@@ -1,0 +1,242 @@
+import React from "react";
+import { Button } from "@/components/ui/button";
+import type { I18nKey } from "@/i18n/translations";
+import type { AttachmentOption } from "@/utils/routines/attachments";
+import type { DayKey, DayPlan, ExerciseItem } from "@/utils/routines/plan";
+import type { RoutineUpsertBody } from "@/utils/routines/putBody";
+import { RoutinesDayEditor } from "@/components/routines/RoutinesDayEditor";
+
+type TFn = (key: I18nKey) => string;
+
+type Placeholders = {
+    sessionType: string;
+    focus: string;
+    tags: string;
+    notes: string;
+    exNotes: string;
+    sets: string;
+    reps: string;
+    load: string;
+};
+
+type DayTabItem = { dayKey: DayKey; label: string };
+type SplitPreset = { value: string; labelKey: I18nKey };
+
+type Props = {
+    t: TFn;
+    lang: string;
+    busy: boolean;
+    isSaving: boolean;
+
+    onSave: () => void;
+
+    putBody: RoutineUpsertBody;
+    onChangeTitle: (next: string) => void;
+
+    splitPreset: string;
+    splitCustom: string;
+    splitPresets: SplitPreset[];
+    onChangeSplitPreset: (next: string) => void;
+    onChangeSplitCustom: (next: string) => void;
+
+    dayKeys: readonly DayKey[];
+    onTogglePlannedDay: (dayKey: string) => void;
+
+    planBuilderTitle: string;
+    planBuilderHint: string;
+
+    dayTabItems: DayTabItem[];
+    activeDay: DayKey;
+    onSelectDay: (dayKey: DayKey) => void;
+
+    activePlan: DayPlan;
+    attachmentOptions: AttachmentOption[];
+
+    exerciseUploadBusy: boolean;
+    uploadingExercise: { dayKey: DayKey; exerciseId: string } | null;
+
+    // ✅ pending is exerciseId-based
+    getPendingExerciseFiles: (exerciseId: string) => File[];
+    onAddPendingExerciseFiles: (exerciseId: string, files: File[]) => void;
+    onClearPendingExerciseFiles: (exerciseId: string, fileIndex?: number) => void;
+
+    onAddExercise: (dayKey: DayKey) => void;
+    onRemoveExercise: (dayKey: DayKey, idx: number) => void;
+    onUpdatePlan: (dayKey: DayKey, patch: Partial<DayPlan>) => void;
+    onUpdateExercise: (dayKey: DayKey, idx: number, patch: Partial<ExerciseItem>) => void;
+
+    ph: Placeholders;
+
+    debugPutBodyTitle: string;
+    debugPutBodyData: unknown;
+
+    debugPlansTitle: string;
+    plans: DayPlan[];
+};
+
+export function RoutinesPutForm({
+    t,
+    lang,
+    busy,
+    isSaving,
+    onSave,
+    putBody,
+    onChangeTitle,
+    splitPreset,
+    splitCustom,
+    splitPresets,
+    onChangeSplitPreset,
+    onChangeSplitCustom,
+    dayKeys,
+    onTogglePlannedDay,
+    planBuilderTitle,
+    planBuilderHint,
+    dayTabItems,
+    activeDay,
+    onSelectDay,
+    activePlan,
+    attachmentOptions,
+    exerciseUploadBusy,
+    uploadingExercise,
+    getPendingExerciseFiles,
+    onAddPendingExerciseFiles,
+    onClearPendingExerciseFiles,
+    onAddExercise,
+    onRemoveExercise,
+    onUpdatePlan,
+    onUpdateExercise,
+    ph,
+    debugPutBodyTitle,
+    debugPutBodyData,
+    debugPlansTitle,
+    plans,
+}: Props) {
+    const planned = (putBody.plannedDays ?? []) as string[];
+
+    return (
+        <div className="space-y-4">
+            <div className="rounded-xl border bg-card p-4 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                    <div>
+                        <div className="text-sm font-semibold">{lang === "es" ? "Editor de rutina" : "Routine editor"}</div>
+                        <div className="text-xs text-muted-foreground">
+                            {lang === "es" ? "Edita el plan por día y guarda con PUT." : "Edit day plan and save with PUT."}
+                        </div>
+                    </div>
+
+                    <Button onClick={onSave} disabled={busy || isSaving} className="h-9">
+                        {lang === "es" ? "Guardar (PUT)" : "Save (PUT)"}
+                    </Button>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium">{t("routines.titleField")}</label>
+                        <input
+                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                            value={putBody.title ?? ""}
+                            onChange={(e) => onChangeTitle(e.target.value)}
+                            disabled={busy}
+                            placeholder={lang === "es" ? "Título" : "Title"}
+                        />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium">{t("routines.split.none")}</label>
+                            <select
+                                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                value={splitPreset}
+                                onChange={(e) => onChangeSplitPreset(e.target.value)}
+                                disabled={busy}
+                            >
+                                {splitPresets.map((p) => (
+                                    <option key={p.value} value={p.value}>
+                                        {t(p.labelKey)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="space-y-1">
+                            <input
+                                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                value={splitCustom}
+                                onChange={(e) => onChangeSplitCustom(e.target.value)}
+                                disabled={busy}
+                                placeholder={lang === "es" ? "Split personalizado (opcional)" : "Custom split (optional)"}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <div className="text-xs font-medium">{t("routines.plannedDays")}</div>
+                    <div className="flex flex-wrap gap-2">
+                        {dayKeys.map((d) => {
+                            const checked = planned.includes(d);
+                            return (
+                                <label key={d} className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm bg-background">
+                                    <input type="checkbox" checked={checked} onChange={() => onTogglePlannedDay(d)} disabled={busy} />
+                                    <span className="font-mono">{d}</span>
+                                </label>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+
+            <div className="rounded-xl border bg-card p-4 space-y-3">
+                <div>
+                    <div className="text-sm font-semibold">{planBuilderTitle}</div>
+                    <div className="text-xs text-muted-foreground">{planBuilderHint}</div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                    {dayTabItems.map((d) => (
+                        <Button
+                            key={d.dayKey}
+                            type="button"
+                            variant={d.dayKey === activeDay ? "default" : "outline"}
+                            className="h-8"
+                            onClick={() => onSelectDay(d.dayKey)}
+                            disabled={busy}
+                        >
+                            {d.label}
+                        </Button>
+                    ))}
+                </div>
+
+                <RoutinesDayEditor
+                    activePlan={activePlan}
+                    busy={busy}
+                    t={t}
+                    lang={lang}
+                    ph={ph}
+                    attachmentOptions={attachmentOptions}
+                    exerciseUploadBusy={exerciseUploadBusy}
+                    uploadingExercise={uploadingExercise}
+                    getPendingFilesForExercise={(exerciseId) => getPendingExerciseFiles(exerciseId)}
+                    onPickFilesForExercise={(exerciseId, files) => onAddPendingExerciseFiles(exerciseId, files)}
+                    onRemovePendingForExercise={(exerciseId, fileIndex) => onClearPendingExerciseFiles(exerciseId, fileIndex)}
+                    onAddExercise={onAddExercise}
+                    onRemoveExercise={onRemoveExercise}
+                    onUpdatePlan={onUpdatePlan}
+                    onUpdateExercise={onUpdateExercise}
+                />
+            </div>
+
+            <details className="rounded-xl border bg-card p-4">
+                <summary className="cursor-pointer select-none text-sm font-semibold">{debugPutBodyTitle}</summary>
+                <pre className="mt-3 whitespace-pre-wrap text-xs text-muted-foreground">
+                    {typeof debugPutBodyData === "string" ? debugPutBodyData : JSON.stringify(debugPutBodyData, null, 2)}
+                </pre>
+            </details>
+
+            <details className="rounded-xl border bg-card p-4">
+                <summary className="cursor-pointer select-none text-sm font-semibold">{debugPlansTitle}</summary>
+                <pre className="mt-3 whitespace-pre-wrap text-xs text-muted-foreground">{JSON.stringify(plans, null, 2)}</pre>
+            </details>
+        </div>
+    );
+}

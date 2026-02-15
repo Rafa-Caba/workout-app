@@ -156,7 +156,7 @@ export function TrendsPage() {
             {query.isError ? <JsonDetails title={t("common.errorTitle")} data={query.error} defaultOpen /> : null}
 
             {query.isSuccess && last ? (
-                <div className="grid gap-4 sm:grid-cols-4">
+                <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
                     <StatCard label={t("trends.kpi.week")} value={last.weekKey} />
                     <StatCard label={t("trends.kpi.sessions")} value={last.training.sessionsCount} />
                     <StatCard label={t("trends.kpi.durationSeconds")} value={last.training.durationSeconds} />

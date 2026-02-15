@@ -280,7 +280,7 @@ export function PlanVsActualPage() {
 
             {pva && summary && !shouldShowEmpty ? (
                 <div className="space-y-4">
-                    <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-7">
+                    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-7">
                         <StatCard label={t("pva.stats.days")} value={summary.total} />
                         <StatCard label={t("pva.stats.planned")} value={summary.plannedCount} />
                         <StatCard label={t("pva.stats.actualSessions")} value={summary.actualSessions} />

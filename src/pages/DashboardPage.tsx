@@ -12,11 +12,15 @@ import {
     pickTrendPointForWeek,
     secondsToHhMm,
 } from "@/utils/dashboard/format";
+import { MediaFeedItem } from "@/types/media.types";
+import { MediaViewerModal } from "@/components/media/MediaViewerModal";
 
 export function DashboardPage() {
     const { t } = useI18n();
     const user = useAuthStore((s) => s.user);
     const name = getSafeUserName(user);
+
+    const [selected, setSelected] = React.useState<MediaFeedItem | null>(null);
 
     const d = useDashboard();
     const todayLabel = React.useMemo(() => formatIsoToPPP(d.today), [d.today]);
@@ -305,30 +309,41 @@ export function DashboardPage() {
                             <div className="grid grid-cols-3 gap-2">
                                 {media.map((m) => {
                                     const isImage = m.resourceType === "image";
+
                                     return (
-                                        <a
+                                        <button
                                             key={`${m.source}:${m.publicId}`}
-                                            href={m.url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className={cn("block overflow-hidden rounded-xl border bg-background")}
+                                            type="button"
+                                            onClick={() => setSelected(m)}
+                                            className={cn(
+                                                "block overflow-hidden rounded-xl border bg-background text-left",
+                                                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                            )}
                                             title={`${m.date} • ${m.sessionType}`}
                                         >
                                             {isImage ? (
-                                                <img src={m.url} alt={m.publicId} className="h-24 w-full object-cover" />
+                                                <img
+                                                    src={m.url}
+                                                    alt={m.publicId}
+                                                    className="h-24 w-full object-cover"
+                                                    loading="lazy"
+                                                />
                                             ) : (
-                                                <div className="flex h-24 items-center justify-center text-xs text-muted-foreground">
+                                                <div className="flex h-24 w-full items-center justify-center text-xs text-muted-foreground">
                                                     {t("dashboard.media.video")}
                                                 </div>
                                             )}
-                                        </a>
+                                        </button>
                                     );
                                 })}
                             </div>
                         ) : null}
+
                     </CardContent>
                 </Card>
             </div>
+
+            {selected ? <MediaViewerModal item={selected} onClose={() => setSelected(null)} /> : null}
         </div>
     );
 }

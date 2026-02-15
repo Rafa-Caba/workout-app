@@ -92,12 +92,12 @@ export function NavBar() {
         () => [
             { label: t("nav.home"), to: "/", end: true },
             { label: "Gym Check", to: "/gym-check", end: true },
+            { label: t("nav.routines"), to: "/routines", end: true },
             { label: "Sleep", to: "/sleep", end: true },
             { label: t("nav.days"), to: "/days", end: true },
             { label: t("nav.weeks"), to: "/weeks", end: true },
             { label: t("nav.trends"), to: "/trends", end: true },
             { label: t("nav.media"), to: "/media", end: true },
-            { label: t("nav.routines"), to: "/routines", end: true },
             { label: t("nav.pva"), to: "/plan-vs-actual", end: true },
         ],
         [t]
@@ -235,12 +235,12 @@ export function NavBar() {
                 <nav className="mt-3 hidden md:flex flex-wrap items-center gap-2">
                     <TopNavLink to="/" label={t("nav.home")} end />
                     <TopNavLink to="/gym-check" label="Gym Check" end />
+                    <TopNavLink to="/routines" label={t("nav.routines")} end />
                     <TopNavLink to="/sleep" label="Sleep" end />
                     <TopNavLink to="/days" label={t("nav.days")} end />
                     <TopNavLink to="/weeks" label={t("nav.weeks")} end />
                     <TopNavLink to="/trends" label={t("nav.trends")} end />
                     <TopNavLink to="/media" label={t("nav.media")} end />
-                    <TopNavLink to="/routines" label={t("nav.routines")} end />
                     <TopNavLink to="/plan-vs-actual" label={t("nav.pva")} end />
 
                     {/* Insights dropdown (desktop) */}

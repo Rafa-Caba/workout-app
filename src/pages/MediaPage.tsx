@@ -243,7 +243,7 @@ export function MediaPage() {
                     ) : null}
 
                     {allItems.length > 0 ? (
-                        <div className="grid gap-4 sm:grid-cols-3">
+                        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
                             <StatCard label={t("media.kpi.itemsTotal")} value={allItems.length} />
                             <StatCard label={t("media.kpi.pages")} value={pages.length} />
                             <StatCard label={t("media.kpi.nextCursor")} value={nextCursor ?? "—"} />
@@ -251,7 +251,7 @@ export function MediaPage() {
                     ) : null}
 
                     {allItems.length > 0 ? (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="grid gap-4 grid-cols-3 sm:grid-cols-4 lg:grid-cols-5">
                             {allItems.map((item) => (
                                 <MediaCard
                                     key={`${item.publicId}-${item.createdAt}`}
@@ -274,7 +274,7 @@ export function MediaPage() {
 
                     {statsQuery.data ? (
                         <>
-                            <div className="grid gap-4 sm:grid-cols-3">
+                            <div className="grid gap-4 grid-cols-3 sm:grid-cols-3">
                                 <StatCard label={t("media.stats.total")} value={statsQuery.data.totals.items} />
                                 <StatCard label={t("media.stats.images")} value={statsQuery.data.totals.images} />
                                 <StatCard label={t("media.stats.videos")} value={statsQuery.data.totals.videos} />

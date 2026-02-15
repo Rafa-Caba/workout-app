@@ -24,7 +24,7 @@ export function JsonDetails({
     const { t } = useI18n();
     const showJson = useSettingsStore((s) => s.settings.debug.showJson);
 
-    // ✅ Global toggle
+    // Global toggle
     if (!showJson) return null;
 
     const [isOpen, setIsOpen] = React.useState<boolean>(defaultOpen);

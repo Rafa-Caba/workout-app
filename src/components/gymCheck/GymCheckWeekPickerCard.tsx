@@ -61,19 +61,21 @@ export function GymCheckWeekPickerCard(props: Props) {
                 <div className="flex flex-wrap items-center gap-2">
                     <label className="text-sm text-muted-foreground">{t("week.pickDateInWeek")}</label>
                     <input
-                        className="rounded-lg border bg-background px-3 py-2 text-sm"
+                        className="rounded-lg border mx-auto sm:mx-0 bg-background px-3 py-2 text-sm"
                         type="date"
                         value={weekDate}
                         onChange={(e) => onWeekDateChange(e.target.value)}
                         disabled={busy}
                     />
-                    <Button variant="outline" onClick={onPrevWeek} disabled={busy}>
-                        {t("week.prev")}
-                    </Button>
-                    <Button variant="outline" onClick={onNextWeek} disabled={busy}>
-                        {t("week.next")}
-                    </Button>
-                    <Button onClick={onUseWeek} disabled={busy}>
+                    <div className="grid gap-2 grid-cols-2 my-1 sm:my-0">
+                        <Button variant="outline" onClick={onPrevWeek} disabled={busy}>
+                            {t("week.prev")}
+                        </Button>
+                        <Button variant="outline" onClick={onNextWeek} disabled={busy}>
+                            {t("week.next")}
+                        </Button>
+                    </div>
+                    <Button className="mx-auto sm:mx-0" onClick={onUseWeek} disabled={busy}>
                         {lang === "es" ? "Usar semana" : "Use week"}
                     </Button>
                 </div>

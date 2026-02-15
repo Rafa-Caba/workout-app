@@ -40,6 +40,10 @@ type Props = {
     onChangeNotes: (next: string) => void;
     onChangeSets: (next: string) => void;
     onChangeReps: (next: string) => void;
+
+    // ✅ NEW
+    onChangeRpe: (next: string) => void;
+
     onChangeLoad: (next: string) => void;
 
     onToggleAttachment: (publicId: string) => void;
@@ -63,6 +67,7 @@ export function RoutinesExerciseCard({
     onChangeNotes,
     onChangeSets,
     onChangeReps,
+    onChangeRpe,
     onChangeLoad,
     onToggleAttachment,
 }: Props) {
@@ -108,6 +113,7 @@ export function RoutinesExerciseCard({
                         onChange={(ev) => onChangeSets(ev.target.value)}
                         disabled={busy}
                         placeholder={ph.sets}
+                        inputMode="numeric"
                     />
                 </div>
 
@@ -122,7 +128,19 @@ export function RoutinesExerciseCard({
                     />
                 </div>
 
-                <div className="space-y-1 md:col-span-2">
+                <div className="space-y-1">
+                    <label className="text-xs font-medium">{lang === "es" ? "RPE (planeado)" : "Planned RPE"}</label>
+                    <input
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                        value={exercise.rpe ?? ""}
+                        onChange={(ev) => onChangeRpe(ev.target.value)}
+                        disabled={busy}
+                        placeholder={lang === "es" ? "Ej. 8" : "e.g. 8"}
+                        inputMode="decimal"
+                    />
+                </div>
+
+                <div className="space-y-1">
                     <label className="text-xs font-medium">{t("routines.load")}</label>
                     <input
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"

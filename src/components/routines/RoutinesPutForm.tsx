@@ -5,6 +5,7 @@ import type { AttachmentOption } from "@/utils/routines/attachments";
 import type { DayKey, DayPlan, ExerciseItem } from "@/utils/routines/plan";
 import type { RoutineUpsertBody } from "@/utils/routines/putBody";
 import { RoutinesDayEditor } from "@/components/routines/RoutinesDayEditor";
+import { useSettingsStore } from "@/state/settings.store";
 
 type TFn = (key: I18nKey) => string;
 
@@ -111,6 +112,8 @@ export function RoutinesPutForm({
     debugPlansTitle,
     plans,
 }: Props) {
+    const showJson = useSettingsStore((s) => s.settings.debug.showJson);
+
     const planned = (putBody.plannedDays ?? []) as string[];
 
     return (
@@ -143,7 +146,7 @@ export function RoutinesPutForm({
 
                     <div className="grid gap-2">
                         <div className="space-y-1">
-                            <label className="text-xs font-medium">{t("routines.split.none")}</label>
+                            <label className="text-xs font-medium">{t("routines.splitField")}</label>
                             <select
                                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                 value={splitPreset}
@@ -226,17 +229,21 @@ export function RoutinesPutForm({
                 />
             </div>
 
-            <details className="rounded-xl border bg-card p-4">
-                <summary className="cursor-pointer select-none text-sm font-semibold">{debugPutBodyTitle}</summary>
-                <pre className="mt-3 whitespace-pre-wrap text-xs text-muted-foreground">
-                    {typeof debugPutBodyData === "string" ? debugPutBodyData : JSON.stringify(debugPutBodyData, null, 2)}
-                </pre>
-            </details>
+            {showJson &&
+                <>
+                    <details className="rounded-xl border bg-card p-4">
+                        <summary className="cursor-pointer select-none text-sm font-semibold">{debugPutBodyTitle}</summary>
+                        <pre className="mt-3 whitespace-pre-wrap text-xs text-muted-foreground">
+                            {typeof debugPutBodyData === "string" ? debugPutBodyData : JSON.stringify(debugPutBodyData, null, 2)}
+                        </pre>
+                    </details>
 
-            <details className="rounded-xl border bg-card p-4">
-                <summary className="cursor-pointer select-none text-sm font-semibold">{debugPlansTitle}</summary>
-                <pre className="mt-3 whitespace-pre-wrap text-xs text-muted-foreground">{JSON.stringify(plans, null, 2)}</pre>
-            </details>
+                    <details className="rounded-xl border bg-card p-4">
+                        <summary className="cursor-pointer select-none text-sm font-semibold">{debugPlansTitle}</summary>
+                        <pre className="mt-3 whitespace-pre-wrap text-xs text-muted-foreground">{JSON.stringify(plans, null, 2)}</pre>
+                    </details>
+                </>
+            }
         </div>
     );
 }

@@ -614,7 +614,7 @@ export const es: Record<I18nKey, string> = {
     // Routines
     "routines.title": "Rutinas",
     "routines.subtitle":
-        "Gestiona la rutina por semana (título, split, días planeados y adjuntos). El plan canónico vive en routine.days.",
+        "Gestiona la rutina por semana (título, split, días planeados y adjuntos).",
     "routines.modeForm": "Formulario",
     "routines.modeJson": "JSON",
     "routines.useWeek": "Usar semana",

@@ -18,7 +18,7 @@ export function DayExplorerKpisPanel({
     if (!kpis) return null;
 
     return (
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
             <StatCard label={t("days.kpi.trainingSeconds")} value={formatMaybeNumber(kpis.trainingSeconds)} />
             <StatCard label={t("days.kpi.activeKcal")} value={formatMaybeNumber(kpis.activeKcal)} />
             <StatCard label={t("days.kpi.sleepMinutes")} value={formatMaybeNumber(kpis.sleepMinutes)} />

@@ -1,7 +1,9 @@
+import type { DayKey } from "@/types/workoutRoutine.types";
+
 export type RoutineUpsertBody = {
     title?: string | null;
     split?: string | null;
-    plannedDays?: string[] | null;
+    plannedDays?: DayKey[] | null;
     meta?: Record<string, unknown> | null;
 };
 

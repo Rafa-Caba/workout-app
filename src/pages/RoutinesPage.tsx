@@ -4,12 +4,18 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 
 import { toWeekKey, weekKeyToStartDate } from "@/utils/weekKey";
-import { startOfISOWeek, endOfISOWeek, addWeeks, format } from "date-fns";
+import { startOfISOWeek, endOfISOWeek, addWeeks, format, parseISO, isValid } from "date-fns";
 
-import { useInitRoutineWeek, useRoutineWeek, useSetRoutineArchived, useUpdateRoutineWeek } from "@/hooks/useRoutineWeek";
+import {
+    useInitRoutineWeek,
+    useRoutineWeek,
+    useRoutineWeeksList,
+    useSetRoutineArchived,
+    useUpdateRoutineWeek,
+} from "@/hooks/useRoutineWeek";
 import { useDeleteRoutineAttachment, useUploadRoutineAttachments } from "@/hooks/useRoutineAttachments";
 
-import { toRoutineUpsertBody } from "@/services/workout/routines.service";
+import { toRoutineUpsertBody, toStatusLabel } from "@/services/workout/routines.service";
 import type { ApiError } from "@/api/httpErrors";
 
 import { useI18n } from "@/i18n/I18nProvider";
@@ -26,7 +32,6 @@ import {
 } from "@/utils/routines/plan";
 
 import { extractAttachments, toAttachmentOptions, type AttachmentOption } from "@/utils/routines/attachments";
-
 import { normalizePutBodyForApi, type RoutineUpsertBody } from "@/utils/routines/putBody";
 
 import { saveRoutineWeekWithPlanFallback } from "@/utils/routines/saveRoutineWeek";
@@ -41,6 +46,7 @@ import { RoutinesPutForm } from "@/components/routines/RoutinesPutForm";
 import { RoutinesJsonEditor } from "@/components/routines/RoutinesJsonEditor";
 
 import type { UploadQuery } from "@/types/uploadQuery";
+import type { WorkoutRoutineWeek, WorkoutRoutineDay, WorkoutRoutineStatus } from "@/types/workoutRoutine.types";
 
 function toastApiError(e: unknown, fallback: string) {
     const err = e as Partial<ApiError> | undefined;
@@ -72,23 +78,6 @@ function isRecord(v: unknown): v is Record<string, unknown> {
     return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-function buildAttachmentsSet(routine: unknown): Set<string> {
-    const list = extractAttachments(routine as any);
-    const s = new Set<string>();
-    for (const a of list) {
-        if (a && typeof a.publicId === "string" && a.publicId.trim()) s.add(a.publicId.trim());
-    }
-    return s;
-}
-
-function diffNewAttachmentPublicIds(before: Set<string>, after: Set<string>): string[] {
-    const added: string[] = [];
-    for (const id of after) {
-        if (!before.has(id)) added.push(id);
-    }
-    return added;
-}
-
 function makeId(): string {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const g: any = globalThis as any;
@@ -107,7 +96,10 @@ function ensureExerciseIds(input: DayPlan[]): DayPlan[] {
     }));
 }
 
-function attachPublicIdToExercise(plans: DayPlan[], args: { dayKey: DayKey; exerciseId: string; publicId: string }): DayPlan[] {
+function attachPublicIdToExercise(
+    plans: DayPlan[],
+    args: { dayKey: DayKey; exerciseId: string; publicId: string }
+): DayPlan[] {
     const { dayKey, exerciseId, publicId } = args;
 
     return plans.map((p) => {
@@ -125,6 +117,75 @@ function attachPublicIdToExercise(plans: DayPlan[], args: { dayKey: DayKey; exer
 
         return { ...p, exercises: nextExercises };
     });
+}
+
+function routineDaysToPlans(days: WorkoutRoutineDay[] | null | undefined): DayPlan[] {
+    const list = Array.isArray(days) ? days : [];
+    const mapped: DayPlan[] = list
+        .filter((d) => d && DAY_KEYS.includes(d.dayKey as DayKey))
+        .map((d) => {
+            const dayKey = d.dayKey as DayKey;
+            const exercises: ExerciseItem[] | undefined = Array.isArray(d.exercises)
+                ? d.exercises.map((e) => ({
+                    id: String(e.id || makeId()),
+                    name: String(e.name ?? ""),
+                    sets: e.sets == null ? undefined : String(e.sets),
+                    reps: e.reps == null ? undefined : String(e.reps),
+                    rpe: e.rpe == null ? undefined : String(e.rpe),
+                    load: e.load ?? undefined,
+                    notes: e.notes ?? undefined,
+                    attachmentPublicIds: Array.isArray(e.attachmentPublicIds) ? e.attachmentPublicIds : [],
+                }))
+                : undefined;
+
+            return {
+                dayKey,
+                sessionType: d.sessionType ?? undefined,
+                focus: d.focus ?? undefined,
+                tags: Array.isArray(d.tags) ? d.tags : undefined,
+                notes: d.notes ?? undefined,
+                exercises,
+            };
+        });
+
+    return normalizePlans(ensureExerciseIds(mapped));
+}
+
+function buildWeekRangeLabel(args: { weekDate: string; routine: WorkoutRoutineWeek | null }): string {
+    const { weekDate, routine } = args;
+
+    const from = routine?.range?.from ?? "";
+    const to = routine?.range?.to ?? "";
+
+    if (from && to) {
+        const df = parseISO(from);
+        const dt = parseISO(to);
+        if (isValid(df) && isValid(dt)) {
+            return `${format(df, "MMM d, yyyy")} → ${format(dt, "MMM d, yyyy")}`;
+        }
+    }
+
+    const d = new Date(`${weekDate}T00:00:00`);
+    const start = startOfISOWeek(d);
+    const end = endOfISOWeek(d);
+    return `${format(start, "MMM d, yyyy")} → ${format(end, "MMM d, yyyy")}`;
+}
+
+function buildAttachmentsSet(routine: unknown): Set<string> {
+    const list = extractAttachments(routine as any);
+    const s = new Set<string>();
+    for (const a of list) {
+        if (a && typeof a.publicId === "string" && a.publicId.trim()) s.add(a.publicId.trim());
+    }
+    return s;
+}
+
+function diffNewAttachmentPublicIds(before: Set<string>, after: Set<string>): string[] {
+    const added: string[] = [];
+    for (const id of after) {
+        if (!before.has(id)) added.push(id);
+    }
+    return added;
 }
 
 export function RoutinesPage() {
@@ -148,10 +209,10 @@ export function RoutinesPage() {
     const uploadMutation = useUploadRoutineAttachments(runWeekKey);
     const deleteMutation = useDeleteRoutineAttachment(runWeekKey);
 
-    const routine = routineQuery.data ?? null;
+    const routine = (routineQuery.data ?? null) as WorkoutRoutineWeek | null;
 
     // ✅ refs to avoid stale state during async save/upload flows
-    const routineRef = React.useRef<any>(routine);
+    const routineRef = React.useRef<WorkoutRoutineWeek | null>(routine);
     React.useEffect(() => {
         routineRef.current = routine;
     }, [routine]);
@@ -180,7 +241,7 @@ export function RoutinesPage() {
     const [editor, setEditor] = React.useState<string>("");
     const [metaEditor, setMetaEditor] = React.useState<string>("{}");
 
-    // Day plans
+    // Day plans (UI helper)
     const [plans, setPlans] = React.useState<DayPlan[]>(() => normalizePlans([]));
     const plansRef = React.useRef<DayPlan[]>(plans);
     React.useEffect(() => {
@@ -194,12 +255,11 @@ export function RoutinesPage() {
     const attachmentOptions: AttachmentOption[] = React.useMemo(() => toAttachmentOptions(attachments), [attachments]);
 
     /**
-     * =========================================================
-     * ✅ Pending local files per exercise (exerciseId-based)
-     * pendingExerciseFiles[dayKey][exerciseId] = File[]
-     * =========================================================
+     * Pending local files per exercise
      */
-    const [pendingExerciseFiles, setPendingExerciseFiles] = React.useState<Record<DayKey, Record<string, File[]> | undefined>>({
+    const [pendingExerciseFiles, setPendingExerciseFiles] = React.useState<
+        Record<DayKey, Record<string, File[]> | undefined>
+    >({
         Mon: undefined,
         Tue: undefined,
         Wed: undefined,
@@ -209,8 +269,9 @@ export function RoutinesPage() {
         Sun: undefined,
     });
 
-    // Upload status while saving
-    const [uploadingExercise, setUploadingExercise] = React.useState<{ dayKey: DayKey; exerciseId: string } | null>(null);
+    const [uploadingExercise, setUploadingExercise] = React.useState<{ dayKey: DayKey; exerciseId: string } | null>(
+        null
+    );
     const [exerciseUploadBusy, setExerciseUploadBusy] = React.useState(false);
 
     const getPendingExerciseFilesFor = React.useCallback(
@@ -288,7 +349,9 @@ export function RoutinesPage() {
             meta: isRecord(body.meta) ? body.meta : null,
         });
 
-        const presetMatch = SPLIT_PRESETS.some((p) => p.value && p.value.toLowerCase() === split.toLowerCase()) ? split : "";
+        const presetMatch = SPLIT_PRESETS.some((p) => p.value && p.value.toLowerCase() === split.toLowerCase())
+            ? split
+            : "";
         setSplitPreset(presetMatch);
         setSplitCustom(presetMatch ? "" : split);
 
@@ -298,13 +361,25 @@ export function RoutinesPage() {
                 split: body.split ?? null,
                 plannedDays: body.plannedDays ?? null,
                 meta: body.meta ?? null,
+                // show canonical too (debug-friendly)
+                status: routine.status ?? null,
+                range: routine.range ?? null,
+                days: routine.days ?? null,
+                attachments: routine.attachments ?? null,
             })
         );
 
-        const extracted = getPlanFromMeta(routine?.meta ?? {});
-        const normalized = ensureExerciseIds(normalizePlans(extracted));
-        setPlans(normalized);
-        plansRef.current = normalized;
+        // CANONICAL SOURCE: routine.days (always preferred)
+        const canonicalPlans = routineDaysToPlans(routine.days);
+
+        // Fallback only if days are missing/invalid (legacy or corrupted payload)
+        const fallbackPlans = ensureExerciseIds(normalizePlans(getPlanFromMeta(routine?.meta ?? {})));
+        const hasCanonicalDays = Array.isArray(routine.days) && routine.days.length > 0;
+
+        const chosenPlans = hasCanonicalDays ? canonicalPlans : fallbackPlans;
+
+        setPlans(chosenPlans);
+        plansRef.current = chosenPlans;
 
         setMetaEditor(safeStringify(isRecord(routine?.meta) ? routine.meta : {}));
 
@@ -316,7 +391,7 @@ export function RoutinesPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [routine]);
 
-    // Auto-sync plans into putBody.meta.plan
+    // Auto-sync plans into putBody.meta.plan (UI helper only)
     const lastPlanHashRef = React.useRef<string>("");
     React.useEffect(() => {
         const hash = safeStringify(plans);
@@ -343,12 +418,26 @@ export function RoutinesPage() {
         );
     }, [putBody, mode]);
 
-    const weekRangeLabel = React.useMemo(() => {
-        const d = new Date(`${weekDate}T00:00:00`);
-        const start = startOfISOWeek(d);
-        const end = endOfISOWeek(d);
-        return `${format(start, "MMM d, yyyy")} → ${format(end, "MMM d, yyyy")}`;
-    }, [weekDate]);
+    // ✅ Tabs filter list
+    const [statusFilter, setStatusFilter] = React.useState<WorkoutRoutineStatus>("active");
+    const listQuery = useRoutineWeeksList(statusFilter);
+    const weeksList = listQuery.data ?? [];
+
+    React.useEffect(() => {
+        if (weeksList.length === 0) return;
+
+        setRunWeekKey((prev) => {
+            const exists = weeksList.some((w) => w.weekKey === prev);
+            if (exists) return prev;
+
+            const first = weeksList[0].weekKey;
+            const start = weekKeyToStartDate(first);
+            if (start) setWeekDate(format(start, "yyyy-MM-dd"));
+            return first;
+        });
+    }, [weeksList]);
+
+    const weekRangeLabel = React.useMemo(() => buildWeekRangeLabel({ weekDate, routine }), [weekDate, routine]);
 
     function goPrevWeek() {
         const d = new Date(`${weekDate}T00:00:00`);
@@ -408,9 +497,9 @@ export function RoutinesPage() {
     function togglePlannedDay(dayKey: string) {
         setPutBody((prev) => {
             const current = prev.plannedDays ?? [];
-            const exists = current.includes(dayKey);
-            const next = exists ? current.filter((d) => d !== dayKey) : [...current, dayKey];
-            return { ...prev, plannedDays: next.length ? next : null };
+            const exists = current.includes(dayKey as any);
+            const next = exists ? current.filter((d) => d !== (dayKey as any)) : [...current, dayKey as any];
+            return { ...prev, plannedDays: next.length ? (next as any) : null };
         });
     }
 
@@ -464,13 +553,8 @@ export function RoutinesPage() {
         );
     }
 
-    /**
-     * ✅ IMPORTANT FIX:
-     * This returns the UPDATED plans (no stale state).
-     * Save uses the returned plans, not the old `plans`.
-     */
     async function uploadPendingExerciseFilesIfAny(): Promise<DayPlan[]> {
-        const baseRoutine = routineRef.current ?? routineQuery.data ?? null;
+        const baseRoutine = routineRef.current ?? (routineQuery.data as any) ?? null;
         if (!baseRoutine) return plansRef.current;
 
         const pending: Array<{ dayKey: DayKey; exerciseId: string; file: File }> = [];
@@ -493,15 +577,13 @@ export function RoutinesPage() {
             for (const item of pending) {
                 setUploadingExercise({ dayKey: item.dayKey, exerciseId: item.exerciseId });
 
-                // Always diff against the latest routine snapshot
-                const before = buildAttachmentsSet(routineRef.current ?? routineQuery.data ?? baseRoutine);
+                const before = buildAttachmentsSet(routineRef.current ?? (routineQuery.data as any) ?? baseRoutine);
 
                 await uploadMutation.mutateAsync({ files: [item.file], query: {} });
 
                 const ref = await routineQuery.refetch();
-                const nextRoutine = ref.data ?? null;
+                const nextRoutine = (ref.data ?? null) as WorkoutRoutineWeek | null;
 
-                // Keep ref fresh so next iterations diff correctly
                 routineRef.current = nextRoutine;
 
                 const after = buildAttachmentsSet(nextRoutine);
@@ -524,7 +606,6 @@ export function RoutinesPage() {
                     plansRef.current = nextPlans;
                 }
 
-                // Remove this file from pending (by identity) under exerciseId
                 setPendingExerciseFiles((prev) => {
                     const dayMap = prev[item.dayKey];
                     if (!dayMap) return prev;
@@ -552,10 +633,7 @@ export function RoutinesPage() {
             if (mode === "form") {
                 const updatedPlans = await uploadPendingExerciseFilesIfAny();
 
-                /**
-                 * ✅ CORE FIX:
-                 * Build meta.plan from updatedPlans right now (do NOT rely on useEffect timing).
-                 */
+                // ✅ keep meta.plan in sync (UI helper)
                 const baseMeta = isRecord(putBody.meta) ? putBody.meta : null;
                 const nextMeta = setPlanIntoMeta(baseMeta, updatedPlans);
 
@@ -564,16 +642,16 @@ export function RoutinesPage() {
                     meta: nextMeta,
                 };
 
-                // Keep local state aligned (optional but nice)
                 setPutBody(bodyWithUpdatedMeta);
 
                 const apiBody = normalizePutBodyForApi(bodyWithUpdatedMeta);
 
+                // ✅ IMPORTANT: Persist CANONICAL days[] always
                 await saveRoutineWeekWithPlanFallback({
                     weekKey: runWeekKey,
                     baseBody: apiBody,
                     plans: updatedPlans,
-                    mutateAsync: updateMutation.mutateAsync,
+                    mutateAsync: updateMutation.mutateAsync as any,
                 });
 
                 toast.success(t("routines.saveSuccess"));
@@ -628,7 +706,7 @@ export function RoutinesPage() {
                 exNotes: "Opcional…",
                 sets: "3",
                 reps: "8-10",
-                load: "100kg / RPE 8",
+                load: "100kg / barra",
             };
         }
         return {
@@ -639,7 +717,7 @@ export function RoutinesPage() {
             exNotes: "Optional…",
             sets: "3",
             reps: "8-10",
-            load: "100kg / RPE 8",
+            load: "100kg / bar",
         };
     }, [lang]);
 
@@ -698,116 +776,219 @@ export function RoutinesPage() {
         toast.success(t("routines.metaApplied"));
     }
 
+    const status = routine?.status ?? "active";
+
+    // ✅ NEW: gating to prevent "archived empty list" from still showing loaded editor
+    const listEmpty = !listQuery.isFetching && weeksList.length === 0;
+    const showEditorArea = !listEmpty;
+    const showNoRoutine = showEditorArea && !routine && !routineQuery.isFetching;
+
     return (
         <div className="space-y-6">
             <PageHeader
                 title={t("routines.title")}
-                subtitle={t("routines.subtitle")}
+                subtitle={
+                    routine
+                        ? `${t("routines.subtitle")} • ${toStatusLabel(status as any, lang)} • ${weekRangeLabel}`
+                        : t("routines.subtitle")
+                }
                 right={<RoutinesModeToggle mode={mode} busy={busy} t={t} onModeChange={setMode} />}
             />
 
-            <RoutinesWeekPickerCard
-                t={t}
-                lang={lang}
-                busy={busy}
-                weekDate={weekDate}
-                onWeekDateChange={setWeekDate}
-                onPrevWeek={goPrevWeek}
-                onNextWeek={goNextWeek}
-                onLoadWeek={loadWeek}
-                derivedWeekKey={derivedWeekKey}
-                weekRangeLabel={weekRangeLabel}
-                runWeekKey={runWeekKey}
-                onSyncToLoadedWeek={syncToLoadedWeek}
-                initOpenDefault={initOpenDefault}
-                initTitle={initTitle}
-                setInitTitle={setInitTitle}
-                initSplit={initSplit}
-                setInitSplit={setInitSplit}
-                unarchive={unarchive}
-                setUnarchive={setUnarchive}
-                onInitRoutine={initRoutine}
-                isInitializing={initMutation.isPending}
-                onSetArchived={setArchived}
-            />
+            {/* Status tabs (Activas/Archivadas) */}
+            <div className="rounded-xl border bg-card p-3 flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm font-medium">{lang === "es" ? "Rutinas" : "Routines"}</div>
 
-            {!routine && !routineQuery.isFetching ? (
-                <EmptyState title={t("routines.noRoutineTitle")} description={t("routines.noRoutineDesc")} />
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            className={`h-9 px-3 rounded-md border text-sm ${statusFilter === "active" ? "bg-background" : "bg-transparent opacity-70"
+                                }`}
+                            disabled={busy}
+                            onClick={() => setStatusFilter("active")}
+                        >
+                            {lang === "es" ? "Activas" : "Active"}
+                        </button>
+
+                        <button
+                            type="button"
+                            className={`h-9 px-3 rounded-md border text-sm ${statusFilter === "archived" ? "bg-background" : "bg-transparent opacity-70"
+                                }`}
+                            disabled={busy}
+                            onClick={() => setStatusFilter("archived")}
+                        >
+                            {lang === "es" ? "Archivadas" : "Archived"}
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div className="text-xs text-muted-foreground">
+                        {listQuery.isFetching
+                            ? lang === "es"
+                                ? "Cargando semanas..."
+                                : "Loading weeks..."
+                            : lang === "es"
+                                ? `Mostrando ${weeksList.length} semana(s) ${statusFilter === "active" ? "activas" : "archivadas"}`
+                                : `Showing ${weeksList.length} ${statusFilter} week(s)`}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <div className="text-xs font-medium">{lang === "es" ? "Saltar a semana:" : "Jump to week:"}</div>
+
+                        <select
+                            className="h-9 rounded-md border bg-background px-3 text-sm"
+                            value={runWeekKey}
+                            disabled={busy || listQuery.isFetching || weeksList.length === 0}
+                            onChange={(e) => {
+                                const wk = e.target.value;
+                                setRunWeekKey(wk);
+
+                                const start = weekKeyToStartDate(wk);
+                                if (start) setWeekDate(format(start, "yyyy-MM-dd"));
+                            }}
+                        >
+                            {weeksList.length === 0 ? (
+                                <option value={runWeekKey}>{lang === "es" ? "Sin semanas" : "No weeks"}</option>
+                            ) : (
+                                weeksList.map((w) => (
+                                    <option key={w.weekKey} value={w.weekKey}>
+                                        {w.weekKey} • {w.range.from} → {w.range.to}
+                                        {w.title ? ` • ${w.title}` : ""}
+                                    </option>
+                                ))
+                            )}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {/* Empty state for the selected tab */}
+            {listEmpty ? (
+                <EmptyState
+                    title={
+                        lang === "es"
+                            ? statusFilter === "archived"
+                                ? "No hay rutinas archivadas"
+                                : "No hay rutinas activas"
+                            : statusFilter === "archived"
+                                ? "No archived routines"
+                                : "No active routines"
+                    }
+                    description={lang === "es" ? "Crea una rutina o cambia el filtro." : "Create a routine or switch the filter."}
+                />
             ) : null}
 
-            {routine && mode === "form" ? (
+            {/* ✅ Only show picker + editor if this tab has weeks */}
+            {showEditorArea ? (
                 <>
-                    <RoutinesPutForm
+                    <RoutinesWeekPickerCard
                         t={t}
                         lang={lang}
                         busy={busy}
-                        isSaving={updateMutation.isPending}
-                        onSave={saveRoutine}
-                        putBody={putBody}
-                        onChangeTitle={(next) => setPutBody((p) => ({ ...p, title: next }))}
-                        splitPreset={splitPreset}
-                        splitCustom={splitCustom}
-                        splitPresets={SPLIT_PRESETS}
-                        onChangeSplitPreset={onChangeSplitPreset}
-                        onChangeSplitCustom={onChangeSplitCustom}
-                        dayKeys={DAY_KEYS}
-                        onTogglePlannedDay={togglePlannedDay}
-                        planBuilderTitle={t("routines.planBuilderTitle")}
-                        planBuilderHint={t("routines.planBuilderHint")}
-                        dayTabItems={dayTabItems}
-                        activeDay={activeDay as DayKey}
-                        onSelectDay={(d) => setActiveDay(d)}
-                        activePlan={activePlan}
-                        attachmentOptions={attachmentOptions}
-                        exerciseUploadBusy={exerciseUploadBusy}
-                        uploadingExercise={uploadingExercise}
-                        getPendingExerciseFiles={getPendingExerciseFilesFor}
-                        onAddPendingExerciseFiles={addPendingExerciseFiles}
-                        onClearPendingExerciseFiles={clearPendingExerciseFiles}
-                        onAddExercise={addExercise}
-                        onRemoveExercise={removeExercise}
-                        onUpdatePlan={updatePlan}
-                        onUpdateExercise={updateExercise}
-                        ph={ph}
-                        debugPutBodyTitle={t("routines.debugPutBody")}
-                        debugPutBodyData={debugPutBodyData}
-                        debugPlansTitle={lang === "es" ? "Debug: planes (estado local)" : "Debug: plans (local state)"}
-                        plans={plans}
+                        weekDate={weekDate}
+                        onWeekDateChange={setWeekDate}
+                        onPrevWeek={goPrevWeek}
+                        onNextWeek={goNextWeek}
+                        onLoadWeek={loadWeek}
+                        derivedWeekKey={derivedWeekKey}
+                        weekRangeLabel={weekRangeLabel}
+                        runWeekKey={runWeekKey}
+                        onSyncToLoadedWeek={syncToLoadedWeek}
+                        initOpenDefault={initOpenDefault}
+                        initTitle={initTitle}
+                        setInitTitle={setInitTitle}
+                        initSplit={initSplit}
+                        setInitSplit={setInitSplit}
+                        unarchive={unarchive}
+                        setUnarchive={setUnarchive}
+                        onInitRoutine={initRoutine}
+                        isInitializing={initMutation.isPending}
+                        onSetArchived={setArchived}
+                        hasRoutine={!!routine}
+                        routineStatus={routine?.status}
                     />
 
-                    <PlanVsActualPanel weekKey={runWeekKey} />
-                </>
-            ) : null}
+                    {showNoRoutine ? (
+                        <EmptyState title={t("routines.noRoutineTitle")} description={t("routines.noRoutineDesc")} />
+                    ) : null}
 
-            {routine && mode === "json" ? (
-                <>
-                    <RoutinesJsonEditor
+                    {routine && mode === "form" ? (
+                        <>
+                            <RoutinesPutForm
+                                t={t}
+                                lang={lang}
+                                busy={busy}
+                                isSaving={updateMutation.isPending}
+                                onSave={saveRoutine}
+                                putBody={putBody}
+                                onChangeTitle={(next) => setPutBody((p) => ({ ...p, title: next }))}
+                                splitPreset={splitPreset}
+                                splitCustom={splitCustom}
+                                splitPresets={SPLIT_PRESETS}
+                                onChangeSplitPreset={onChangeSplitPreset}
+                                onChangeSplitCustom={onChangeSplitCustom}
+                                dayKeys={DAY_KEYS}
+                                onTogglePlannedDay={togglePlannedDay}
+                                planBuilderTitle={t("routines.planBuilderTitle")}
+                                planBuilderHint={t("routines.planBuilderHint")}
+                                dayTabItems={dayTabItems}
+                                activeDay={activeDay as DayKey}
+                                onSelectDay={(d) => setActiveDay(d)}
+                                activePlan={activePlan}
+                                attachmentOptions={attachmentOptions}
+                                exerciseUploadBusy={exerciseUploadBusy}
+                                uploadingExercise={uploadingExercise}
+                                getPendingExerciseFiles={getPendingExerciseFilesFor}
+                                onAddPendingExerciseFiles={addPendingExerciseFiles}
+                                onClearPendingExerciseFiles={clearPendingExerciseFiles}
+                                onAddExercise={addExercise}
+                                onRemoveExercise={removeExercise}
+                                onUpdatePlan={updatePlan}
+                                onUpdateExercise={updateExercise}
+                                ph={ph}
+                                debugPutBodyTitle={t("routines.debugPutBody")}
+                                debugPutBodyData={debugPutBodyData}
+                                debugPlansTitle={lang === "es" ? "Debug: planes (estado local)" : "Debug: plans (local state)"}
+                                plans={plans}
+                            />
+
+                            {/* <PlanVsActualPanel weekKey={runWeekKey} /> */}
+                        </>
+                    ) : null}
+
+                    {routine && mode === "json" ? (
+                        <>
+                            <RoutinesJsonEditor
+                                t={t}
+                                lang={lang}
+                                busy={busy}
+                                editor={editor}
+                                onEditorChange={setEditor}
+                                metaEditor={metaEditor}
+                                onMetaEditorChange={setMetaEditor}
+                                onApplyMeta={onApplyMetaFromMetaEditor}
+                                onSave={saveRoutine}
+                                isSaving={updateMutation.isPending}
+                                routine={routine}
+                            />
+
+                            <PlanVsActualPanel weekKey={runWeekKey} />
+                        </>
+                    ) : null}
+
+                    <RoutineAttachmentsSection
                         t={t}
                         lang={lang}
                         busy={busy}
-                        editor={editor}
-                        onEditorChange={setEditor}
-                        metaEditor={metaEditor}
-                        onMetaEditorChange={setMetaEditor}
-                        onApplyMeta={onApplyMetaFromMetaEditor}
-                        onSave={saveRoutine}
-                        isSaving={updateMutation.isPending}
-                        routine={routine}
+                        showUploadQuery={mode === "json"}
+                        attachments={attachments}
+                        onUpload={uploadWeekAttachments}
+                        onDelete={deleteWeekAttachment}
                     />
-
-                    <PlanVsActualPanel weekKey={runWeekKey} />
                 </>
             ) : null}
-
-            <RoutineAttachmentsSection
-                t={t}
-                lang={lang}
-                busy={busy}
-                showUploadQuery={mode === "json"}
-                attachments={attachments}
-                onUpload={uploadWeekAttachments}
-                onDelete={deleteWeekAttachment}
-            />
         </div>
     );
 }

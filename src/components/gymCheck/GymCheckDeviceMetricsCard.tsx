@@ -90,8 +90,8 @@ export function GymCheckDeviceMetricsCard({
                         </div>
                         <div className="text-xs opacity-70">
                             {lang === "es"
-                                ? "Se guardan en Gym Check y se usan al crear la sesión real."
-                                : "Saved in Gym Check and used when creating the real session."}
+                                ? "Gym Check - Guardados al crear la sesión real."
+                                : "Gym Check - Saved when creating the real session."}
                         </div>
                     </div>
 
@@ -107,7 +107,7 @@ export function GymCheckDeviceMetricsCard({
                 </div>
             </summary>
 
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className="mt-3 grid gap-3 grid-cols-2 md:grid-cols-5">
                 <Field
                     label={lang === "es" ? "Hora inicio" : "Start time"}
                     type="time"
@@ -221,7 +221,7 @@ export function GymCheckDeviceMetricsCard({
                 />
 
                 <Field
-                    label={lang === "es" ? "Fuente (trainingSource)" : "Source (trainingSource)"}
+                    label={lang === "es" ? "Fuente" : "Source"}
                     value={metricsUi.trainingSource}
                     onChange={(v) => onMetricsUiChange({ trainingSource: v })}
                     onBlur={onCommit}
@@ -229,7 +229,7 @@ export function GymCheckDeviceMetricsCard({
                     disabled={busy}
                 />
                 <Field
-                    label={lang === "es" ? "RPE del día (dayEffortRpe)" : "Day RPE (dayEffortRpe)"}
+                    label={lang === "es" ? "RPE del día" : "Day RPE"}
                     value={metricsUi.dayEffortRpe}
                     onChange={(v) => onMetricsUiChange({ dayEffortRpe: v })}
                     onBlur={onCommit}

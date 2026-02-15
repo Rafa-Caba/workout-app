@@ -64,10 +64,10 @@ export function MediaCard({ item, onOpen }: Props) {
                 </div>
 
                 <div className="text-xs text-muted-foreground flex flex-wrap gap-2 line-clamp-2">
-                    <span className="font-mono">{type}</span>
-                    {item.format ? <span className="font-mono">{item.format}</span> : null}
-                    {item.date ? <span className="font-mono">{item.date}</span> : null}
-                    {item.sessionType ? <span className="font-mono">{item.sessionType}</span> : null}
+                    {/* <span className="font-mono">{type}</span> */}
+                    {/* {item.format ? <span className="font-mono">{item.format}</span> : null} */}
+                    {/* {item.date ? <span className="font-mono">{item.date}</span> : null} */}
+                    {/* {item.sessionType ? <span className="font-mono">{item.sessionType}</span> : null} */}
                     {item.source ? <span className="font-mono">src:{item.source}</span> : null}
                 </div>
             </div>

@@ -1,51 +1,85 @@
-export type WorkoutRoutineSplit = string;
+export const DAY_KEYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+export type DayKey = (typeof DAY_KEYS)[number];
 
-/**
- * Cloudinary-backed attachment returned by backend for routine week attachments.
- * Keep this flexible, because older data may omit some fields.
- */
+export type WorkoutRoutineStatus = "active" | "archived";
+
+export type WorkoutMediaResourceType = "image" | "video";
+
 export type WorkoutRoutineAttachment = {
     publicId: string;
     url: string;
-    resourceType?: "image" | "video" | string;
-    format?: string | null;
-    createdAt?: string; // ISO string (if backend provides)
-    meta?: any | null;
+    resourceType: WorkoutMediaResourceType;
+    format: string | null;
+    createdAt: string; // ISO
+    meta: unknown | null;
+    originalName: string | null;
 };
 
 export type WorkoutRoutineWeekRange = {
-    from: string; // yyyy-mm-dd
-    to: string; // yyyy-mm-dd
+    from: string; // YYYY-MM-DD
+    to: string; // YYYY-MM-DD
+};
+
+export type WorkoutRoutineExercise = {
+    id: string;
+
+    name: string;
+    sets: number | null;
+    reps: string | null;
+    rpe: number | null;
+
+    load: string | null;
+    notes: string | null;
+
+    attachmentPublicIds: string[] | null;
+};
+
+export type WorkoutRoutineDay = {
+    date: string; // YYYY-MM-DD
+    dayKey: DayKey;
+
+    sessionType: string | null;
+    focus: string | null;
+
+    exercises: WorkoutRoutineExercise[] | null;
+
+    notes: string | null;
+    tags: string[] | null;
 };
 
 export type WorkoutRoutineWeek = {
-    _id?: string;
-    id?: string;
-
+    id: string;
     userId?: string;
-    weekKey: string; // e.g. 2026-W06
-    range?: WorkoutRoutineWeekRange;
 
-    status?: "active" | "archived" | string;
+    weekKey: string; // YYYY-W##
+    range: WorkoutRoutineWeekRange;
 
-    title?: string;
-    split?: WorkoutRoutineSplit;
-    plannedDays?: string[]; // ["Mon","Tue",...]
+    status: WorkoutRoutineStatus;
 
-    // Week-level media/attachments
-    attachments?: WorkoutRoutineAttachment[];
+    title: string | null;
+    split: string | null;
+    plannedDays: DayKey[] | null;
 
-    /**
-     * meta.plan is your local editable plan model
-     * (the big nested object you edit in Form mode).
-     */
-    meta?: {
-        plan?: any;
-        [k: string]: any;
-    };
+    attachments: WorkoutRoutineAttachment[];
 
-    // Some backends also include a derived/normalized days array for Plan vs Real.
-    days?: any[];
+    // ✅ CANONICAL
+    days: WorkoutRoutineDay[];
 
-    [k: string]: any;
+    // UI helper only
+    meta: Record<string, unknown> | null;
+
+    createdAt?: string;
+    updatedAt?: string;
+};
+
+export type WorkoutRoutineWeekSummary = {
+    id: string;
+    weekKey: string;
+    range: WorkoutRoutineWeekRange;
+    status: WorkoutRoutineStatus;
+    title: string | null;
+    split: string | null;
+    plannedDays: DayKey[] | null;
+    createdAt?: string;
+    updatedAt?: string;
 };

@@ -1,14 +1,22 @@
 import { addDays, format } from "date-fns";
 import { weekKeyToStartDate } from "@/utils/weekKey";
+import type { DayKey as CanonDayKey, WorkoutRoutineDay, WorkoutRoutineExercise } from "@/types/workoutRoutine.types";
 
 export const DAY_KEYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 export type DayKey = (typeof DAY_KEYS)[number];
+
+// ✅ Ensure compatibility: your UI DayKey matches canonical DayKey
+type _AssertDayKey = CanonDayKey extends DayKey ? true : false;
 
 export type ExerciseItem = {
     id: string;
     name: string;
     sets?: string;
     reps?: string;
+
+    // ✅ NEW (planned)
+    rpe?: string;
+
     load?: string;
     notes?: string;
     attachmentPublicIds?: string[];
@@ -27,9 +35,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
     return typeof v === "object" && v !== null;
 }
 
-/**
- * ✅ Important: arrays are objects too, so we must exclude them.
- */
+/** ✅ Important: arrays are objects too, so we must exclude them. */
 function isPlainRecord(v: unknown): v is Record<string, unknown> {
     return isRecord(v) && !Array.isArray(v);
 }
@@ -67,6 +73,9 @@ function normalizeExerciseItem(e: unknown): ExerciseItem | null {
         name: typeof (e as any).name === "string" ? ((e as any).name as string) : "",
         sets: typeof (e as any).sets === "string" ? ((e as any).sets as string) : undefined,
         reps: typeof (e as any).reps === "string" ? ((e as any).reps as string) : undefined,
+
+        rpe: typeof (e as any).rpe === "string" ? ((e as any).rpe as string) : undefined,
+
         load: typeof (e as any).load === "string" ? ((e as any).load as string) : undefined,
         notes: typeof (e as any).notes === "string" ? ((e as any).notes as string) : undefined,
         attachmentPublicIds,
@@ -82,7 +91,6 @@ function normalizeDayPlanFromRecord(dayKey: DayKey, raw: Record<string, unknown>
         ? (raw as any).exercises.map(normalizeExerciseItem).filter(notNull)
         : undefined;
 
-    // ✅ ensure every exercise has an id (even if input was missing)
     const ensuredExercises =
         exercises && exercises.length
             ? exercises.map((ex) => ({
@@ -111,7 +119,7 @@ export function getPlanFromMeta(meta: unknown): DayPlan[] {
 
     const planRaw = (meta as any).plan;
 
-    // ✅ 1) Array form first
+    // 1) Array form
     if (Array.isArray(planRaw)) {
         const safe = planRaw
             .map((p) => {
@@ -125,7 +133,7 @@ export function getPlanFromMeta(meta: unknown): DayPlan[] {
         return normalizePlans(safe);
     }
 
-    // ✅ 2) Object form
+    // 2) Object form
     if (isPlainRecord(planRaw)) {
         const safe = DAY_KEYS.map((dayKey) => {
             const raw = (planRaw as any)[dayKey];
@@ -140,8 +148,7 @@ export function getPlanFromMeta(meta: unknown): DayPlan[] {
 }
 
 /**
- * WRITE array-form meta.plan for frontend editing + stable normalization:
- *   meta.plan = [ { dayKey:"Mon", sessionType, focus, tags, notes, exercises }, ... ]
+ * WRITE array-form meta.plan for frontend editing + stable normalization
  */
 export function setPlanIntoMeta(meta: Record<string, unknown> | null | undefined, plans: DayPlan[]): Record<string, unknown> {
     const nextMeta: Record<string, unknown> = { ...(meta ?? {}) };
@@ -155,11 +162,11 @@ export function setPlanIntoMeta(meta: Record<string, unknown> | null | undefined
         notes: p.notes ?? null,
         exercises:
             p.exercises?.map((e) => ({
-                // ✅ IMPORTANT: keep id in meta.plan so hydration stays stable
                 id: e.id || makeId(),
                 name: e.name,
                 sets: e.sets ?? null,
                 reps: e.reps ?? null,
+                rpe: e.rpe ?? null,
                 load: e.load ?? null,
                 notes: e.notes ?? null,
                 attachmentPublicIds: e.attachmentPublicIds ?? null,
@@ -174,36 +181,21 @@ export function setPlanIntoMeta(meta: Record<string, unknown> | null | undefined
  * CANONICAL planned routine storage: routine.days[]
  * =========================================================
  */
-export type RoutineDayExercise = {
-    // NOTE: backend validation may or may not accept id.
-    // We keep it here for UI stability; strip on PUT if needed.
-    id: string;
-
-    name: string;
-    sets: number | null;
-    reps: string | null;
-    rpe: number | null;
-
-    load: string | null;
-    notes: string | null;
-
-    attachmentPublicIds: string[] | null;
-};
-
-export type RoutineDay = {
-    date: string;
-    dayKey: DayKey;
-    sessionType: string | null;
-    focus: string | null;
-    exercises: RoutineDayExercise[] | null;
-    notes: string | null;
-    tags: string[] | null;
-};
 
 function parseSetsMaybe(v?: string): number | null {
     if (!v) return null;
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
+}
+
+function parseRpeMaybe(v?: string): number | null {
+    if (!v) return null;
+    const n = Number(v);
+    if (!Number.isFinite(n)) return null;
+    // keep within 0..10 (model bounds)
+    if (n < 0) return 0;
+    if (n > 10) return 10;
+    return n;
 }
 
 function cleanStrOrNull(v?: string): string | null {
@@ -217,7 +209,7 @@ function cleanIdsOrNull(ids?: string[]): string[] | null {
     return cleaned.length ? cleaned : null;
 }
 
-export function plansToRoutineDays(weekKey: string, plans: DayPlan[]): RoutineDay[] {
+export function plansToRoutineDays(weekKey: string, plans: DayPlan[]): WorkoutRoutineDay[] {
     const start = weekKeyToStartDate(weekKey);
     const normalized = normalizePlans(plans);
 
@@ -226,7 +218,7 @@ export function plansToRoutineDays(weekKey: string, plans: DayPlan[]): RoutineDa
 
         const dateStr = start ? format(addDays(start, idx), "yyyy-MM-dd") : "";
 
-        const exercises: RoutineDayExercise[] | null =
+        const exercises: WorkoutRoutineExercise[] | null =
             p.exercises && p.exercises.length > 0
                 ? p.exercises
                     .filter((e) => (e.name ?? "").trim().length > 0)
@@ -235,11 +227,9 @@ export function plansToRoutineDays(weekKey: string, plans: DayPlan[]): RoutineDa
                         name: (e.name ?? "").trim(),
                         sets: parseSetsMaybe(e.sets),
                         reps: cleanStrOrNull(e.reps),
-                        rpe: null,
-
+                        rpe: parseRpeMaybe(e.rpe),
                         load: cleanStrOrNull(e.load),
                         notes: cleanStrOrNull(e.notes),
-
                         attachmentPublicIds: cleanIdsOrNull(e.attachmentPublicIds),
                     }))
                 : null;

@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import type { I18nKey } from "@/i18n/translations";
+import type { WorkoutRoutineStatus } from "@/types/workoutRoutine.types";
 
 type TFn = (key: I18nKey) => string;
 
@@ -10,6 +11,9 @@ type Props = {
 
     t: TFn;
     lang: string;
+
+    hasRoutine: boolean;
+    routineStatus?: WorkoutRoutineStatus; // "active" | "archived"
 
     initTitle: string;
     setInitTitle: (v: string) => void;
@@ -31,6 +35,8 @@ export function RoutinesAdvancedActions({
     busy,
     t,
     lang,
+    hasRoutine,
+    routineStatus,
     initTitle,
     setInitTitle,
     initSplit,
@@ -41,12 +47,24 @@ export function RoutinesAdvancedActions({
     isInitializing,
     onSetArchived,
 }: Props) {
+    const isArchived = routineStatus === "archived";
+    const canInit = !hasRoutine || (isArchived && unarchive);
+    const initDisabled = busy || !canInit;
+
+    const initLabel = (() => {
+        if (isInitializing) return t("routines.initializing");
+        if (!hasRoutine) return t("routines.initWeekRoutine");
+        if (isArchived) return lang === "es" ? "Reactivar rutina" : "Unarchive routine";
+        return lang === "es" ? "Rutina iniciada" : "Routine initialized";
+    })();
+
+    // Inputs only matter when you can init (or when archived and unarchive is true)
+    const initInputsDisabled = busy || (hasRoutine && !isArchived);
+
     return (
         <details className="rounded-xl border bg-background p-3" open={openDefault}>
             <summary className="cursor-pointer text-sm font-semibold select-none">
-                {lang === "es"
-                    ? "Acciones avanzadas (init / archivar)"
-                    : "Advanced actions (init / archive)"}
+                {lang === "es" ? "Acciones avanzadas (init / archivar)" : "Advanced actions (init / archive)"}
             </summary>
 
             <div className="mt-3 space-y-3">
@@ -58,6 +76,7 @@ export function RoutinesAdvancedActions({
                             value={initTitle}
                             onChange={(e) => setInitTitle(e.target.value)}
                             placeholder={t("routines.initTitlePh")}
+                            disabled={initInputsDisabled}
                         />
                     </div>
 
@@ -68,6 +87,7 @@ export function RoutinesAdvancedActions({
                             value={initSplit}
                             onChange={(e) => setInitSplit(e.target.value)}
                             placeholder={t("routines.initSplitPh")}
+                            disabled={initInputsDisabled}
                         />
                     </div>
 
@@ -79,7 +99,7 @@ export function RoutinesAdvancedActions({
                                 type="checkbox"
                                 checked={unarchive}
                                 onChange={(e) => setUnarchive(e.target.checked)}
-                                disabled={busy}
+                                disabled={busy || (!hasRoutine ? false : !isArchived)}
                             />
                             <label htmlFor="unarchive" className="text-sm text-muted-foreground">
                                 {t("routines.unarchiveHint")}
@@ -89,17 +109,26 @@ export function RoutinesAdvancedActions({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                    <Button onClick={onInitRoutine} disabled={busy}>
-                        {isInitializing ? t("routines.initializing") : t("routines.initWeekRoutine")}
+                    <Button onClick={onInitRoutine} disabled={initDisabled}>
+                        {initLabel}
                     </Button>
 
-                    <Button variant="outline" onClick={() => onSetArchived(true)} disabled={busy}>
+                    <Button variant="outline" onClick={() => onSetArchived(true)} disabled={busy || !hasRoutine || isArchived}>
                         {t("routines.archive")}
                     </Button>
-                    <Button variant="outline" onClick={() => onSetArchived(false)} disabled={busy}>
+
+                    <Button variant="outline" onClick={() => onSetArchived(false)} disabled={busy || !hasRoutine || !isArchived}>
                         {t("routines.unarchive")}
                     </Button>
                 </div>
+
+                {hasRoutine && !isArchived ? (
+                    <div className="text-xs text-muted-foreground">
+                        {lang === "es"
+                            ? "Esta semana ya está inicializada. Puedes editar el plan y guardar cambios."
+                            : "This week is already initialized. You can edit the plan and save changes."}
+                    </div>
+                ) : null}
             </div>
         </details>
     );

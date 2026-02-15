@@ -139,12 +139,14 @@ export function WeeklySummaryPage() {
                                 />
                             </label>
 
-                            <Button variant="outline" onClick={goPrevWeek} disabled={isFetching}>
-                                {t("week.prev")}
-                            </Button>
-                            <Button variant="outline" onClick={goNextWeek} disabled={isFetching}>
-                                {t("week.next")}
-                            </Button>
+                            <div className="grid gap-2 grid-cols-2">
+                                <Button variant="outline" onClick={goPrevWeek} disabled={isFetching}>
+                                    {t("week.prev")}
+                                </Button>
+                                <Button variant="outline" onClick={goNextWeek} disabled={isFetching}>
+                                    {t("week.next")}
+                                </Button>
+                            </div>
 
                             <div className="ml-auto text-xs text-muted-foreground">
                                 {t("week.selectedWeekKey")}:{" "}
@@ -218,7 +220,7 @@ export function WeeklySummaryPage() {
 
                 {tab === "week" && weekQuery.isSuccess && weekData && !showEmptyForZero ? (
                     <>
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
                             <StatCard label={t("weeks.kpi.days")} value={extracted.kpis.daysCount} />
                             <StatCard label={t("weeks.kpi.sessions")} value={extracted.kpis.sessionsCount} />
                             <StatCard label={t("weeks.kpi.durationMin")} value={extracted.kpis.durationMinutes} />

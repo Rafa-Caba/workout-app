@@ -32,7 +32,6 @@ type Props = {
     exerciseUploadBusy: boolean;
     uploadingExercise: { dayKey: DayKey; exerciseId: string } | null;
 
-    // ✅ pending is exerciseId-based
     getPendingFilesForExercise: (exerciseId: string) => File[];
     onPickFilesForExercise: (exerciseId: string, files: File[]) => void;
     onRemovePendingForExercise: (exerciseId: string, fileIndex?: number) => void;
@@ -68,12 +67,7 @@ export function RoutinesDayEditor({
                 <div className="text-sm font-semibold">
                     {t("routines.day")} <span className="font-mono">{activePlan.dayKey}</span>
                 </div>
-                <Button
-                    variant="outline"
-                    className="h-8 px-3"
-                    onClick={() => onAddExercise(activePlan.dayKey as DayKey)}
-                    disabled={busy}
-                >
+                <Button variant="outline" className="h-8 px-3" onClick={() => onAddExercise(activePlan.dayKey as DayKey)} disabled={busy}>
                     {t("routines.addExercise")}
                 </Button>
             </div>
@@ -108,7 +102,10 @@ export function RoutinesDayEditor({
                         value={(activePlan.tags ?? []).join(", ")}
                         onChange={(e) =>
                             onUpdatePlan(activePlan.dayKey as DayKey, {
-                                tags: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                                tags: e.target.value
+                                    .split(",")
+                                    .map((s) => s.trim())
+                                    .filter(Boolean),
                             })
                         }
                         disabled={busy}
@@ -130,7 +127,7 @@ export function RoutinesDayEditor({
 
             <div className="space-y-3">
                 {exercises.map((ex, idx) => {
-                    const exerciseId = ex.id; // MUST exist
+                    const exerciseId = ex.id;
                     const selectedIds = Array.isArray(ex.attachmentPublicIds) ? ex.attachmentPublicIds : [];
 
                     const isThisUploading =
@@ -161,6 +158,7 @@ export function RoutinesDayEditor({
                             onChangeNotes={(next) => onUpdateExercise(activePlan.dayKey as DayKey, idx, { notes: next || undefined })}
                             onChangeSets={(next) => onUpdateExercise(activePlan.dayKey as DayKey, idx, { sets: next || undefined })}
                             onChangeReps={(next) => onUpdateExercise(activePlan.dayKey as DayKey, idx, { reps: next || undefined })}
+                            onChangeRpe={(next) => onUpdateExercise(activePlan.dayKey as DayKey, idx, { rpe: next || undefined })}
                             onChangeLoad={(next) => onUpdateExercise(activePlan.dayKey as DayKey, idx, { load: next || undefined })}
                             onToggleAttachment={(publicId) => {
                                 const curr = new Set(selectedIds);

@@ -148,7 +148,7 @@ export function InsightsRecoveryPage() {
             ) : null}
 
             {enabled && query.isSuccess && kpis ? (
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
                     <StatCard label={t("recovery.kpi.score")} value={kpis.score ?? "—"} />
                     <StatCard label={t("recovery.kpi.sleep")} value={kpis.sleep ?? "—"} />
                     <StatCard label={t("recovery.kpi.strain")} value={kpis.strain ?? "—"} />

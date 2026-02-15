@@ -157,7 +157,7 @@ export function InsightsStreaksPage() {
 
             {query.isSuccess && kpis ? (
                 <div className="space-y-4">
-                    <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
                         <StatCard label={t("streaks.kpi.current")} value={kpis.current ?? "—"} />
                         <StatCard label={t("streaks.kpi.best")} value={kpis.best ?? "—"} />
                         <StatCard label={t("streaks.kpi.totalApprox")} value={kpis.total ?? "—"} />

@@ -121,13 +121,17 @@ export function MediaViewerModal({
             }}
         >
             <div className="absolute inset-0 bg-black/80" />
+
             <div className="absolute inset-0 p-4 md:p-8 flex items-center justify-center">
                 <div className="w-full max-w-5xl rounded-2xl border bg-background shadow-xl overflow-hidden">
-                    <div className="flex items-center flex-col md:flex-row justify-between gap-3 p-4 border-b">
-                        <div className="min-w-0">
-                            <div className="text-sm font-semibold truncate" title={fileName}>
+                    {/* Header */}
+                    <div className="flex w-full flex-col md:flex-row md:items-center items-start justify-between gap-3 p-4 border-b">
+                        {/* Left: file + meta */}
+                        <div className="flex-1 min-w-0 w-full">
+                            <div className="text-sm font-semibold truncate max-w-full" title={fileName}>
                                 {fileName}
                             </div>
+
                             <div className="text-xs text-muted-foreground flex flex-wrap gap-2">
                                 <span className="font-mono">{inferredType}</span>
                                 {item.createdAt ? <span className="font-mono">{item.createdAt}</span> : null}
@@ -137,7 +141,8 @@ export function MediaViewerModal({
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
+                        {/* Right: actions */}
+                        <div className="flex items-center gap-2 shrink-0 w-full md:w-auto justify-start md:justify-end flex-wrap">
                             <Button variant="outline" onClick={() => window.open(url, "_blank", "noreferrer")}>
                                 {t("media.open")}
                             </Button>
@@ -148,6 +153,7 @@ export function MediaViewerModal({
                         </div>
                     </div>
 
+                    {/* Viewer */}
                     <div className="bg-black/5">
                         <div className="w-full aspect-video flex items-center justify-center">
                             {inferredType === "image" ? (
@@ -165,6 +171,7 @@ export function MediaViewerModal({
                         </div>
                     </div>
 
+                    {/* Meta */}
                     <div className="p-4 border-t">
                         <JsonDetails title="Meta (JSON)" data={item.meta ?? null} />
                     </div>

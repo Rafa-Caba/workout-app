@@ -69,6 +69,8 @@ type NavItem = {
 export function NavBar() {
     const { t, lang, setLang } = useI18n();
 
+    const { loadSettings } = useAdminSettingsStore();
+
     const user = useAuthStore((s) => s.user);
     const accessToken = useAuthStore((s) => s.accessToken);
     const logout = useAuthStore((s) => s.logout);
@@ -79,6 +81,10 @@ export function NavBar() {
     const pathname = location.pathname;
 
     const adminSettings = useAdminSettingsStore((s) => s.settings);
+
+    React.useEffect(() => {
+        void loadSettings();
+    }, [loadSettings]);
 
     const appName =
         adminSettings?.appName && adminSettings.appName.trim().length > 0

@@ -38,16 +38,13 @@ export function AdminSettingsSection() {
     const [selectedMedia, setSelectedMedia] =
         React.useState<MediaLikeItem | null>(null);
 
-    // Cargar settings al montar
     React.useEffect(() => {
         void loadSettings();
     }, [loadSettings]);
 
-    // Resolver URL de logo devuelta por el backend
     const storedLogoUrl: string | null = React.useMemo(() => {
         if (!settings) return null;
 
-        // Intentamos distintas formas por si el backend cambió el nombre
         const anySettings = settings as any;
         return (
             anySettings.logoUrl ??
@@ -57,7 +54,6 @@ export function AdminSettingsSection() {
         );
     }, [settings]);
 
-    // Sincronizar form cuando llegan los settings
     React.useEffect(() => {
         if (!settings) return;
 
@@ -67,7 +63,6 @@ export function AdminSettingsSection() {
         setThemeMode(settings.themeDefaults?.mode ?? "system");
         setThemePalette(settings.themeDefaults?.palette ?? "blue");
 
-        // Reset de logo local al recibir settings nuevos
         setLogoFile(null);
         if (logoPreview) {
             URL.revokeObjectURL(logoPreview);
@@ -76,7 +71,6 @@ export function AdminSettingsSection() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [settings?.id]);
 
-    // Limpieza de preview
     React.useEffect(() => {
         return () => {
             if (logoPreview) {
@@ -128,7 +122,6 @@ export function AdminSettingsSection() {
                 createdAt: settings.updatedAt ?? new Date().toISOString(),
                 meta: { kind: "admin_logo" },
 
-                // Contexto mínimo para que el tipo se cumpla
                 date: null,
                 weekKey: "",
                 sessionId: null,
@@ -158,7 +151,6 @@ export function AdminSettingsSection() {
                 ) : null}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Nombre + subtítulo */}
                     <div className="grid gap-3 md:grid-cols-2">
                         <div className="space-y-1">
                             <label className="text-xs font-medium">
@@ -293,7 +285,6 @@ export function AdminSettingsSection() {
 
                         {hasLogo ? (
                             <div className="mt-2 flex flex-col gap-3 md:items-start">
-                                {/* Si hay preview local, lo mostramos directo */}
                                 {logoPreview ? (
                                     <div className="h-16 w-16 overflow-hidden rounded-md border bg-background">
                                         <img
@@ -338,7 +329,6 @@ export function AdminSettingsSection() {
                         )}
                     </div>
 
-                    {/* Botones */}
                     <div className="flex items-center justify-end gap-2">
                         <Button
                             type="submit"

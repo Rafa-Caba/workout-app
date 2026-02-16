@@ -117,7 +117,7 @@ function toStatus(e: any): number | null {
     return e?.status ?? e?.response?.status ?? null;
 }
 
-export async function getWorkoutDay(date: string): Promise<WorkoutDay> {
+export async function getWorkoutDayServ(date: string): Promise<WorkoutDay> {
     const res = await api.get(`/workout/days/${encodeURIComponent(date)}`);
     const data = res.data as unknown;
 
@@ -135,7 +135,7 @@ export async function getWorkoutDay(date: string): Promise<WorkoutDay> {
 
 export async function getDaySummary(date: string): Promise<DaySummary> {
     try {
-        const day = await getWorkoutDay(date);
+        const day = await getWorkoutDayServ(date);
         return buildDaySummaryFromWorkoutDay(day);
     } catch (e: any) {
         if (toStatus(e) === 404) return emptyDaySummary(date);
@@ -147,7 +147,7 @@ export async function getDaySummary(date: string): Promise<DaySummary> {
  * Ensures a workout day exists, because some endpoints may 404 if the day doc doesn't exist yet.
  * NOTE: PUT /days/:date already upserts, so this is mostly useful for older endpoints.
  */
-export async function ensureWorkoutDayExists(date: string): Promise<void> {
+async function ensureWorkoutDayExists(date: string): Promise<void> {
     try {
         await api.get(`/workout/days/${encodeURIComponent(date)}`);
         return;

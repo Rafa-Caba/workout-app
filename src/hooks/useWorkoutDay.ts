@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ApiError } from "@/api/httpErrors";
-import { getWorkoutDay } from "@/services/workout/days.service";
+import { getWorkoutDayServ } from "@/services/workout/days.service";
 import type { WorkoutDay } from "@/types/workoutDay.types";
 
 function toStatus(e: any): number | null {
@@ -23,7 +23,7 @@ export function useWorkoutDay(date: string | null, enabled: boolean = true) {
             if (!date) return null;
 
             try {
-                return await getWorkoutDay(date);
+                return await getWorkoutDayServ(date);
             } catch (e: any) {
                 if (toStatus(e) === 404) return null;
                 throw e;

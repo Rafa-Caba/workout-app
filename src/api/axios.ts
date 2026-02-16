@@ -2,8 +2,10 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/state/auth.store";
 import { normalizeApiError, type ApiError } from "@/api/httpErrors";
 
+const VITE_API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000/api";
+
 export const api = axios.create({
-    baseURL: "http://localhost:4000/api",
+    baseURL: VITE_API_URL,
 });
 
 api.interceptors.request.use((config) => {
@@ -26,7 +28,7 @@ async function refreshTokens(): Promise<{ accessToken: string; refreshToken: str
 
     // Call backend refresh: POST /api/auth/refresh
     const res = await axios.post(
-        "http://localhost:4000/api/auth/refresh",
+        `${VITE_API_URL}/auth/refresh`,
         { refreshToken: rt },
         {
             headers: {

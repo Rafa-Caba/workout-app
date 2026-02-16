@@ -64,7 +64,7 @@ export function SettingsPage() {
             ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                     {/* Account info */}
-                    <Card>
+                    <Card className="border-primary/20 bg-primary/2">
                         <CardHeader>
                             <CardTitle>{t("settings.account.title")}</CardTitle>
                             <CardDescription>{t("settings.account.desc")}</CardDescription>
@@ -103,7 +103,7 @@ export function SettingsPage() {
                     </Card>
 
                     {/* App settings */}
-                    <Card>
+                    <Card className="border-primary/20 bg-primary/2">
                         <CardHeader>
                             <CardTitle>{t("settings.app.title")}</CardTitle>
                             <CardDescription>{t("settings.app.desc")}</CardDescription>
@@ -198,7 +198,7 @@ export function SettingsPage() {
                     </Card>
 
                     {/* Admin-only section */}
-                    <Card className={isAdmin ? "" : "opacity-70"}>
+                    <Card className={isAdmin ? "border-primary/20 bg-primary/2" : "border-primary/20 bg-primary/2 opacity-70"}>
                         <CardHeader>
                             <CardTitle>{t("settings.admin.title")}</CardTitle>
                             <CardDescription>
@@ -221,7 +221,7 @@ export function SettingsPage() {
                     </Card>
 
                     {/* Debug info */}
-                    <Card>
+                    <Card className="border-primary/20 bg-primary/2">
                         <CardHeader>
                             <CardTitle>{t("settings.debug.title")}</CardTitle>
                             <CardDescription>{t("settings.debug.desc")}</CardDescription>

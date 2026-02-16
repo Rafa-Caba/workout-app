@@ -1,4 +1,4 @@
-import type { DayKey } from "@/types/workoutRoutine.types";
+import { DayKey } from "@/types/workoutRoutine.types";
 
 export type RoutineUpsertBody = {
     title?: string | null;

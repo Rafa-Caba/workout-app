@@ -24,6 +24,11 @@ export type WorkoutRoutineExercise = {
     id: string;
 
     name: string;
+
+    // ✅ Movement catalog link + snapshot (Option A)
+    movementId: string | null;
+    movementName: string | null;
+
     sets: number | null;
     reps: string | null;
     rpe: number | null;
@@ -62,7 +67,7 @@ export type WorkoutRoutineWeek = {
 
     attachments: WorkoutRoutineAttachment[];
 
-    // ✅ CANONICAL
+    // CANONICAL
     days: WorkoutRoutineDay[];
 
     // UI helper only

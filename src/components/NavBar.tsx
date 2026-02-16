@@ -93,6 +93,7 @@ export function NavBar() {
             { label: t("nav.home"), to: "/", end: true },
             { label: "Gym Check", to: "/gym-check", end: true },
             { label: t("nav.routines"), to: "/routines", end: true },
+            { label: t("nav.movements"), to: "/movements", end: true },
             { label: "Sleep", to: "/sleep", end: true },
             { label: t("nav.days"), to: "/days", end: true },
             { label: t("nav.weeks"), to: "/weeks", end: true },
@@ -114,7 +115,7 @@ export function NavBar() {
             <div className="mx-auto max-w-6xl px-4 py-3">
                 {/* Row 1 */}
                 <div className="flex items-center justify-between gap-3">
-                    <Link to="/" className="font-semibold tracking-tight">
+                    <Link to="/" className="font-semibold tracking-tight" style={{ fontSize: "1.3rem" }}>
                         {t("app.title")}
                     </Link>
 
@@ -236,6 +237,7 @@ export function NavBar() {
                     <TopNavLink to="/" label={t("nav.home")} end />
                     <TopNavLink to="/gym-check" label="Gym Check" end />
                     <TopNavLink to="/routines" label={t("nav.routines")} end />
+                    <TopNavLink to="/movements" label={t("nav.movements")} end />
                     <TopNavLink to="/sleep" label="Sleep" end />
                     <TopNavLink to="/days" label={t("nav.days")} end />
                     <TopNavLink to="/weeks" label={t("nav.weeks")} end />

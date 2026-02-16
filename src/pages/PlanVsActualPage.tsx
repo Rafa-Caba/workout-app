@@ -228,7 +228,7 @@ export function PlanVsActualPage() {
                 }
             />
 
-            <div className="rounded-xl border bg-card p-4 space-y-3">
+            <div className="rounded-xl border p-4 space-y-3 border-primary/40 bg-primary/5">
                 <div className="flex flex-wrap items-center gap-2">
                     <label className="text-sm">
                         {t("pva.pickDateInWeek")}{" "}
@@ -291,7 +291,7 @@ export function PlanVsActualPage() {
                     </div>
 
                     <div className="rounded-xl border bg-card overflow-auto">
-                        <table className="w-full text-sm">
+                        <table className="w-full text-sm border-primary/40 bg-primary/5">
                             <thead className="border-b text-left">
                                 <tr>
                                     <th className="p-3">{t("pva.table.day")}</th>

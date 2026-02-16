@@ -1,6 +1,10 @@
 import { api } from "@/api/axios";
 import type { RoutineUpsertBody } from "@/utils/routines/putBody";
-import type { WorkoutRoutineWeek, WorkoutRoutineStatus, WorkoutRoutineWeekSummary } from "@/types/workoutRoutine.types";
+import type {
+    WorkoutRoutineWeek,
+    WorkoutRoutineStatus,
+    WorkoutRoutineWeekSummary,
+} from "@/types/workoutRoutine.types";
 
 export async function getRoutineWeek(weekKey: string): Promise<WorkoutRoutineWeek | null> {
     const res = await api.get(`/workout/routines/weeks/${encodeURIComponent(weekKey)}`);

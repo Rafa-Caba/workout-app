@@ -2,6 +2,7 @@ import React from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { cn } from "@/lib/utils";
 
 import { toWeekKey, weekKeyToStartDate } from "@/utils/weekKey";
 import { startOfISOWeek, endOfISOWeek, addWeeks, format, parseISO, isValid } from "date-fns";
@@ -47,6 +48,7 @@ import { RoutinesJsonEditor } from "@/components/routines/RoutinesJsonEditor";
 
 import type { UploadQuery } from "@/types/uploadQuery";
 import type { WorkoutRoutineWeek, WorkoutRoutineDay, WorkoutRoutineStatus } from "@/types/workoutRoutine.types";
+import { useMovements } from "@/hooks/useMovements";
 
 function toastApiError(e: unknown, fallback: string) {
     const err = e as Partial<ApiError> | undefined;
@@ -435,7 +437,13 @@ export function RoutinesPage() {
             if (start) setWeekDate(format(start, "yyyy-MM-dd"));
             return first;
         });
-    }, [weeksList]);
+    }, [weeksList, setWeekDate]);
+
+    const movementsQuery = useMovements();
+    const movementOptions = React.useMemo(
+        () => (movementsQuery.data ?? []).map((m: any) => ({ id: m.id, name: m.name })),
+        [movementsQuery.data]
+    );
 
     const weekRangeLabel = React.useMemo(() => buildWeekRangeLabel({ weekDate, routine }), [weekDate, routine]);
 
@@ -778,10 +786,37 @@ export function RoutinesPage() {
 
     const status = routine?.status ?? "active";
 
-    // ✅ NEW: gating to prevent "archived empty list" from still showing loaded editor
+    // Gating and UI helpers
     const listEmpty = !listQuery.isFetching && weeksList.length === 0;
-    const showEditorArea = !listEmpty;
+
+    // ✅ In "active" tab we ALWAYS want the picker/editor area visible
+    // so the user can initialize the first routine.
+    const showEditorArea =
+        statusFilter === "active"
+            ? true
+            : !listEmpty;
+
     const showNoRoutine = showEditorArea && !routine && !routineQuery.isFetching;
+
+    const isActiveTab = statusFilter === "active";
+    const isArchivedTab = statusFilter === "archived";
+
+    // function statusTabClass(active: boolean): string {
+    //     return [
+    //         "h-9 px-3 rounded-full border text-sm transition-colors",
+    //         active
+    //             ? "bg-foreground text-background border-foreground shadow-sm"
+    //             : "bg-background text-muted-foreground border-border hover:bg-accent/60",
+    //     ].join(" ");
+    // }
+
+    const statusTabClass = (active: boolean) =>
+        cn(
+            "h-9 px-3 rounded-md border text-sm inline-flex items-center gap-2 transition-colors",
+            active
+                ? "border-primary bg-primary/10 text-primary shadow-sm"
+                : "border-border text-muted-foreground hover:bg-muted/60"
+        );
 
     return (
         <div className="space-y-6">
@@ -798,13 +833,14 @@ export function RoutinesPage() {
             {/* Status tabs (Activas/Archivadas) */}
             <div className="rounded-xl border bg-card p-3 flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm font-medium">{lang === "es" ? "Rutinas" : "Routines"}</div>
+                    <div className="text-sm font-medium">
+                        {lang === "es" ? "Rutinas" : "Routines"}
+                    </div>
 
                     <div className="flex gap-2">
                         <button
                             type="button"
-                            className={`h-9 px-3 rounded-md border text-sm ${statusFilter === "active" ? "bg-background" : "bg-transparent opacity-70"
-                                }`}
+                            className={statusTabClass(isActiveTab)}
                             disabled={busy}
                             onClick={() => setStatusFilter("active")}
                         >
@@ -813,8 +849,7 @@ export function RoutinesPage() {
 
                         <button
                             type="button"
-                            className={`h-9 px-3 rounded-md border text-sm ${statusFilter === "archived" ? "bg-background" : "bg-transparent opacity-70"
-                                }`}
+                            className={statusTabClass(isArchivedTab)}
                             disabled={busy}
                             onClick={() => setStatusFilter("archived")}
                         >
@@ -823,6 +858,7 @@ export function RoutinesPage() {
                     </div>
                 </div>
 
+
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <div className="text-xs text-muted-foreground">
                         {listQuery.isFetching
@@ -830,12 +866,15 @@ export function RoutinesPage() {
                                 ? "Cargando semanas..."
                                 : "Loading weeks..."
                             : lang === "es"
-                                ? `Mostrando ${weeksList.length} semana(s) ${statusFilter === "active" ? "activas" : "archivadas"}`
+                                ? `Mostrando ${weeksList.length} semana(s) ${statusFilter === "active" ? "activas" : "archivadas"
+                                }`
                                 : `Showing ${weeksList.length} ${statusFilter} week(s)`}
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <div className="text-xs font-medium">{lang === "es" ? "Saltar a semana:" : "Jump to week:"}</div>
+                        <div className="text-xs font-medium">
+                            {lang === "es" ? "Saltar a semana:" : "Jump to week:"}
+                        </div>
 
                         <select
                             className="h-9 rounded-md border bg-background px-3 text-sm"
@@ -850,7 +889,9 @@ export function RoutinesPage() {
                             }}
                         >
                             {weeksList.length === 0 ? (
-                                <option value={runWeekKey}>{lang === "es" ? "Sin semanas" : "No weeks"}</option>
+                                <option value={runWeekKey}>
+                                    {lang === "es" ? "Sin semanas" : "No weeks"}
+                                </option>
                             ) : (
                                 weeksList.map((w) => (
                                     <option key={w.weekKey} value={w.weekKey}>
@@ -864,23 +905,10 @@ export function RoutinesPage() {
                 </div>
             </div>
 
-            {/* Empty state for the selected tab */}
-            {listEmpty ? (
-                <EmptyState
-                    title={
-                        lang === "es"
-                            ? statusFilter === "archived"
-                                ? "No hay rutinas archivadas"
-                                : "No hay rutinas activas"
-                            : statusFilter === "archived"
-                                ? "No archived routines"
-                                : "No active routines"
-                    }
-                    description={lang === "es" ? "Crea una rutina o cambia el filtro." : "Create a routine or switch the filter."}
-                />
-            ) : null}
-
-            {/* ✅ Only show picker + editor if this tab has weeks */}
+            {/* ✅ Editor area:
+                - In "active": SIEMPRE visible (aunque listEmpty)
+                - In "archived": solo si hay semanas en esa lista
+            */}
             {showEditorArea ? (
                 <>
                     <RoutinesWeekPickerCard
@@ -909,10 +937,6 @@ export function RoutinesPage() {
                         hasRoutine={!!routine}
                         routineStatus={routine?.status}
                     />
-
-                    {showNoRoutine ? (
-                        <EmptyState title={t("routines.noRoutineTitle")} description={t("routines.noRoutineDesc")} />
-                    ) : null}
 
                     {routine && mode === "form" ? (
                         <>
@@ -950,12 +974,24 @@ export function RoutinesPage() {
                                 ph={ph}
                                 debugPutBodyTitle={t("routines.debugPutBody")}
                                 debugPutBodyData={debugPutBodyData}
-                                debugPlansTitle={lang === "es" ? "Debug: planes (estado local)" : "Debug: plans (local state)"}
+                                debugPlansTitle={
+                                    lang === "es"
+                                        ? "Debug: planes (estado local)"
+                                        : "Debug: plans (local state)"
+                                }
                                 plans={plans}
+                                movementOptions={movementOptions}
                             />
 
                             {/* <PlanVsActualPanel weekKey={runWeekKey} /> */}
                         </>
+                    ) : null}
+
+                    {showNoRoutine ? (
+                        <EmptyState
+                            title={t("routines.noRoutineTitle")}
+                            description={t("routines.noRoutineDesc")}
+                        />
                     ) : null}
 
                     {routine && mode === "json" ? (
@@ -978,16 +1014,39 @@ export function RoutinesPage() {
                         </>
                     ) : null}
 
-                    <RoutineAttachmentsSection
-                        t={t}
-                        lang={lang}
-                        busy={busy}
-                        showUploadQuery={mode === "json"}
-                        attachments={attachments}
-                        onUpload={uploadWeekAttachments}
-                        onDelete={deleteWeekAttachment}
-                    />
+                    {/* ✅ Adjuntos solo tienen sentido cuando hay rutina cargada */}
+                    {routine ? (
+                        <RoutineAttachmentsSection
+                            t={t}
+                            lang={lang}
+                            busy={busy}
+                            showUploadQuery={mode === "json"}
+                            attachments={attachments}
+                            onUpload={uploadWeekAttachments}
+                            onDelete={deleteWeekAttachment}
+                        />
+                    ) : null}
                 </>
+            ) : null}
+
+            {/* Empty state for the selected tab */}
+            {!showEditorArea && listEmpty ? (
+                <EmptyState
+                    title={
+                        lang === "es"
+                            ? statusFilter === "archived"
+                                ? "No hay rutinas archivadas"
+                                : "No hay rutinas activas"
+                            : statusFilter === "archived"
+                                ? "No archived routines"
+                                : "No active routines"
+                    }
+                    description={
+                        lang === "es"
+                            ? "Crea una rutina o cambia el filtro."
+                            : "Create a routine or switch the filter."
+                    }
+                />
             ) : null}
         </div>
     );

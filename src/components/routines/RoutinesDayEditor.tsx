@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { RoutinesExerciseCard } from "@/components/routines/RoutinesExerciseCard";
+import { RoutinesExerciseCard, type MovementOption } from "@/components/routines/RoutinesExerciseCard";
 import type { AttachmentOption } from "@/utils/routines/attachments";
 import type { DayPlan, DayKey, ExerciseItem } from "@/utils/routines/plan";
 import type { I18nKey } from "@/i18n/translations";
@@ -29,6 +29,9 @@ type Props = {
 
     attachmentOptions: AttachmentOption[];
 
+    // ✅ NEW
+    movementOptions?: MovementOption[];
+
     exerciseUploadBusy: boolean;
     uploadingExercise: { dayKey: DayKey; exerciseId: string } | null;
 
@@ -49,6 +52,7 @@ export function RoutinesDayEditor({
     lang,
     ph,
     attachmentOptions,
+    movementOptions,
     exerciseUploadBusy,
     uploadingExercise,
     getPendingFilesForExercise,
@@ -62,116 +66,238 @@ export function RoutinesDayEditor({
     const exercises = activePlan.exercises ?? [];
 
     return (
-        <div className="rounded-xl border bg-card p-4 space-y-4">
+        <div className="space-y-4">
+            {/* Header: día + botón agregar ejercicio */}
             <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-semibold">
-                    {t("routines.day")} <span className="font-mono">{activePlan.dayKey}</span>
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                    <span>{t("routines.day")}</span>
+                    <span className="inline-flex items-center rounded-full border border-secondary/60 bg-primary/20 px-2 py-0.5 text-[11px] font-mono">
+                        {activePlan.dayKey}
+                    </span>
                 </div>
-                <Button variant="outline" className="h-8 px-3" onClick={() => onAddExercise(activePlan.dayKey as DayKey)} disabled={busy}>
+                <Button
+                    variant="outline"
+                    className="h-8 px-3"
+                    onClick={() => onAddExercise(activePlan.dayKey as DayKey)}
+                    disabled={busy}
+                >
                     {t("routines.addExercise")}
                 </Button>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2">
-                <div className="space-y-1">
-                    <label className="text-xs font-medium">{t("routines.sessionType")}</label>
-                    <input
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={activePlan.sessionType ?? ""}
-                        onChange={(e) => onUpdatePlan(activePlan.dayKey as DayKey, { sessionType: e.target.value || undefined })}
-                        disabled={busy}
-                        placeholder={ph.sessionType}
-                    />
-                </div>
+            {/* Meta del día (sessionType, focus, tags, notes) */}
+            <div className="rounded-xl border bg-card/80 p-4 space-y-3">
+                <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium">{t("routines.sessionType")}</label>
+                        <input
+                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                            value={activePlan.sessionType ?? ""}
+                            onChange={(e) =>
+                                onUpdatePlan(activePlan.dayKey as DayKey, {
+                                    sessionType: e.target.value || undefined,
+                                })
+                            }
+                            disabled={busy}
+                            placeholder={ph.sessionType}
+                        />
+                    </div>
 
-                <div className="space-y-1">
-                    <label className="text-xs font-medium">{t("routines.focus")}</label>
-                    <input
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={activePlan.focus ?? ""}
-                        onChange={(e) => onUpdatePlan(activePlan.dayKey as DayKey, { focus: e.target.value || undefined })}
-                        disabled={busy}
-                        placeholder={ph.focus}
-                    />
-                </div>
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium">{t("routines.focus")}</label>
+                        <input
+                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                            value={activePlan.focus ?? ""}
+                            onChange={(e) =>
+                                onUpdatePlan(activePlan.dayKey as DayKey, {
+                                    focus: e.target.value || undefined,
+                                })
+                            }
+                            disabled={busy}
+                            placeholder={ph.focus}
+                        />
+                    </div>
 
-                <div className="space-y-1">
-                    <label className="text-xs font-medium">{t("routines.tagsCsv")}</label>
-                    <input
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={(activePlan.tags ?? []).join(", ")}
-                        onChange={(e) =>
-                            onUpdatePlan(activePlan.dayKey as DayKey, {
-                                tags: e.target.value
-                                    .split(",")
-                                    .map((s) => s.trim())
-                                    .filter(Boolean),
-                            })
-                        }
-                        disabled={busy}
-                        placeholder={ph.tags}
-                    />
-                </div>
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium">{t("routines.tagsCsv")}</label>
+                        <input
+                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                            value={(activePlan.tags ?? []).join(", ")}
+                            onChange={(e) =>
+                                onUpdatePlan(activePlan.dayKey as DayKey, {
+                                    tags: e.target.value
+                                        .split(",")
+                                        .map((s) => s.trim())
+                                        .filter(Boolean),
+                                })
+                            }
+                            disabled={busy}
+                            placeholder={ph.tags}
+                        />
+                    </div>
 
-                <div className="space-y-1">
-                    <label className="text-xs font-medium">{t("routines.notes")}</label>
-                    <input
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={activePlan.notes ?? ""}
-                        onChange={(e) => onUpdatePlan(activePlan.dayKey as DayKey, { notes: e.target.value || undefined })}
-                        disabled={busy}
-                        placeholder={ph.notes}
-                    />
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium">{t("routines.notes")}</label>
+                        <input
+                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                            value={activePlan.notes ?? ""}
+                            onChange={(e) =>
+                                onUpdatePlan(activePlan.dayKey as DayKey, {
+                                    notes: e.target.value || undefined,
+                                })
+                            }
+                            disabled={busy}
+                            placeholder={ph.notes}
+                        />
+                    </div>
                 </div>
             </div>
 
-            <div className="space-y-3">
-                {exercises.map((ex, idx) => {
-                    const exerciseId = ex.id;
-                    const selectedIds = Array.isArray(ex.attachmentPublicIds) ? ex.attachmentPublicIds : [];
+            {/* Lista de ejercicios del día */}
+            <div className="rounded-xl border border-dashed bg-card/60 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                    <div className="text-xs font-medium text-muted-foreground">
+                        {lang === "es" ? "Ejercicios del día" : "Day exercises"}
+                    </div>
+                    {exercises.length > 0 ? (
+                        <div className="text-[11px] font-mono text-muted-foreground">
+                            {exercises.length}{" "}
+                            {lang === "es" ? "ejercicio(s)" : "exercise(s)"}
+                        </div>
+                    ) : null}
+                </div>
 
-                    const isThisUploading =
-                        exerciseUploadBusy &&
-                        uploadingExercise?.dayKey === (activePlan.dayKey as DayKey) &&
-                        uploadingExercise?.exerciseId === exerciseId;
+                <div className="space-y-3 border-primary/80">
+                    {exercises.map((ex, idx) => {
+                        const exerciseId = ex.id;
+                        const selectedIds = Array.isArray(ex.attachmentPublicIds)
+                            ? ex.attachmentPublicIds
+                            : [];
 
-                    const pendingFiles = getPendingFilesForExercise(exerciseId);
+                        const isThisUploading =
+                            exerciseUploadBusy &&
+                            uploadingExercise?.dayKey ===
+                            (activePlan.dayKey as DayKey) &&
+                            uploadingExercise?.exerciseId === exerciseId;
 
-                    return (
-                        <RoutinesExerciseCard
-                            key={exerciseId}
-                            dayKey={activePlan.dayKey as DayKey}
-                            idx={idx}
-                            exercise={ex}
-                            attachmentOptions={attachmentOptions}
-                            selectedIds={selectedIds}
-                            pendingFiles={pendingFiles}
-                            onPickFiles={(files) => onPickFilesForExercise(exerciseId, files)}
-                            onRemovePending={(fileIndex) => onRemovePendingForExercise(exerciseId, fileIndex)}
-                            busy={busy}
-                            isThisUploading={isThisUploading}
-                            t={t}
-                            lang={lang}
-                            ph={ph}
-                            onRemove={() => onRemoveExercise(activePlan.dayKey as DayKey, idx)}
-                            onChangeName={(next) => onUpdateExercise(activePlan.dayKey as DayKey, idx, { name: next })}
-                            onChangeNotes={(next) => onUpdateExercise(activePlan.dayKey as DayKey, idx, { notes: next || undefined })}
-                            onChangeSets={(next) => onUpdateExercise(activePlan.dayKey as DayKey, idx, { sets: next || undefined })}
-                            onChangeReps={(next) => onUpdateExercise(activePlan.dayKey as DayKey, idx, { reps: next || undefined })}
-                            onChangeRpe={(next) => onUpdateExercise(activePlan.dayKey as DayKey, idx, { rpe: next || undefined })}
-                            onChangeLoad={(next) => onUpdateExercise(activePlan.dayKey as DayKey, idx, { load: next || undefined })}
-                            onToggleAttachment={(publicId) => {
-                                const curr = new Set(selectedIds);
-                                if (curr.has(publicId)) curr.delete(publicId);
-                                else curr.add(publicId);
+                        const pendingFiles = getPendingFilesForExercise(
+                            exerciseId
+                        );
 
-                                onUpdateExercise(activePlan.dayKey as DayKey, idx, {
-                                    attachmentPublicIds: Array.from(curr),
-                                });
-                            }}
-                        />
-                    );
-                })}
+                        return (
+                            <RoutinesExerciseCard
+                                key={exerciseId}
+                                dayKey={activePlan.dayKey as DayKey}
+                                idx={idx}
+                                exercise={ex}
+                                movementOptions={movementOptions}
+                                attachmentOptions={attachmentOptions}
+                                selectedIds={selectedIds}
+                                pendingFiles={pendingFiles}
+                                onPickFiles={(files) =>
+                                    onPickFilesForExercise(exerciseId, files)
+                                }
+                                onRemovePending={(fileIndex) =>
+                                    onRemovePendingForExercise(
+                                        exerciseId,
+                                        fileIndex
+                                    )
+                                }
+                                busy={busy}
+                                isThisUploading={isThisUploading}
+                                t={t}
+                                lang={lang}
+                                ph={ph}
+                                onRemove={() =>
+                                    onRemoveExercise(
+                                        activePlan.dayKey as DayKey,
+                                        idx
+                                    )
+                                }
+                                onChangeMovement={({
+                                    movementId,
+                                    movementName,
+                                }) => {
+                                    onUpdateExercise(
+                                        activePlan.dayKey as DayKey,
+                                        idx,
+                                        {
+                                            movementId,
+                                            movementName,
+                                            // keep display name synced (you can still edit afterwards)
+                                            name: movementName ?? ex.name,
+                                        }
+                                    );
+                                }}
+                                onChangeName={(next) =>
+                                    onUpdateExercise(
+                                        activePlan.dayKey as DayKey,
+                                        idx,
+                                        { name: next }
+                                    )
+                                }
+                                onChangeNotes={(next) =>
+                                    onUpdateExercise(
+                                        activePlan.dayKey as DayKey,
+                                        idx,
+                                        { notes: next || undefined }
+                                    )
+                                }
+                                onChangeSets={(next) =>
+                                    onUpdateExercise(
+                                        activePlan.dayKey as DayKey,
+                                        idx,
+                                        { sets: next || undefined }
+                                    )
+                                }
+                                onChangeReps={(next) =>
+                                    onUpdateExercise(
+                                        activePlan.dayKey as DayKey,
+                                        idx,
+                                        { reps: next || undefined }
+                                    )
+                                }
+                                onChangeRpe={(next) =>
+                                    onUpdateExercise(
+                                        activePlan.dayKey as DayKey,
+                                        idx,
+                                        { rpe: next || undefined }
+                                    )
+                                }
+                                onChangeLoad={(next) =>
+                                    onUpdateExercise(
+                                        activePlan.dayKey as DayKey,
+                                        idx,
+                                        { load: next || undefined }
+                                    )
+                                }
+                                onToggleAttachment={(publicId) => {
+                                    const curr = new Set(selectedIds);
+                                    if (curr.has(publicId)) curr.delete(publicId);
+                                    else curr.add(publicId);
+
+                                    onUpdateExercise(
+                                        activePlan.dayKey as DayKey,
+                                        idx,
+                                        {
+                                            attachmentPublicIds: Array.from(
+                                                curr
+                                            ),
+                                        }
+                                    );
+                                }}
+                            />
+                        );
+                    })}
+
+                    {exercises.length === 0 ? (
+                        <div className="text-xs text-muted-foreground">
+                            {lang === "es"
+                                ? "Agrega tu primer ejercicio para este día."
+                                : "Add your first exercise for this day."}
+                        </div>
+                    ) : null}
+                </div>
             </div>
         </div>
     );

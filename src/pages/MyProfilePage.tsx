@@ -51,7 +51,7 @@ export function MyProfilePage() {
                 <EmptyState title={t("common.noDataDash")} description={t("profile.subtitle")} />
             ) : (
                 <>
-                    <Card>
+                    <Card className="border-primary/40 bg-primary/10">
                         <CardHeader>
                             <CardTitle>{t("profile.title")}</CardTitle>
                             <CardDescription>{t("profile.subtitle")}</CardDescription>

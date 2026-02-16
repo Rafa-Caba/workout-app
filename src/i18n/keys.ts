@@ -80,6 +80,7 @@ export const i18nKeys = [
     "nav.trends",
     "nav.media",
     "nav.routines",
+    "nav.movements",
     "nav.pva",
     "nav.insights",
     "nav.streaks",

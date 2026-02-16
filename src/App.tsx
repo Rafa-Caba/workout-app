@@ -17,6 +17,7 @@ import { InsightsStreaksPage } from "@/pages/InsightsStreaksPage";
 import { InsightsPRsPage } from "@/pages/InsightsPRsPage";
 import { InsightsRecoveryPage } from "@/pages/InsightsRecoveryPage";
 import { RoutineGymCheckPage } from "@/pages/RoutineGymCheckPage";
+import { MovementsPage } from "./pages/MovementsPage";
 import { SleepPage } from "./pages/SleepPage";
 
 import { MyProfilePage } from "@/pages/MyProfilePage";
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/insights/prs" element={<InsightsPRsPage />} />
           <Route path="/insights/recovery" element={<InsightsRecoveryPage />} />
           <Route path="/gym-check" element={<RoutineGymCheckPage />} />
+          <Route path="/movements" element={<MovementsPage />} />
           <Route path="/sleep" element={<SleepPage />} />
 
           {/* <Route path="/protected" element={<ProtectedPage />} />

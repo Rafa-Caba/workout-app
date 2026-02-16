@@ -1,3 +1,4 @@
+// src/utils/routines/plan.ts
 import { addDays, format } from "date-fns";
 import { weekKeyToStartDate } from "@/utils/weekKey";
 import type { DayKey as CanonDayKey, WorkoutRoutineDay, WorkoutRoutineExercise } from "@/types/workoutRoutine.types";
@@ -11,6 +12,7 @@ type _AssertDayKey = CanonDayKey extends DayKey ? true : false;
 export type ExerciseItem = {
     id: string;
     name: string;
+
     sets?: string;
     reps?: string;
 
@@ -19,7 +21,12 @@ export type ExerciseItem = {
 
     load?: string;
     notes?: string;
+
     attachmentPublicIds?: string[];
+
+    // ✅ NEW: Movement catalog link + snapshot (UI)
+    movementId?: string;
+    movementName?: string;
 };
 
 export type DayPlan = {
@@ -52,6 +59,12 @@ function makeId(): string {
     return `ex_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
+function cleanUiStrOrUndef(v: unknown): string | undefined {
+    if (typeof v !== "string") return undefined;
+    const s = v.trim();
+    return s.length ? s : undefined;
+}
+
 export function normalizePlans(plans: DayPlan[]): DayPlan[] {
     const map = new Map<DayKey, DayPlan>();
     for (const p of plans) map.set(p.dayKey, p);
@@ -71,14 +84,19 @@ function normalizeExerciseItem(e: unknown): ExerciseItem | null {
     return {
         id,
         name: typeof (e as any).name === "string" ? ((e as any).name as string) : "",
+
         sets: typeof (e as any).sets === "string" ? ((e as any).sets as string) : undefined,
         reps: typeof (e as any).reps === "string" ? ((e as any).reps as string) : undefined,
-
         rpe: typeof (e as any).rpe === "string" ? ((e as any).rpe as string) : undefined,
 
         load: typeof (e as any).load === "string" ? ((e as any).load as string) : undefined,
         notes: typeof (e as any).notes === "string" ? ((e as any).notes as string) : undefined,
+
         attachmentPublicIds,
+
+        // ✅ NEW
+        movementId: cleanUiStrOrUndef((e as any).movementId),
+        movementName: cleanUiStrOrUndef((e as any).movementName),
     };
 }
 
@@ -170,6 +188,10 @@ export function setPlanIntoMeta(meta: Record<string, unknown> | null | undefined
                 load: e.load ?? null,
                 notes: e.notes ?? null,
                 attachmentPublicIds: e.attachmentPublicIds ?? null,
+
+                // ✅ NEW
+                movementId: e.movementId ?? null,
+                movementName: e.movementName ?? null,
             })) ?? null,
     }));
 
@@ -225,6 +247,11 @@ export function plansToRoutineDays(weekKey: string, plans: DayPlan[]): WorkoutRo
                     .map((e) => ({
                         id: e.id || makeId(),
                         name: (e.name ?? "").trim(),
+
+                        // ✅ NEW: movement fields to backend
+                        movementId: cleanStrOrNull(e.movementId),
+                        movementName: cleanStrOrNull(e.movementName),
+
                         sets: parseSetsMaybe(e.sets),
                         reps: cleanStrOrNull(e.reps),
                         rpe: parseRpeMaybe(e.rpe),

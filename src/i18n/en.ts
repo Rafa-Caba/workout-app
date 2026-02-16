@@ -75,6 +75,7 @@ export const en: Record<I18nKey, string> = {
     "nav.trends": "Trends",
     "nav.media": "Media",
     "nav.routines": "Routines",
+    "nav.movements": "Movements",
     "nav.pva": "Plan vs Actual",
     "nav.insights": "Insights",
     "nav.streaks": "Streaks",

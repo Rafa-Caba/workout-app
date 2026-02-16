@@ -48,8 +48,10 @@ export function DashboardPage() {
                             {t("dashboard.welcome", { name })}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                            {t("dashboard.todayLabel")} <span className="font-mono">{d.today}</span> · {todayLabel} ·{" "}
-                            {t("dashboard.weekLabel")} <span className="font-mono">{d.weekKey}</span>
+                            {t("dashboard.todayLabel")}{" "}
+                            <span className="font-mono">{d.today}</span> · {todayLabel} ·{" "}
+                            {t("dashboard.weekLabel")}{" "}
+                            <span className="font-mono">{d.weekKey}</span>
                         </div>
                     </div>
                 }
@@ -66,22 +68,29 @@ export function DashboardPage() {
                 </Card>
             ) : null}
 
+            {/* Last 7 days summary */}
             <Card>
                 <CardHeader>
                     <CardTitle className="text-base">{t("dashboard.last7.title")}</CardTitle>
                     <div className="text-xs text-muted-foreground">
-                        {t("dashboard.last7.range")} <span className="font-mono">{d.range.from}</span> →{" "}
+                        {t("dashboard.last7.range")}{" "}
+                        <span className="font-mono">{d.range.from}</span> →{" "}
                         <span className="font-mono">{d.range.to}</span>
                     </div>
                 </CardHeader>
 
                 <CardContent className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-xl border bg-background p-4">
-                        <div className="text-sm font-semibold">{t("dashboard.training.title")}</div>
+                    {/* Training summary */}
+                    <div className="rounded-xl border bg-primary/5 border-primary/20 p-4">
+                        <div className="text-sm font-semibold">
+                            {t("dashboard.training.title")}
+                        </div>
                         <div className="mt-2 grid gap-1 text-sm text-muted-foreground">
                             <div>
                                 {t("dashboard.training.sessions")}{" "}
-                                <span className="text-foreground">{rangeTraining?.sessionsCount ?? 0}</span>
+                                <span className="text-foreground">
+                                    {rangeTraining?.sessionsCount ?? 0}
+                                </span>
                             </div>
                             <div>
                                 {t("dashboard.training.duration")}{" "}
@@ -91,45 +100,68 @@ export function DashboardPage() {
                             </div>
                             <div>
                                 {t("dashboard.training.activeKcal")}{" "}
-                                <span className="text-foreground">{rangeTraining?.activeKcal ?? "—"}</span>
+                                <span className="text-foreground">
+                                    {rangeTraining?.activeKcal ?? "—"}
+                                </span>
                             </div>
                             <div>
                                 {t("dashboard.training.hr")}{" "}
-                                <span className="text-foreground">{rangeTraining?.avgHr ?? "—"}</span> ·{" "}
-                                {t("dashboard.training.maxHr")}{" "}
-                                <span className="text-foreground">{rangeTraining?.maxHr ?? "—"}</span>
+                                <span className="text-foreground">
+                                    {rangeTraining?.avgHr ?? "—"}
+                                </span>{" "}
+                                · {t("dashboard.training.maxHr")}{" "}
+                                <span className="text-foreground">
+                                    {rangeTraining?.maxHr ?? "—"}
+                                </span>
                             </div>
                             <div>
                                 {t("dashboard.training.media")}{" "}
-                                <span className="text-foreground">{rangeTraining?.mediaCount ?? 0}</span>
+                                <span className="text-foreground">
+                                    {rangeTraining?.mediaCount ?? 0}
+                                </span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="rounded-xl border bg-background p-4">
-                        <div className="text-sm font-semibold">{t("dashboard.sleep.title")}</div>
+                    {/* Sleep summary */}
+                    <div className="rounded-xl border bg-primary/5 border-primary/20 p-4">
+                        <div className="text-sm font-semibold">
+                            {t("dashboard.sleep.title")}
+                        </div>
                         <div className="mt-2 grid gap-1 text-sm text-muted-foreground">
                             <div>
                                 {t("dashboard.sleep.daysWithSleep")}{" "}
-                                <span className="text-foreground">{rangeSleep?.daysWithSleep ?? 0}</span>
+                                <span className="text-foreground">
+                                    {rangeSleep?.daysWithSleep ?? 0}
+                                </span>
                             </div>
                             <div>
                                 {t("dashboard.sleep.avgTotal")}{" "}
                                 <span className="text-foreground">
-                                    {rangeSleep?.avgTotalMinutes ? minutesToHhMm(rangeSleep.avgTotalMinutes) : "—"}
+                                    {rangeSleep?.avgTotalMinutes
+                                        ? minutesToHhMm(rangeSleep.avgTotalMinutes)
+                                        : "—"}
                                 </span>
                             </div>
                             <div>
                                 {t("dashboard.sleep.avgDeep")}{" "}
-                                <span className="text-foreground">{rangeSleep?.avgDeepMinutes ?? "—"}</span> min
+                                <span className="text-foreground">
+                                    {rangeSleep?.avgDeepMinutes ?? "—"}
+                                </span>{" "}
+                                min
                             </div>
                             <div>
                                 {t("dashboard.sleep.avgRem")}{" "}
-                                <span className="text-foreground">{rangeSleep?.avgRemMinutes ?? "—"}</span> min
+                                <span className="text-foreground">
+                                    {rangeSleep?.avgRemMinutes ?? "—"}
+                                </span>{" "}
+                                min
                             </div>
                             <div>
                                 {t("dashboard.sleep.avgScore")}{" "}
-                                <span className="text-foreground">{rangeSleep?.avgScore ?? "—"}</span>
+                                <span className="text-foreground">
+                                    {rangeSleep?.avgScore ?? "—"}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -137,68 +169,112 @@ export function DashboardPage() {
             </Card>
 
             <div className="grid gap-4 lg:grid-cols-2">
+                {/* Today card */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-base">{t("dashboard.todayCard.title")}</CardTitle>
+                        <CardTitle className="text-base">
+                            {t("dashboard.todayCard.title")}
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                        {!day && d.isLoading ? <div className="text-sm text-muted-foreground">{t("common.loading")}</div> : null}
+                        {!day && d.isLoading ? (
+                            <div className="text-sm text-muted-foreground">
+                                {t("common.loading")}
+                            </div>
+                        ) : null}
                         {!day && !d.isLoading ? (
-                            <div className="text-sm text-muted-foreground">{t("dashboard.todayCard.empty")}</div>
+                            <div className="text-sm text-muted-foreground">
+                                {t("dashboard.todayCard.empty")}
+                            </div>
                         ) : null}
 
                         {day ? (
                             <div className="space-y-3">
                                 <div className="text-xs text-muted-foreground">
-                                    {t("dashboard.todayCard.date")} <span className="font-mono">{day.date}</span> ·{" "}
-                                    {t("dashboard.todayCard.weekKey")} <span className="font-mono">{day.weekKey ?? "—"}</span>
+                                    {t("dashboard.todayCard.date")}{" "}
+                                    <span className="font-mono">{day.date}</span> ·{" "}
+                                    {t("dashboard.todayCard.weekKey")}{" "}
+                                    <span className="font-mono">
+                                        {day.weekKey ?? "—"}
+                                    </span>
                                 </div>
 
-                                <div className="rounded-xl border bg-background p-3">
-                                    <div className="text-sm font-semibold">{t("dashboard.training.title")}</div>
+                                {/* Today training */}
+                                <div className="rounded-xl border bg-primary/5 border-primary/20 p-3">
+                                    <div className="text-sm font-semibold">
+                                        {t("dashboard.training.title")}
+                                    </div>
                                     <div className="mt-2 grid gap-1 text-sm text-muted-foreground">
                                         <div>
                                             {t("dashboard.training.sessions")}{" "}
-                                            <span className="text-foreground">{day.training.sessionsCount}</span>
+                                            <span className="text-foreground">
+                                                {day.training.sessionsCount}
+                                            </span>
                                         </div>
                                         <div>
                                             {t("dashboard.training.duration")}{" "}
-                                            <span className="text-foreground">{secondsToHhMm(day.training.durationSeconds)}</span>
+                                            <span className="text-foreground">
+                                                {secondsToHhMm(
+                                                    day.training.durationSeconds
+                                                )}
+                                            </span>
                                         </div>
                                         <div>
                                             {t("dashboard.training.activeKcal")}{" "}
-                                            <span className="text-foreground">{day.training.activeKcal ?? "—"}</span>
+                                            <span className="text-foreground">
+                                                {day.training.activeKcal ?? "—"}
+                                            </span>
                                         </div>
                                         <div>
                                             {t("dashboard.training.hr")}{" "}
-                                            <span className="text-foreground">{day.training.avgHr ?? "—"}</span> ·{" "}
-                                            {t("dashboard.training.maxHr")}{" "}
-                                            <span className="text-foreground">{day.training.maxHr ?? "—"}</span>
+                                            <span className="text-foreground">
+                                                {day.training.avgHr ?? "—"}
+                                            </span>{" "}
+                                            · {t("dashboard.training.maxHr")}{" "}
+                                            <span className="text-foreground">
+                                                {day.training.maxHr ?? "—"}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="rounded-xl border bg-background p-3">
-                                    <div className="text-sm font-semibold">{t("dashboard.sleep.title")}</div>
+                                {/* Today sleep */}
+                                <div className="rounded-xl border bg-accent/10 border-accent/25 p-3">
+                                    <div className="text-sm font-semibold">
+                                        {t("dashboard.sleep.title")}
+                                    </div>
                                     {!day.sleep ? (
-                                        <div className="mt-2 text-sm text-muted-foreground">{t("dashboard.sleep.noData")}</div>
+                                        <div className="mt-2 text-sm text-muted-foreground">
+                                            {t("dashboard.sleep.noData")}
+                                        </div>
                                     ) : (
                                         <div className="mt-2 grid gap-1 text-sm text-muted-foreground">
                                             <div>
                                                 {t("dashboard.sleep.total")}{" "}
                                                 <span className="text-foreground">
-                                                    {day.sleep.totalMinutes ? minutesToHhMm(day.sleep.totalMinutes) : "—"}
+                                                    {day.sleep.totalMinutes
+                                                        ? minutesToHhMm(
+                                                            day.sleep.totalMinutes
+                                                        )
+                                                        : "—"}
                                                 </span>
                                             </div>
                                             <div>
                                                 {t("dashboard.sleep.deep")}{" "}
-                                                <span className="text-foreground">{day.sleep.deepMinutes ?? "—"}</span> min ·{" "}
-                                                {t("dashboard.sleep.rem")}{" "}
-                                                <span className="text-foreground">{day.sleep.remMinutes ?? "—"}</span> min
+                                                <span className="text-foreground">
+                                                    {day.sleep.deepMinutes ?? "—"}
+                                                </span>{" "}
+                                                min · {t("dashboard.sleep.rem")}{" "}
+                                                <span className="text-foreground">
+                                                    {day.sleep.remMinutes ?? "—"}
+                                                </span>{" "}
+                                                min
                                             </div>
                                             <div>
                                                 {t("dashboard.sleep.score")}{" "}
-                                                <span className="text-foreground">{day.sleep.score ?? "—"}</span>
+                                                <span className="text-foreground">
+                                                    {day.sleep.score ?? "—"}
+                                                </span>
                                             </div>
                                         </div>
                                     )}
@@ -208,56 +284,90 @@ export function DashboardPage() {
                     </CardContent>
                 </Card>
 
+                {/* This week card */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-base">{t("dashboard.thisWeek.title")}</CardTitle>
+                        <CardTitle className="text-base">
+                            {t("dashboard.thisWeek.title")}
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                        {!week && d.isLoading ? <div className="text-sm text-muted-foreground">{t("common.loading")}</div> : null}
+                        {!week && d.isLoading ? (
+                            <div className="text-sm text-muted-foreground">
+                                {t("common.loading")}
+                            </div>
+                        ) : null}
                         {!week && !d.isLoading ? (
-                            <div className="text-sm text-muted-foreground">{t("dashboard.thisWeek.empty")}</div>
+                            <div className="text-sm text-muted-foreground">
+                                {t("dashboard.thisWeek.empty")}
+                            </div>
                         ) : null}
 
                         {week ? (
                             <div className="space-y-3">
                                 <div className="text-xs text-muted-foreground">
-                                    <span className="font-mono">{week.weekKey}</span> · {week.range.from} → {week.range.to}
+                                    <span className="font-mono">{week.weekKey}</span> ·{" "}
+                                    {week.range.from} → {week.range.to}
                                 </div>
 
-                                <div className="rounded-xl border bg-background p-3">
-                                    <div className="text-sm font-semibold">{t("dashboard.thisWeek.summaryTitle")}</div>
+                                {/* Week training summary */}
+                                <div className="rounded-xl border bg-primary/5 border-primary/20 p-3">
+                                    <div className="text-sm font-semibold">
+                                        {t("dashboard.thisWeek.summaryTitle")}
+                                    </div>
                                     <div className="mt-2 grid gap-1 text-sm text-muted-foreground">
                                         <div>
                                             {t("dashboard.training.sessions")}{" "}
-                                            <span className="text-foreground">{week.training.sessionsCount}</span>
+                                            <span className="text-foreground">
+                                                {week.training.sessionsCount}
+                                            </span>
                                         </div>
                                         <div>
                                             {t("dashboard.training.duration")}{" "}
-                                            <span className="text-foreground">{secondsToHhMm(week.training.durationSeconds)}</span>
+                                            <span className="text-foreground">
+                                                {secondsToHhMm(
+                                                    week.training.durationSeconds
+                                                )}
+                                            </span>
                                         </div>
                                         <div>
                                             {t("dashboard.training.activeKcal")}{" "}
-                                            <span className="text-foreground">{week.training.activeKcal ?? "—"}</span>
+                                            <span className="text-foreground">
+                                                {week.training.activeKcal ?? "—"}
+                                            </span>
                                         </div>
                                         <div>
                                             {t("dashboard.training.hr")}{" "}
-                                            <span className="text-foreground">{week.training.avgHr ?? "—"}</span> ·{" "}
-                                            {t("dashboard.training.maxHr")}{" "}
-                                            <span className="text-foreground">{week.training.maxHr ?? "—"}</span>
+                                            <span className="text-foreground">
+                                                {week.training.avgHr ?? "—"}
+                                            </span>{" "}
+                                            · {t("dashboard.training.maxHr")}{" "}
+                                            <span className="text-foreground">
+                                                {week.training.maxHr ?? "—"}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="rounded-xl border bg-background p-3">
-                                    <div className="text-sm font-semibold">{t("dashboard.thisWeek.trendTitle")}</div>
+                                {/* Week trend */}
+                                <div className="rounded-xl border bg-accent/10 border-accent/25 p-3">
+                                    <div className="text-sm font-semibold">
+                                        {t("dashboard.thisWeek.trendTitle")}
+                                    </div>
                                     {!trendPoint ? (
-                                        <div className="mt-2 text-sm text-muted-foreground">{t("dashboard.thisWeek.noTrend")}</div>
+                                        <div className="mt-2 text-sm text-muted-foreground">
+                                            {t("dashboard.thisWeek.noTrend")}
+                                        </div>
                                     ) : (
                                         <div className="mt-2 text-sm text-muted-foreground">
                                             {t("dashboard.thisWeek.daysLogged")}{" "}
-                                            <span className="text-foreground">{trendPoint.daysCount}</span> ·{" "}
-                                            {t("dashboard.thisWeek.media")}{" "}
-                                            <span className="text-foreground">{trendPoint.mediaCount}</span>
+                                            <span className="text-foreground">
+                                                {trendPoint.daysCount}
+                                            </span>{" "}
+                                            · {t("dashboard.thisWeek.media")}{" "}
+                                            <span className="text-foreground">
+                                                {trendPoint.mediaCount}
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -266,43 +376,71 @@ export function DashboardPage() {
                     </CardContent>
                 </Card>
 
+                {/* Streak card */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-base">{t("dashboard.streak.title")}</CardTitle>
+                        <CardTitle className="text-base">
+                            {t("dashboard.streak.title")}
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {!streaks && d.isLoading ? <div className="text-sm text-muted-foreground">{t("common.loading")}</div> : null}
+                        {!streaks && d.isLoading ? (
+                            <div className="text-sm text-muted-foreground">
+                                {t("common.loading")}
+                            </div>
+                        ) : null}
                         {!streaks && !d.isLoading ? (
-                            <div className="text-sm text-muted-foreground">{t("dashboard.streak.empty")}</div>
+                            <div className="text-sm text-muted-foreground">
+                                {t("dashboard.streak.empty")}
+                            </div>
                         ) : null}
 
                         {streaks ? (
-                            <div className="space-y-2">
+                            <div className="space-y-2 rounded-xl border bg-primary/5 border-primary/20 p-4">
                                 <div className="text-xs text-muted-foreground">
-                                    {t("dashboard.streak.asOf")} <span className="font-mono">{streaks.asOf}</span>
+                                    {t("dashboard.streak.asOf")}{" "}
+                                    <span className="font-mono">
+                                        {streaks.asOf}
+                                    </span>
                                 </div>
-                                <div className="text-4xl font-extrabold tracking-tight">{streaks.currentStreakDays}</div>
-                                <div className="text-sm text-muted-foreground">{t("dashboard.streak.days")}</div>
+                                <div className="text-4xl font-extrabold tracking-tight text-primary">
+                                    {streaks.currentStreakDays}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                    {t("dashboard.streak.days")}
+                                </div>
                                 <div className="text-sm text-muted-foreground">
                                     {t("dashboard.streak.longest")}{" "}
-                                    <span className="text-foreground">{streaks.longestStreakDays}</span> ·{" "}
-                                    {t("dashboard.streak.lastDay")}{" "}
-                                    <span className="text-foreground">{streaks.lastQualifiedDate ?? "—"}</span>
+                                    <span className="text-foreground">
+                                        {streaks.longestStreakDays}
+                                    </span>{" "}
+                                    · {t("dashboard.streak.lastDay")}{" "}
+                                    <span className="text-foreground">
+                                        {streaks.lastQualifiedDate ?? "—"}
+                                    </span>
                                 </div>
                             </div>
                         ) : null}
                     </CardContent>
                 </Card>
 
+                {/* Media card */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-base">{t("dashboard.media.title")}</CardTitle>
-                        {/* Debug endpoint label removed per request */}
+                        <CardTitle className="text-base">
+                            {t("dashboard.media.title")}
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {d.isLoading && media.length === 0 ? <div className="text-sm text-muted-foreground">{t("common.loading")}</div> : null}
+                        {d.isLoading && media.length === 0 ? (
+                            <div className="text-sm text-muted-foreground">
+                                {t("common.loading")}
+                            </div>
+                        ) : null}
                         {!d.isLoading && media.length === 0 ? (
-                            <div className="text-sm text-muted-foreground">{t("dashboard.media.empty")}</div>
+                            <div className="text-sm text-muted-foreground">
+                                {t("dashboard.media.empty")}
+                            </div>
                         ) : null}
 
                         {media.length > 0 ? (
@@ -316,7 +454,7 @@ export function DashboardPage() {
                                             type="button"
                                             onClick={() => setSelected(m)}
                                             className={cn(
-                                                "block overflow-hidden rounded-xl border bg-background text-left",
+                                                "block overflow-hidden rounded-xl border bg-card text-left",
                                                 "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                                             )}
                                             title={`${m.date} • ${m.sessionType}`}
@@ -338,12 +476,16 @@ export function DashboardPage() {
                                 })}
                             </div>
                         ) : null}
-
                     </CardContent>
                 </Card>
             </div>
 
-            {selected ? <MediaViewerModal item={selected} onClose={() => setSelected(null)} /> : null}
+            {selected ? (
+                <MediaViewerModal
+                    item={selected}
+                    onClose={() => setSelected(null)}
+                />
+            ) : null}
         </div>
     );
 }

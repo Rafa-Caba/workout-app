@@ -1,5 +1,7 @@
+// src/hooks/useRoutineWeek.ts
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ApiError } from "@/api/httpErrors";
+
 import {
     getRoutineWeek,
     initRoutineWeek,
@@ -7,7 +9,12 @@ import {
     setRoutineArchived,
     listRoutineWeeks,
 } from "@/services/workout/routines.service";
-import { WorkoutRoutineStatus, WorkoutRoutineWeek, WorkoutRoutineWeekSummary } from "@/types/workoutRoutine.types";
+
+import type {
+    WorkoutRoutineStatus,
+    WorkoutRoutineWeek,
+    WorkoutRoutineWeekSummary,
+} from "@/types/workoutRoutine.types";
 
 export function useRoutineWeek(weekKey: string) {
     return useQuery<WorkoutRoutineWeek | null, ApiError>({
@@ -20,7 +27,12 @@ export function useRoutineWeek(weekKey: string) {
 
 export function useInitRoutineWeek(weekKey: string) {
     const qc = useQueryClient();
-    return useMutation<WorkoutRoutineWeek, ApiError, { title?: string; split?: string; unarchive?: boolean } | undefined>({
+
+    return useMutation<
+        WorkoutRoutineWeek,
+        ApiError,
+        { title?: string; split?: string; unarchive?: boolean } | undefined
+    >({
         mutationFn: (args) => initRoutineWeek(weekKey, args),
         onSuccess: (data) => {
             qc.setQueryData(["routineWeek", weekKey], data);
@@ -32,6 +44,7 @@ export function useInitRoutineWeek(weekKey: string) {
 
 export function useUpdateRoutineWeek(weekKey: string) {
     const qc = useQueryClient();
+
     return useMutation<WorkoutRoutineWeek, ApiError, unknown>({
         mutationFn: (payload) => updateRoutineWeek(weekKey, payload),
         onSuccess: (data) => {
@@ -44,6 +57,7 @@ export function useUpdateRoutineWeek(weekKey: string) {
 
 export function useSetRoutineArchived(weekKey: string) {
     const qc = useQueryClient();
+
     return useMutation<WorkoutRoutineWeek, ApiError, { archived: boolean }>({
         mutationFn: ({ archived }) => setRoutineArchived(weekKey, archived),
         onSuccess: (data) => {

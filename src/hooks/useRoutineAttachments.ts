@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ApiError } from "@/api/httpErrors";
-import type { RoutineWeek } from "@/services/workout/routines.service";
 import { deleteRoutineAttachment, uploadRoutineAttachments } from "@/services/workout/routineAttachments.service";
+import { WorkoutRoutineWeek } from "@/types/workoutRoutine.types";
 
-function unwrapRoutineWeek(maybe: unknown): RoutineWeek | null {
+function unwrapRoutineWeek(maybe: unknown): WorkoutRoutineWeek | null {
     if (!maybe || typeof maybe !== "object") return null;
     const rec = maybe as Record<string, unknown>;
-    if (rec && rec.routine && typeof rec.routine === "object") return rec.routine as RoutineWeek;
-    if (rec && ("weekKey" in rec) && ("days" in rec)) return rec as RoutineWeek;
+    if (rec && rec.routine && typeof rec.routine === "object") return rec.routine as WorkoutRoutineWeek;
+    if (rec && ("weekKey" in rec) && ("days" in rec)) return rec as WorkoutRoutineWeek;
     return null;
 }
 

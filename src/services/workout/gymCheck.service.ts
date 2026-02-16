@@ -1,88 +1,17 @@
 import { api } from "@/api/axios";
-import type { DayKey } from "@/utils/routines/plan";
+import type {
+    GymCheckDayPatchBody,
+    GymCheckExercisePatch,
+    GymCheckMetricsPatch,
+    GymDayState,
+} from "@/types/gymCheck.types";
+import type { DayKey, WorkoutRoutineWeek } from "@/types/workoutRoutine.types";
 
 /**
  * We support two caller styles:
  * 1) Old: GymDayState with strings (UX inputs)
  * 2) New: Already-clean patch payload (numbers/null) from useSyncGymCheckDay
  */
-
-// -------------------- Types --------------------
-
-type GymExerciseState = {
-    done: boolean;
-    notes?: string;
-    durationMin?: string;
-    mediaPublicIds: string[];
-};
-
-type GymDayMetricsState = {
-    startAt?: string;
-    endAt?: string;
-
-    activeKcal?: string;
-    totalKcal?: string;
-
-    avgHr?: string;
-    maxHr?: string;
-
-    distanceKm?: string;
-    steps?: string;
-    elevationGainM?: string;
-
-    paceSecPerKm?: string;
-    cadenceRpm?: string;
-
-    effortRpe?: string;
-
-    trainingSource?: string;
-    dayEffortRpe?: string;
-};
-
-type GymDayState = {
-    durationMin: string;
-    notes: string;
-    metrics?: GymDayMetricsState;
-    exercises: Record<string, GymExerciseState>;
-};
-
-// Clean patch payload (what BE expects after our upgrades)
-export type GymCheckExercisePatch = {
-    done?: boolean | null;
-    notes?: string | null;
-    durationMin?: number | null;
-    mediaPublicIds?: string[] | null;
-};
-
-export type GymCheckMetricsPatch = {
-    startAt?: string | null;
-    endAt?: string | null;
-
-    activeKcal?: number | null;
-    totalKcal?: number | null;
-
-    avgHr?: number | null;
-    maxHr?: number | null;
-
-    distanceKm?: number | null;
-    steps?: number | null;
-    elevationGainM?: number | null;
-
-    paceSecPerKm?: number | null;
-    cadenceRpm?: number | null;
-
-    effortRpe?: number | null;
-
-    trainingSource?: string | null;
-    dayEffortRpe?: number | null;
-};
-
-export type GymCheckDayPatchBody = {
-    durationMin?: number | null;
-    notes?: string | null;
-    metrics?: GymCheckMetricsPatch | null;
-    exercises?: Record<string, GymCheckExercisePatch> | null;
-};
 
 // -------------------- Helpers --------------------
 
@@ -188,7 +117,7 @@ export async function syncGymCheckDay(
     weekKey: string,
     dayKey: DayKey,
     input: GymDayState | GymCheckDayPatchBody
-): Promise<unknown> {
+): Promise<WorkoutRoutineWeek> {
     const payload: GymCheckDayPatchBody = looksLikeCleanPatch(input)
         ? (input as GymCheckDayPatchBody)
         : buildPatchFromGymDayState(input as GymDayState);
@@ -198,5 +127,5 @@ export async function syncGymCheckDay(
         payload
     );
 
-    return res.data;
+    return res.data as WorkoutRoutineWeek;
 }

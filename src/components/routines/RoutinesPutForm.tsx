@@ -6,6 +6,8 @@ import type { DayKey, DayPlan, ExerciseItem } from "@/utils/routines/plan";
 import type { RoutineUpsertBody } from "@/utils/routines/putBody";
 import { RoutinesDayEditor } from "@/components/routines/RoutinesDayEditor";
 import { useSettingsStore } from "@/state/settings.store";
+import { MovementOption } from "./RoutinesExerciseCard";
+import { cn } from "@/lib/utils";
 
 type TFn = (key: I18nKey) => string;
 
@@ -56,7 +58,7 @@ type Props = {
     exerciseUploadBusy: boolean;
     uploadingExercise: { dayKey: DayKey; exerciseId: string } | null;
 
-    // ✅ pending is exerciseId-based
+    // pending is exerciseId-based
     getPendingExerciseFiles: (exerciseId: string) => File[];
     onAddPendingExerciseFiles: (exerciseId: string, files: File[]) => void;
     onClearPendingExerciseFiles: (exerciseId: string, fileIndex?: number) => void;
@@ -65,6 +67,8 @@ type Props = {
     onRemoveExercise: (dayKey: DayKey, idx: number) => void;
     onUpdatePlan: (dayKey: DayKey, patch: Partial<DayPlan>) => void;
     onUpdateExercise: (dayKey: DayKey, idx: number, patch: Partial<ExerciseItem>) => void;
+
+    movementOptions?: MovementOption[];
 
     ph: Placeholders;
 
@@ -111,6 +115,7 @@ export function RoutinesPutForm({
     debugPutBodyData,
     debugPlansTitle,
     plans,
+    movementOptions,
 }: Props) {
     const showJson = useSettingsStore((s) => s.settings.debug.showJson);
 
@@ -118,35 +123,52 @@ export function RoutinesPutForm({
 
     return (
         <div className="space-y-4">
-            <div className="rounded-xl border bg-card p-4 space-y-4">
+            {/* Meta / header card */}
+            <div className="rounded-xl border bg-primary/5 border-primary/10 p-4 space-y-4">
                 <div className="flex items-center justify-between gap-3">
                     <div>
-                        <div className="text-sm font-semibold">{lang === "es" ? "Editor de rutina" : "Routine editor"}</div>
+                        <div className="text-sm font-semibold">
+                            {lang === "es" ? "Editor de rutina" : "Routine editor"}
+                        </div>
                         <div className="text-xs text-muted-foreground">
-                            {lang === "es" ? "Edita el plan por día y guarda con PUT." : "Edit day plan and save with PUT."}
+                            {lang === "es"
+                                ? "Edita el plan por día y guarda con PUT."
+                                : "Edit day plan and save with PUT."}
                         </div>
                     </div>
 
-                    <Button onClick={onSave} disabled={busy || isSaving} className="h-9">
+                    <Button
+                        onClick={onSave}
+                        disabled={busy || isSaving}
+                        className="h-9"
+                    >
                         {lang === "es" ? "Guardar (PUT)" : "Save (PUT)"}
                     </Button>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
+                    {/* Title */}
                     <div className="space-y-1">
-                        <label className="text-xs font-medium">{t("routines.titleField")}</label>
+                        <label className="text-xs font-medium">
+                            {t("routines.titleField")}
+                        </label>
                         <input
                             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                             value={putBody.title ?? ""}
                             onChange={(e) => onChangeTitle(e.target.value)}
                             disabled={busy}
-                            placeholder={lang === "es" ? "Título" : "Title"}
+                            placeholder={
+                                lang === "es" ? "Título" : "Title"
+                            }
                         />
                     </div>
 
+                    {/* Split preset + custom */}
                     <div className="grid gap-2">
                         <div className="space-y-1">
-                            <label className="text-xs font-medium">{t("routines.splitField")}</label>
+                            <label className="text-xs font-medium">
+                                {t("routines.splitField")}
+                            </label>
                             <select
                                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                 value={splitPreset}
@@ -165,22 +187,43 @@ export function RoutinesPutForm({
                             <input
                                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                 value={splitCustom}
-                                onChange={(e) => onChangeSplitCustom(e.target.value)}
+                                onChange={(e) =>
+                                    onChangeSplitCustom(e.target.value)
+                                }
                                 disabled={busy}
-                                placeholder={lang === "es" ? "Split personalizado (opcional)" : "Custom split (optional)"}
+                                placeholder={
+                                    lang === "es"
+                                        ? "Split personalizado (opcional)"
+                                        : "Custom split (optional)"
+                                }
                             />
                         </div>
                     </div>
                 </div>
 
+                {/* Planned days */}
                 <div className="space-y-2">
-                    <div className="text-xs font-medium">{t("routines.plannedDays")}</div>
+                    <div className="text-xs font-medium">
+                        {t("routines.plannedDays")}
+                    </div>
                     <div className="flex flex-wrap gap-2">
                         {dayKeys.map((d) => {
                             const checked = planned.includes(d);
                             return (
-                                <label key={d} className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm bg-background">
-                                    <input type="checkbox" checked={checked} onChange={() => onTogglePlannedDay(d)} disabled={busy} />
+                                <label
+                                    key={d}
+                                    className={cn(
+                                        "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm bg-background transition-colors",
+                                        checked &&
+                                        "border-primary/40 bg-primary/8 text-primary"
+                                    )}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => onTogglePlannedDay(d)}
+                                        disabled={busy}
+                                    />
                                     <span className="font-mono">{d}</span>
                                 </label>
                             );
@@ -189,18 +232,26 @@ export function RoutinesPutForm({
                 </div>
             </div>
 
-            <div className="rounded-xl border bg-card p-4 space-y-3">
+            {/* Plan builder + day editor */}
+            <div className="rounded-xl border bg-accent/10 border-accent/50 p-4 space-y-3">
                 <div>
-                    <div className="text-sm font-semibold">{planBuilderTitle}</div>
-                    <div className="text-xs text-muted-foreground">{planBuilderHint}</div>
+                    <div className="text-sm font-semibold">
+                        {planBuilderTitle}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                        {planBuilderHint}
+                    </div>
                 </div>
 
+                {/* Day tabs */}
                 <div className="flex flex-wrap gap-2">
                     {dayTabItems.map((d) => (
                         <Button
                             key={d.dayKey}
                             type="button"
-                            variant={d.dayKey === activeDay ? "default" : "outline"}
+                            variant={
+                                d.dayKey === activeDay ? "default" : "outline"
+                            }
                             className="h-8"
                             onClick={() => onSelectDay(d.dayKey)}
                             disabled={busy}
@@ -210,6 +261,7 @@ export function RoutinesPutForm({
                     ))}
                 </div>
 
+                {/* Day editor */}
                 <RoutinesDayEditor
                     activePlan={activePlan}
                     busy={busy}
@@ -219,31 +271,47 @@ export function RoutinesPutForm({
                     attachmentOptions={attachmentOptions}
                     exerciseUploadBusy={exerciseUploadBusy}
                     uploadingExercise={uploadingExercise}
-                    getPendingFilesForExercise={(exerciseId) => getPendingExerciseFiles(exerciseId)}
-                    onPickFilesForExercise={(exerciseId, files) => onAddPendingExerciseFiles(exerciseId, files)}
-                    onRemovePendingForExercise={(exerciseId, fileIndex) => onClearPendingExerciseFiles(exerciseId, fileIndex)}
+                    getPendingFilesForExercise={(exerciseId) =>
+                        getPendingExerciseFiles(exerciseId)
+                    }
+                    onPickFilesForExercise={(exerciseId, files) =>
+                        onAddPendingExerciseFiles(exerciseId, files)
+                    }
+                    onRemovePendingForExercise={(exerciseId, fileIndex) =>
+                        onClearPendingExerciseFiles(exerciseId, fileIndex)
+                    }
                     onAddExercise={onAddExercise}
                     onRemoveExercise={onRemoveExercise}
                     onUpdatePlan={onUpdatePlan}
                     onUpdateExercise={onUpdateExercise}
+                    movementOptions={movementOptions}
                 />
             </div>
 
-            {showJson &&
+            {/* Debug JSON blocks */}
+            {showJson && (
                 <>
                     <details className="rounded-xl border bg-card p-4">
-                        <summary className="cursor-pointer select-none text-sm font-semibold">{debugPutBodyTitle}</summary>
+                        <summary className="cursor-pointer select-none text-sm font-semibold">
+                            {debugPutBodyTitle}
+                        </summary>
                         <pre className="mt-3 whitespace-pre-wrap text-xs text-muted-foreground">
-                            {typeof debugPutBodyData === "string" ? debugPutBodyData : JSON.stringify(debugPutBodyData, null, 2)}
+                            {typeof debugPutBodyData === "string"
+                                ? debugPutBodyData
+                                : JSON.stringify(debugPutBodyData, null, 2)}
                         </pre>
                     </details>
 
                     <details className="rounded-xl border bg-card p-4">
-                        <summary className="cursor-pointer select-none text-sm font-semibold">{debugPlansTitle}</summary>
-                        <pre className="mt-3 whitespace-pre-wrap text-xs text-muted-foreground">{JSON.stringify(plans, null, 2)}</pre>
+                        <summary className="cursor-pointer select-none text-sm font-semibold">
+                            {debugPlansTitle}
+                        </summary>
+                        <pre className="mt-3 whitespace-pre-wrap text-xs text-muted-foreground">
+                            {JSON.stringify(plans, null, 2)}
+                        </pre>
                     </details>
                 </>
-            }
+            )}
         </div>
     );
 }

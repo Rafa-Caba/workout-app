@@ -1,5 +1,5 @@
 export type MediaResourceType = "image" | "video";
-export type MediaSource = "day" | "routine";
+export type MediaSource = "day" | "routine" | "adminSettings";
 
 export type MediaFeedItem = {
     source: MediaSource;

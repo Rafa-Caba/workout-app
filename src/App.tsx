@@ -4,8 +4,9 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
-// import { ProtectedPage } from "@/pages/ProtectedPage";
-// import { ProtectedTestPage } from "@/pages/ProtectedTestPage";
+
+import { AdminPage } from "@/pages/admin/AdminPage";
+
 import { DayExplorerPage } from "@/pages/DayExplorerPage";
 import { WeeklySummaryPage } from "@/pages/WeeklySummaryPage";
 import { TrendsPage } from "@/pages/TrendsPage";
@@ -17,13 +18,16 @@ import { InsightsStreaksPage } from "@/pages/InsightsStreaksPage";
 import { InsightsPRsPage } from "@/pages/InsightsPRsPage";
 import { InsightsRecoveryPage } from "@/pages/InsightsRecoveryPage";
 import { RoutineGymCheckPage } from "@/pages/RoutineGymCheckPage";
-import { MovementsPage } from "./pages/MovementsPage";
-import { SleepPage } from "./pages/SleepPage";
-
+import { MovementsPage } from "@/pages/MovementsPage";
+import { SleepPage } from "@/pages/SleepPage";
 import { MyProfilePage } from "@/pages/MyProfilePage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
+import { useAuthStore } from "@/state/auth.store";
+
 export default function App() {
+  const user = useAuthStore((s) => s.user);
+
   return (
     <Routes>
       <Route element={<AppShell />}>
@@ -49,12 +53,14 @@ export default function App() {
           <Route path="/insights/streaks" element={<InsightsStreaksPage />} />
           <Route path="/insights/prs" element={<InsightsPRsPage />} />
           <Route path="/insights/recovery" element={<InsightsRecoveryPage />} />
+
           <Route path="/gym-check" element={<RoutineGymCheckPage />} />
           <Route path="/movements" element={<MovementsPage />} />
           <Route path="/sleep" element={<SleepPage />} />
 
-          {/* <Route path="/protected" element={<ProtectedPage />} />
-          <Route path="/protected/test" element={<ProtectedTestPage />} /> */}
+          {user?.role === "admin" && (
+            <Route path="/admin" element={<AdminPage />} />
+          )}
         </Route>
 
         {/* Unknown routes */}

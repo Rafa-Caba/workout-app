@@ -12,19 +12,19 @@ function safeStringify(v: unknown) {
     }
 }
 
-export function JsonDetails({
-    title,
-    data,
-    defaultOpen = false,
-}: {
+type JsonDetailsProps = {
     title?: string;
     data: unknown;
     defaultOpen?: boolean;
-}) {
-    const { t } = useI18n();
-    const showJson = useSettingsStore((s) => s.settings.debug.showJson);
+};
 
-    // Global toggle
+export function JsonDetails({ title, data, defaultOpen = false }: JsonDetailsProps) {
+    const { t } = useI18n();
+
+    // 🔧 Usa el flag persistido en Admin Settings (settings.debug.showJson)
+    const showJson = useSettingsStore((s) => s.settings.debug?.showJson ?? false);
+
+    // Si el admin apagó el JSON debug desde Admin Settings, no mostramos nada
     if (!showJson) return null;
 
     const [isOpen, setIsOpen] = React.useState<boolean>(defaultOpen);
@@ -47,23 +47,38 @@ export function JsonDetails({
 
     return (
         <details
-            className="rounded-xl border bg-background p-3"
+            className="rounded-xl border bg-card p-3 space-y-3"
             open={isOpen}
             onToggle={(e) => setIsOpen((e.target as HTMLDetailsElement).open)}
         >
-            <summary className="cursor-pointer text-sm font-medium">{title ?? t("json.title")}</summary>
+            <summary className="cursor-pointer text-sm font-medium">
+                {title ?? t("json.title")}
+            </summary>
 
-            <div className="mt-3 flex items-center gap-2">
-                <Button variant="outline" className="h-8 px-3" onClick={copy} disabled={isEmpty}>
+            <div className="flex items-center gap-2">
+                <Button
+                    variant="outline"
+                    className="h-8 px-3"
+                    onClick={copy}
+                    disabled={isEmpty}
+                >
                     {t("json.copy")}
                 </Button>
-                {isEmpty ? <span className="text-xs text-muted-foreground">{t("json.noDataInline")}</span> : null}
+                {isEmpty ? (
+                    <span className="text-xs text-muted-foreground">
+                        {t("json.noDataInline")}
+                    </span>
+                ) : null}
             </div>
 
             {!isEmpty ? (
-                <pre className="mt-3 text-xs overflow-auto whitespace-pre-wrap">{text}</pre>
+                <pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap text-xs text-muted-foreground">
+                    {text}
+                </pre>
             ) : (
-                <div className="mt-3 text-sm text-muted-foreground">{t("json.noResponse")}</div>
+                <div className="mt-2 text-sm text-muted-foreground">
+                    {t("json.noResponse")}
+                </div>
             )}
         </details>
     );

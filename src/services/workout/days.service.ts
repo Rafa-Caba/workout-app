@@ -147,7 +147,7 @@ export async function getDaySummary(date: string): Promise<DaySummary> {
  * Ensures a workout day exists, because some endpoints may 404 if the day doc doesn't exist yet.
  * NOTE: PUT /days/:date already upserts, so this is mostly useful for older endpoints.
  */
-async function ensureWorkoutDayExists(date: string): Promise<void> {
+export async function ensureWorkoutDayExistsDays(date: string): Promise<void> {
     try {
         await api.get(`/workout/days/${encodeURIComponent(date)}`);
         return;

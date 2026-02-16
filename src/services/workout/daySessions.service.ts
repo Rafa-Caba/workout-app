@@ -1,5 +1,5 @@
 import { api } from "@/api/axios";
-import { ensureWorkoutDayExists } from "@/services/workout/days.service";
+import { ensureWorkoutDayExistsDays } from "@/services/workout/days.service";
 import type { CreateWorkoutSessionBody } from "@/utils/gymCheck/buildGymCheckSession";
 
 export type CreatedSessionResponse = {
@@ -12,7 +12,7 @@ export type CreatedSessionResponse = {
 
 export async function createWorkoutSessionForDay(date: string, body: CreateWorkoutSessionBody): Promise<CreatedSessionResponse> {
     // Required because your backend returns 404 if day doc doesn't exist
-    await ensureWorkoutDayExists(date);
+    await ensureWorkoutDayExistsDays(date);
 
     const res = await api.post(`/workout/days/${encodeURIComponent(date)}/sessions`, body);
     return res.data as CreatedSessionResponse;

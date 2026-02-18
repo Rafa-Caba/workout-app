@@ -111,7 +111,7 @@ export function RoutineLogSessionCard({
 
     return (
         <div className="rounded-xl border bg-background p-3 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <div>
                     <div className="text-sm font-semibold">
                         {lang === "es" ? "Registrar sesión real" : "Log actual session"}
@@ -123,11 +123,20 @@ export function RoutineLogSessionCard({
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={quickComplete} disabled={loggingBusy}>
+                <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:items-center">
+                    <Button
+                        variant="outline"
+                        className="w-full sm:w-auto"
+                        onClick={quickComplete}
+                        disabled={loggingBusy}
+                    >
                         Quick complete
                     </Button>
-                    <Button onClick={logSession} disabled={loggingBusy}>
+                    <Button
+                        className="w-full sm:w-auto"
+                        onClick={logSession}
+                        disabled={loggingBusy}
+                    >
                         {creating
                             ? lang === "es"
                                 ? "Guardando…"
@@ -151,7 +160,7 @@ export function RoutineLogSessionCard({
                     />
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-1 md:col-span-1">
                     <label className="text-xs font-medium">
                         {lang === "es" ? "Duración (seg)" : "Duration (sec)"}
                     </label>

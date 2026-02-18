@@ -1,4 +1,3 @@
-// src/sections/admin/AdminSettingsSection.tsx
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -132,14 +131,14 @@ export function AdminSettingsSection() {
             : null;
 
     return (
-        <Card>
-            <CardHeader>
+        <Card className="w-full">
+            <CardHeader className="p-4 sm:p-6">
                 <CardTitle className="text-base">
                     {lang === "es" ? "Ajustes de la app" : "App settings"}
                 </CardTitle>
             </CardHeader>
 
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
                 {loading ? (
                     <div className="text-xs text-muted-foreground">
                         {lang === "es" ? "Cargando ajustes..." : "Loading settings..."}
@@ -147,7 +146,7 @@ export function AdminSettingsSection() {
                 ) : null}
 
                 {error ? (
-                    <div className="text-xs text-red-500">{error}</div>
+                    <div className="text-xs text-red-500 wrap-break-words">{error}</div>
                 ) : null}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -190,11 +189,11 @@ export function AdminSettingsSection() {
                             <label className="text-xs font-medium">
                                 {lang === "es" ? "Depuración JSON" : "JSON debug"}
                             </label>
-                            <div className="flex items-center gap-2 rounded-md border bg-card/40 px-3 py-2">
+                            <div className="flex items-start gap-2 rounded-md border bg-card/40 px-3 py-2">
                                 <input
                                     id="debug-json"
                                     type="checkbox"
-                                    className="h-4 w-4"
+                                    className="mt-0.5 h-4 w-4"
                                     checked={debugShowJson}
                                     onChange={(e) => setDebugShowJson(e.target.checked)}
                                 />
@@ -258,7 +257,7 @@ export function AdminSettingsSection() {
 
                     {/* Logo */}
                     <div className="space-y-2 rounded-xl border bg-card/60 p-3">
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <div className="text-sm font-semibold">
                                     {lang === "es" ? "Logo de la app" : "App logo"}
@@ -270,7 +269,7 @@ export function AdminSettingsSection() {
                                 </div>
                             </div>
 
-                            <label className="inline-flex cursor-pointer items-center justify-center rounded-md border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent">
+                            <label className="inline-flex w-full sm:w-auto cursor-pointer items-center justify-center rounded-md border bg-background px-3 py-2 text-xs font-medium hover:bg-accent">
                                 <span>
                                     {lang === "es" ? "Seleccionar logo" : "Select logo"}
                                 </span>
@@ -284,7 +283,7 @@ export function AdminSettingsSection() {
                         </div>
 
                         {hasLogo ? (
-                            <div className="mt-2 flex flex-col gap-3 md:items-start">
+                            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start">
                                 {logoPreview ? (
                                     <div className="h-16 w-16 overflow-hidden rounded-md border bg-background">
                                         <img
@@ -294,7 +293,7 @@ export function AdminSettingsSection() {
                                         />
                                     </div>
                                 ) : logoMediaItem ? (
-                                    <div className="w-32">
+                                    <div className="w-28 sm:w-32">
                                         <MediaCard
                                             item={logoMediaItem}
                                             onOpen={(it) => setSelectedMedia(it)}
@@ -312,7 +311,7 @@ export function AdminSettingsSection() {
                                                 : "New logo ready to be saved."}
                                         </span>
                                     ) : storedLogoUrl ? (
-                                        <span>
+                                        <span className="wrap-break-words">
                                             {lang === "es"
                                                 ? "Logo actual configurado. Haz clic para verlo."
                                                 : "Current logo configured. Click to view."}
@@ -329,9 +328,10 @@ export function AdminSettingsSection() {
                         )}
                     </div>
 
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
                         <Button
                             type="submit"
+                            className="w-full sm:w-auto"
                             disabled={saving || loading || !settings}
                         >
                             {saving
@@ -345,7 +345,7 @@ export function AdminSettingsSection() {
                     </div>
 
                     {settings ? (
-                        <div className="text-[11px] text-muted-foreground">
+                        <div className="text-[11px] text-muted-foreground wrap-break-words">
                             {lang === "es"
                                 ? `Última actualización: ${settings.updatedAt}`
                                 : `Last updated: ${settings.updatedAt}`}

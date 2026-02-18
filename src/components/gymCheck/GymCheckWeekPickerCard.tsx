@@ -47,47 +47,51 @@ export function GymCheckWeekPickerCard(props: Props) {
     } = props;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{lang === "es" ? "Semana" : "Week"}</CardTitle>
-                <CardDescription>
+        <Card className="w-full min-w-0">
+            <CardHeader className="min-w-0">
+                <CardTitle className="min-w-0 wrap-break-words">{lang === "es" ? "Semana" : "Week"}</CardTitle>
+                <CardDescription className="min-w-0 wrap-break-words">
                     {lang === "es"
                         ? "Elige semana. Si no existe rutina, puedes cambiar a otra."
                         : "Pick a week. If there’s no routine, you can switch weeks."}
                 </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
+            <CardContent className="min-w-0 space-y-3">
+                <div className="min-w-0 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
                     <label className="text-sm text-muted-foreground">{t("week.pickDateInWeek")}</label>
+
                     <input
-                        className="rounded-lg border mx-auto sm:mx-0 bg-background px-3 py-2 text-sm"
+                        className="h-10 w-full sm:w-auto min-w-0 rounded-lg border bg-background px-3 text-base sm:text-sm"
                         type="date"
                         value={weekDate}
                         onChange={(e) => onWeekDateChange(e.target.value)}
                         disabled={busy}
                     />
-                    <div className="grid gap-2 grid-cols-2 my-1 sm:my-0">
-                        <Button variant="outline" onClick={onPrevWeek} disabled={busy}>
+
+                    <div className="grid w-full sm:w-auto gap-2 grid-cols-2 my-1 sm:my-0">
+                        <Button className="w-full sm:w-auto" variant="outline" onClick={onPrevWeek} disabled={busy}>
                             {t("week.prev")}
                         </Button>
-                        <Button variant="outline" onClick={onNextWeek} disabled={busy}>
+                        <Button className="w-full sm:w-auto" variant="outline" onClick={onNextWeek} disabled={busy}>
                             {t("week.next")}
                         </Button>
                     </div>
-                    <Button className="mx-auto sm:mx-0" onClick={onUseWeek} disabled={busy}>
+
+                    <Button className="w-full sm:w-auto" onClick={onUseWeek} disabled={busy}>
                         {lang === "es" ? "Usar semana" : "Use week"}
                     </Button>
                 </div>
 
-                <div className="text-xs text-muted-foreground">
-                    {lang === "es" ? "Seleccionado" : "Selected"}: <span className="font-mono">{derivedWeekKey}</span> •{" "}
-                    {lang === "es" ? "Cargado" : "Loaded"}: <span className="font-mono">{runWeekKey}</span> •{" "}
-                    <span className="font-mono">{weekRangeLabel}</span>
+                <div className="min-w-0 text-xs text-muted-foreground wrap-break-words">
+                    {lang === "es" ? "Seleccionado" : "Selected"}:{" "}
+                    <span className="font-mono break-all">{derivedWeekKey}</span> •{" "}
+                    {lang === "es" ? "Cargado" : "Loaded"}: <span className="font-mono break-all">{runWeekKey}</span> •{" "}
+                    <span className="font-mono break-all">{weekRangeLabel}</span>
                 </div>
 
                 {routineExists ? (
-                    <div className="text-sm">
+                    <div className="min-w-0 text-sm wrap-break-words">
                         <span className="font-semibold">{formatNullable(routineTitle)}</span>{" "}
                         <span className="text-muted-foreground">• {formatNullable(routineSplit)}</span>
                     </div>

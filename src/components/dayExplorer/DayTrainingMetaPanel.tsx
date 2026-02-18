@@ -24,7 +24,7 @@ export function DayTrainingMetaPanel({
 }) {
     if (!training) {
         return (
-            <div className="rounded-2xl border bg-card p-4">
+            <div className="w-full min-w-0 rounded-2xl border bg-card p-4">
                 <div className="text-sm text-muted-foreground">{t("days.training.empty")}</div>
             </div>
         );
@@ -37,36 +37,39 @@ export function DayTrainingMetaPanel({
     const dayRpe = isFiniteNumber(training.dayEffortRpe) ? `${Math.round(training.dayEffortRpe)}` : null;
 
     return (
-        <div className="rounded-2xl border bg-card p-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="w-full min-w-0 rounded-2xl border bg-card p-4">
+            <div className="min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm font-semibold">{t("days.training.title")}</div>
 
-                <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs">
-                        <span aria-hidden="true">🏋️</span>
+                <div className="min-w-0 flex flex-wrap gap-2">
+                    <span className="inline-flex min-w-0 items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs">
+                        <span aria-hidden="true" className="shrink-0">🏋️</span>
                         <span className="text-muted-foreground">{t("days.training.sessions")}:</span>
                         <span className="font-mono tabular-nums text-foreground">{sessions.length}</span>
                     </span>
 
-                    <span className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs">
-                        <span aria-hidden="true">📎</span>
+                    <span className="inline-flex min-w-0 items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs">
+                        <span aria-hidden="true" className="shrink-0">📎</span>
                         <span className="text-muted-foreground">{t("days.training.mediaTotal")}:</span>
                         <span className="font-mono tabular-nums text-foreground">{mediaTotal}</span>
                     </span>
 
                     {source ? (
-                        <span className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs">
-                            <span aria-hidden="true">🔌</span>
-                            <span className="text-muted-foreground">{t("days.training.source")}:</span>
-                            <span className="font-mono text-foreground truncate max-w-[45]" title={source}>
+                        <span className="inline-flex min-w-0 items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs">
+                            <span aria-hidden="true" className="shrink-0">🔌</span>
+                            <span className="text-muted-foreground shrink-0">{t("days.training.source")}:</span>
+                            <span
+                                className="min-w-0 font-mono text-foreground truncate max-w-48 sm:max-w-[16rem] md:max-w-[20rem]"
+                                title={source}
+                            >
                                 {source}
                             </span>
                         </span>
                     ) : null}
 
                     {dayRpe ? (
-                        <span className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs">
-                            <span aria-hidden="true">🎯</span>
+                        <span className="inline-flex min-w-0 items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs">
+                            <span aria-hidden="true" className="shrink-0">🎯</span>
                             <span className="text-muted-foreground">{t("days.training.dayRpe")}:</span>
                             <span className="font-mono tabular-nums text-foreground">{dayRpe}</span>
                         </span>

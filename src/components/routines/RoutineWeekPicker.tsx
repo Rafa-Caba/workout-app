@@ -33,32 +33,35 @@ export function RoutineWeekPicker(props: {
     }
 
     return (
-        <div className="rounded-xl border bg-card p-4 space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-                <label className="text-sm">
-                    {t("week.pickDateInWeek")}{" "}
+        <div className="w-full min-w-0 rounded-xl border bg-card p-4 space-y-3">
+            <div className="min-w-0 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+                <label className="min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center text-sm">
+                    <span className="shrink-0">{t("week.pickDateInWeek")}</span>
                     <input
                         type="date"
-                        className="ml-2 rounded-md border bg-background px-3 py-2 text-sm"
+                        className="w-full sm:w-auto rounded-md border bg-background px-3 py-2 text-base sm:text-sm"
                         value={props.weekDate}
                         onChange={(e) => props.setWeekDate(e.target.value)}
                     />
                 </label>
 
-                <Button variant="outline" onClick={goPrevWeek} disabled={props.busy}>
-                    {t("week.prev")}
-                </Button>
-                <Button variant="outline" onClick={goNextWeek} disabled={props.busy}>
-                    {t("week.next")}
-                </Button>
+                <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+                    <Button variant="outline" onClick={goPrevWeek} disabled={props.busy} className="w-full sm:w-auto">
+                        {t("week.prev")}
+                    </Button>
+                    <Button variant="outline" onClick={goNextWeek} disabled={props.busy} className="w-full sm:w-auto">
+                        {t("week.next")}
+                    </Button>
+                </div>
 
-                <Button onClick={props.onLoadWeek} disabled={props.busy}>
+                <Button onClick={props.onLoadWeek} disabled={props.busy} className="w-full sm:w-auto">
                     {t("routines.useWeek")}
                 </Button>
 
-                <span className="text-xs text-muted-foreground">
+                <div className="min-w-0 text-xs text-muted-foreground wrap-break-words">
                     {t("routines.selected")}: <span className="font-mono">{props.derivedWeekKey}</span> •{" "}
-                    {weekRangeLabel} • {t("week.loaded")}: <span className="font-mono">{props.runWeekKey}</span>{" "}
+                    <span className="font-mono">{weekRangeLabel}</span> • {t("week.loaded")}:{" "}
+                    <span className="font-mono">{props.runWeekKey}</span>{" "}
                     <Button
                         variant="ghost"
                         className="h-8 px-2"
@@ -67,7 +70,7 @@ export function RoutineWeekPicker(props: {
                     >
                         (sync)
                     </Button>
-                </span>
+                </div>
             </div>
         </div>
     );

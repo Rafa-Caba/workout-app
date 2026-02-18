@@ -114,15 +114,15 @@ export function TrendsPage() {
     const last = points.length ? points[points.length - 1] : null;
 
     return (
-        <div className="space-y-6">
+        <div className="px-4 sm:px-0 space-y-6">
             <PageHeader title={t("pages.trends.title")} subtitle={t("pages.trends.subtitle")} />
 
             <div className="rounded-xl border bg-card p-4 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                    <label className="text-sm">
-                        {t("trends.fromWeek")}{" "}
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+                    <label className="text-sm w-full sm:w-auto">
+                        <span className="block sm:inline">{t("trends.fromWeek")}</span>{" "}
                         <input
-                            className="ml-2 rounded-md border bg-background px-3 py-2 text-sm"
+                            className="mt-1 sm:mt-0 sm:ml-2 w-full sm:w-44 h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
                             value={fromWeek}
                             onChange={(e) => setFromWeek(e.target.value)}
                             placeholder="YYYY-W##"
@@ -132,10 +132,10 @@ export function TrendsPage() {
                         />
                     </label>
 
-                    <label className="text-sm">
-                        {t("trends.toWeek")}{" "}
+                    <label className="text-sm w-full sm:w-auto">
+                        <span className="block sm:inline">{t("trends.toWeek")}</span>{" "}
                         <input
-                            className="ml-2 rounded-md border bg-background px-3 py-2 text-sm"
+                            className="mt-1 sm:mt-0 sm:ml-2 w-full sm:w-44 h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
                             value={toWeek}
                             onChange={(e) => setToWeek(e.target.value)}
                             placeholder="YYYY-W##"
@@ -145,7 +145,7 @@ export function TrendsPage() {
                         />
                     </label>
 
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground wrap-break-words">
                         {t("week.loaded")}:{" "}
                         <span className="font-mono">{runFrom || "—"}</span> →{" "}
                         <span className="font-mono">{runTo || "—"}</span>
@@ -172,8 +172,8 @@ export function TrendsPage() {
                 ) : null}
 
                 {query.isSuccess && points.length > 0 ? (
-                    <div className="h-80">
-                        <ResponsiveContainer width="100%" height={320}>
+                    <div className="h-[75] sm:h-80">
+                        <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={chartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="weekKey" />

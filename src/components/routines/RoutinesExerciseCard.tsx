@@ -93,15 +93,13 @@ export function RoutinesExerciseCard({
     return (
         <div
             className={cn(
-                "rounded-xl border p-4 space-y-4 transition-colors shadow-sm",
-                hasMovementMapping
-                    ? "border-primary/30 bg-primary/5"
-                    : "border-primary/30 bg-primary/5"
+                "w-full min-w-0 rounded-xl border p-4 space-y-4 transition-colors shadow-sm",
+                hasMovementMapping ? "border-primary/30 bg-primary/5" : "border-primary/30 bg-primary/5"
             )}
         >
             {/* Header ejercicio + botón eliminar */}
-            <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 flex flex-wrap items-center gap-2">
                     <div className="text-sm font-medium">
                         {t("routines.exercise")} #{idx + 1}
                     </div>
@@ -111,15 +109,18 @@ export function RoutinesExerciseCard({
                     </span>
 
                     {hasMovementMapping && exercise.movementName ? (
-                        <span className="inline-flex items-center rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[11px] text-accent-foreground">
-                            {lang === "es" ? "Catálogo" : "Catalog"} · {exercise.movementName}
+                        <span className="inline-flex max-w-full items-center rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[11px] text-accent-foreground">
+                            <span className="truncate">
+                                {lang === "es" ? "Catálogo" : "Catalog"} · {exercise.movementName}
+                            </span>
                         </span>
                     ) : null}
                 </div>
 
                 <Button
+                    type="button"
                     variant="outline"
-                    className="h-8 px-3 text-xs"
+                    className="h-9 w-full sm:w-auto px-3 text-xs whitespace-nowrap"
                     onClick={onRemove}
                     disabled={busy}
                 >
@@ -130,10 +131,8 @@ export function RoutinesExerciseCard({
             {/* Campos principales */}
             <div className="grid gap-3 md:grid-cols-2">
                 {/* Movement selector */}
-                <div className="space-y-1 md:col-span-2">
-                    <label className="text-xs font-medium">
-                        {lang === "es" ? "Movimiento" : "Movement"}
-                    </label>
+                <div className="space-y-1 md:col-span-2 min-w-0">
+                    <label className="text-xs font-medium">{lang === "es" ? "Movimiento" : "Movement"}</label>
 
                     <select
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -171,7 +170,7 @@ export function RoutinesExerciseCard({
                     </select>
 
                     {exercise.movementName ? (
-                        <div className="text-[11px] text-muted-foreground">
+                        <div className="text-[11px] text-muted-foreground wrap-break-words">
                             {lang === "es" ? "Snapshot:" : "Snapshot:"}{" "}
                             <span className="font-mono">{exercise.movementName}</span>
                         </div>
@@ -179,10 +178,8 @@ export function RoutinesExerciseCard({
                 </div>
 
                 {/* Name (editable) */}
-                <div className="space-y-1">
-                    <label className="text-xs font-medium">
-                        {t("routines.exName")}
-                    </label>
+                <div className="space-y-1 min-w-0">
+                    <label className="text-xs font-medium">{t("routines.exName")}</label>
                     <input
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                         value={exercise.name}
@@ -192,10 +189,8 @@ export function RoutinesExerciseCard({
                     />
                 </div>
 
-                <div className="space-y-1">
-                    <label className="text-xs font-medium">
-                        {t("routines.exNotes")}
-                    </label>
+                <div className="space-y-1 min-w-0">
+                    <label className="text-xs font-medium">{t("routines.exNotes")}</label>
                     <input
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                         value={exercise.notes ?? ""}
@@ -206,10 +201,8 @@ export function RoutinesExerciseCard({
                 </div>
 
                 {/* Sets / Reps / RPE / Load */}
-                <div className="space-y-1">
-                    <label className="text-xs font-medium">
-                        {t("routines.sets")}
-                    </label>
+                <div className="space-y-1 min-w-0">
+                    <label className="text-xs font-medium">{t("routines.sets")}</label>
                     <input
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                         value={exercise.sets ?? ""}
@@ -220,10 +213,8 @@ export function RoutinesExerciseCard({
                     />
                 </div>
 
-                <div className="space-y-1">
-                    <label className="text-xs font-medium">
-                        {t("routines.reps")}
-                    </label>
+                <div className="space-y-1 min-w-0">
+                    <label className="text-xs font-medium">{t("routines.reps")}</label>
                     <input
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                         value={exercise.reps ?? ""}
@@ -233,10 +224,8 @@ export function RoutinesExerciseCard({
                     />
                 </div>
 
-                <div className="space-y-1">
-                    <label className="text-xs font-medium">
-                        {lang === "es" ? "RPE (planeado)" : "Planned RPE"}
-                    </label>
+                <div className="space-y-1 min-w-0">
+                    <label className="text-xs font-medium">{lang === "es" ? "RPE (planeado)" : "Planned RPE"}</label>
                     <input
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                         value={exercise.rpe ?? ""}
@@ -247,10 +236,8 @@ export function RoutinesExerciseCard({
                     />
                 </div>
 
-                <div className="space-y-1">
-                    <label className="text-xs font-medium">
-                        {t("routines.load")}
-                    </label>
+                <div className="space-y-1 min-w-0">
+                    <label className="text-xs font-medium">{t("routines.load")}</label>
                     <input
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                         value={exercise.load ?? ""}
@@ -266,15 +253,11 @@ export function RoutinesExerciseCard({
                 title={t("routines.exerciseAttachments")}
                 emptyText={t("routines.noAttachmentsToLink")}
                 hint={t("routines.attachmentsHint")}
-                uploadAndAttachLabel={
-                    lang === "es" ? "Seleccionar archivo(s)" : "Select file(s)"
-                }
+                uploadAndAttachLabel={lang === "es" ? "Seleccionar archivo(s)" : "Select file(s)"}
                 attachmentOptions={attachmentOptions}
                 selectedIds={selectedIds}
                 pendingFiles={pendingFiles}
-                onPickFiles={(files) =>
-                    onPickFiles(Array.isArray(files) ? files : [])
-                }
+                onPickFiles={(files) => onPickFiles(Array.isArray(files) ? files : [])}
                 onRemovePending={onRemovePending}
                 busy={isThisUploading}
                 disabled={busy}

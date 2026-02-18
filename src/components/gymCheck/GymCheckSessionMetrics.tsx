@@ -1,8 +1,6 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 
-// type TFn = (key: string) => string;
-
 export type GymCheckSessionMetricsProps = {
     t: (key: any) => string;
     lang: "es" | "en";
@@ -59,17 +57,19 @@ export function GymCheckSessionMetrics(props: GymCheckSessionMetricsProps) {
                     : "Create real session with done exercises";
 
     return (
-        <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="w-full min-w-0 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-start sm:justify-end gap-2">
             <Button
+                className="w-full sm:w-auto"
                 variant="outline"
                 onClick={onSyncToLoadedWeek}
                 disabled={busy}
                 title={lang === "es" ? "Sincronizar selector con semana cargada" : "Sync picker to loaded week"}
             >
-                {(lang === "es" ? "Sync semana" : "Sync week")}
+                {lang === "es" ? "Sync semana" : "Sync week"}
             </Button>
 
             <Button
+                className="w-full sm:w-auto"
                 variant="secondary"
                 onClick={onSaveGymCheckToDb}
                 disabled={busy || !routineExists}
@@ -78,11 +78,17 @@ export function GymCheckSessionMetrics(props: GymCheckSessionMetricsProps) {
                 {lang === "es" ? "Guardar (semana)" : "Save (week)"}
             </Button>
 
-            <Button onClick={onCreateRealSession} disabled={!canCreateOrUpdate} title={realSessionTitle}>
+            <Button
+                className="w-full sm:w-auto"
+                onClick={onCreateRealSession}
+                disabled={!canCreateOrUpdate}
+                title={realSessionTitle}
+            >
                 {realSessionLabel}
             </Button>
 
             <Button
+                className="w-full sm:w-auto"
                 variant="secondary"
                 onClick={onResetWeek}
                 disabled={busy}

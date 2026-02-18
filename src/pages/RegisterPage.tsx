@@ -49,19 +49,19 @@ export function RegisterPage() {
     };
 
     return (
-        <div className="mx-auto max-w-md space-y-4">
+        <div className="mx-auto w-full max-w-md px-4 py-6 sm:px-0 sm:py-10 space-y-4">
             <div className="space-y-1">
-                <h1 className="text-2xl font-semibold">Crear cuenta</h1>
+                <h1 className="text-2xl font-semibold tracking-tight">Crear cuenta</h1>
                 <p className="text-sm text-muted-foreground">
                     Registrar vía <span className="font-mono">POST /api/auth/register</span>
                 </p>
             </div>
 
-            <form onSubmit={form.handleSubmit(onSubmit)} className="rounded-xl border bg-card p-4 space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="rounded-xl border bg-card p-4 sm:p-6 space-y-4">
                 <div className="space-y-1">
                     <label className="text-sm font-medium">Nombre</label>
                     <input
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                        className="w-full h-11 rounded-md border bg-background px-3 text-sm"
                         placeholder="Tu nombre"
                         autoComplete="name"
                         {...form.register("name")}
@@ -74,7 +74,7 @@ export function RegisterPage() {
                 <div className="space-y-1">
                     <label className="text-sm font-medium">Email</label>
                     <input
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                        className="w-full h-11 rounded-md border bg-background px-3 text-sm"
                         placeholder="tu@email.com"
                         autoComplete="email"
                         {...form.register("email")}
@@ -88,7 +88,7 @@ export function RegisterPage() {
                     <label className="text-sm font-medium">Contraseña</label>
                     <input
                         type="password"
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                        className="w-full h-11 rounded-md border bg-background px-3 text-sm"
                         placeholder="Mínimo 8 caracteres"
                         autoComplete="new-password"
                         {...form.register("password")}
@@ -100,7 +100,10 @@ export function RegisterPage() {
 
                 <div className="space-y-1">
                     <label className="text-sm font-medium">Sexo (opcional)</label>
-                    <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" {...form.register("sex")}>
+                    <select
+                        className="w-full h-11 rounded-md border bg-background px-3 text-sm"
+                        {...form.register("sex")}
+                    >
                         <option value="">Prefiero no decir</option>
                         <option value="male">Masculino</option>
                         <option value="female">Femenino</option>
@@ -111,11 +114,11 @@ export function RegisterPage() {
                     )}
                 </div>
 
-                <Button type="submit" disabled={registerMutation.isPending} className="w-full">
+                <Button type="submit" disabled={registerMutation.isPending} className="w-full h-11">
                     {registerMutation.isPending ? "Creando..." : "Crear cuenta"}
                 </Button>
 
-                <div className="pt-2 border-t">
+                <div className="pt-3 border-t">
                     <p className="text-sm text-muted-foreground">
                         Tiene cuenta?{" "}
                         <Link to="/login" className="underline underline-offset-4">

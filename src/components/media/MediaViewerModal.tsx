@@ -113,7 +113,7 @@ export function MediaViewerModal({
 
     return (
         <div
-            className="fixed inset-0 z-50"
+            className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden"
             role="dialog"
             aria-modal="true"
             onMouseDown={(e) => {
@@ -122,22 +122,22 @@ export function MediaViewerModal({
         >
             <div className="absolute inset-0 bg-black/80" />
 
-            <div className="absolute inset-0 p-4 md:p-8 flex items-center justify-center">
-                <div className="w-full max-w-5xl rounded-2xl border bg-background shadow-xl overflow-hidden">
+            <div className="relative min-h-full p-3 sm:p-4 md:p-8 flex items-start sm:items-center justify-center">
+                <div className="w-full max-w-5xl rounded-2xl border bg-background shadow-xl overflow-hidden max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] flex flex-col">
                     {/* Header */}
-                    <div className="flex w-full flex-col md:flex-row md:items-center items-start justify-between gap-3 p-4 border-b">
+                    <div className="flex w-full min-w-0 flex-col md:flex-row md:items-center items-start justify-between gap-3 p-4 border-b">
                         {/* Left: file + meta */}
                         <div className="flex-1 min-w-0 w-full">
                             <div className="text-sm font-semibold truncate max-w-full" title={fileName}>
                                 {fileName}
                             </div>
 
-                            <div className="text-xs text-muted-foreground flex flex-wrap gap-2">
+                            <div className="min-w-0 text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-1">
                                 <span className="font-mono">{inferredType}</span>
                                 {item.createdAt ? <span className="font-mono">{item.createdAt}</span> : null}
                                 {item.date ? <span className="font-mono">{item.date}</span> : null}
                                 {item.sessionType ? <span className="font-mono">{item.sessionType}</span> : null}
-                                {item.source ? <span className="font-mono">src:{item.source}</span> : null}
+                                {item.source ? <span className="font-mono break-all">src:{item.source}</span> : null}
                             </div>
                         </div>
 
@@ -153,27 +153,38 @@ export function MediaViewerModal({
                         </div>
                     </div>
 
-                    {/* Viewer */}
-                    <div className="bg-black/5">
-                        <div className="w-full aspect-video flex items-center justify-center">
-                            {inferredType === "image" ? (
-                                <img src={url} alt={fileName} className="max-h-[75vh] w-auto object-contain" />
-                            ) : inferredType === "video" ? (
-                                <video src={url} className="max-h-[75vh] w-full object-contain" controls />
-                            ) : (
-                                <div className="p-8 text-center space-y-3">
-                                    <div className="text-sm text-muted-foreground">{t("media.open")}</div>
-                                    <a className="underline break-all" href={url} target="_blank" rel="noreferrer">
-                                        {url}
-                                    </a>
-                                </div>
-                            )}
+                    {/* Scrollable body */}
+                    <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+                        {/* Viewer */}
+                        <div className="bg-black/5">
+                            <div className="w-full aspect-video flex items-center justify-center">
+                                {inferredType === "image" ? (
+                                    <img
+                                        src={url}
+                                        alt={fileName}
+                                        className="max-h-[60vh] sm:max-h-[75vh] w-auto max-w-full object-contain"
+                                    />
+                                ) : inferredType === "video" ? (
+                                    <video
+                                        src={url}
+                                        className="max-h-[60vh] sm:max-h-[75vh] w-full object-contain"
+                                        controls
+                                    />
+                                ) : (
+                                    <div className="p-6 sm:p-8 text-center space-y-3">
+                                        <div className="text-sm text-muted-foreground">{t("media.open")}</div>
+                                        <a className="underline break-all" href={url} target="_blank" rel="noreferrer">
+                                            {url}
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Meta */}
-                    <div className="p-4 border-t">
-                        <JsonDetails title="Meta (JSON)" data={item.meta ?? null} />
+                        {/* Meta */}
+                        <div className="p-4 border-t">
+                            <JsonDetails title="Meta (JSON)" data={item.meta ?? null} />
+                        </div>
                     </div>
                 </div>
             </div>

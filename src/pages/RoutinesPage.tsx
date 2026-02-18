@@ -801,15 +801,6 @@ export function RoutinesPage() {
     const isActiveTab = statusFilter === "active";
     const isArchivedTab = statusFilter === "archived";
 
-    // function statusTabClass(active: boolean): string {
-    //     return [
-    //         "h-9 px-3 rounded-full border text-sm transition-colors",
-    //         active
-    //             ? "bg-foreground text-background border-foreground shadow-sm"
-    //             : "bg-background text-muted-foreground border-border hover:bg-accent/60",
-    //     ].join(" ");
-    // }
-
     const statusTabClass = (active: boolean) =>
         cn(
             "h-9 px-3 rounded-md border text-sm inline-flex items-center gap-2 transition-colors",
@@ -819,7 +810,7 @@ export function RoutinesPage() {
         );
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5 sm:space-y-6">
             <PageHeader
                 title={t("routines.title")}
                 subtitle={
@@ -827,57 +818,62 @@ export function RoutinesPage() {
                         ? `${t("routines.subtitle")} • ${toStatusLabel(status as any, lang)} • ${weekRangeLabel}`
                         : t("routines.subtitle")
                 }
-                right={<RoutinesModeToggle mode={mode} busy={busy} t={t} onModeChange={setMode} />}
+                right={
+                    <div className="w-full sm:w-auto">
+                        <RoutinesModeToggle mode={mode} busy={busy} t={t} onModeChange={setMode} />
+                    </div>
+                }
             />
 
             {/* Status tabs (Activas/Archivadas) */}
-            <div className="rounded-xl border bg-card p-3 flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-3">
+            <div className="rounded-xl border bg-card p-3 sm:p-4 flex flex-col gap-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                     <div className="text-sm font-medium">
                         {lang === "es" ? "Rutinas" : "Routines"}
                     </div>
 
-                    <div className="flex gap-2">
-                        <button
-                            type="button"
-                            className={statusTabClass(isActiveTab)}
-                            disabled={busy}
-                            onClick={() => setStatusFilter("active")}
-                        >
-                            {lang === "es" ? "Activas" : "Active"}
-                        </button>
+                    {/* Mobile: allow wrap/scroll if needed */}
+                    <div className="-mx-1 px-1 overflow-x-auto">
+                        <div className="flex w-max sm:w-auto gap-2">
+                            <button
+                                type="button"
+                                className={statusTabClass(isActiveTab)}
+                                disabled={busy}
+                                onClick={() => setStatusFilter("active")}
+                            >
+                                {lang === "es" ? "Activas" : "Active"}
+                            </button>
 
-                        <button
-                            type="button"
-                            className={statusTabClass(isArchivedTab)}
-                            disabled={busy}
-                            onClick={() => setStatusFilter("archived")}
-                        >
-                            {lang === "es" ? "Archivadas" : "Archived"}
-                        </button>
+                            <button
+                                type="button"
+                                className={statusTabClass(isArchivedTab)}
+                                disabled={busy}
+                                onClick={() => setStatusFilter("archived")}
+                            >
+                                {lang === "es" ? "Archivadas" : "Archived"}
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div className="text-xs text-muted-foreground">
                         {listQuery.isFetching
                             ? lang === "es"
                                 ? "Cargando semanas..."
                                 : "Loading weeks..."
                             : lang === "es"
-                                ? `Mostrando ${weeksList.length} semana(s) ${statusFilter === "active" ? "activas" : "archivadas"
-                                }`
+                                ? `Mostrando ${weeksList.length} semana(s) ${statusFilter === "active" ? "activas" : "archivadas"}`
                                 : `Showing ${weeksList.length} ${statusFilter} week(s)`}
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
                         <div className="text-xs font-medium">
                             {lang === "es" ? "Saltar a semana:" : "Jump to week:"}
                         </div>
 
                         <select
-                            className="h-9 rounded-md border bg-background px-3 text-sm"
+                            className="h-9 w-full sm:w-auto rounded-md border bg-background px-3 text-sm"
                             value={runWeekKey}
                             disabled={busy || listQuery.isFetching || weeksList.length === 0}
                             onChange={(e) => {

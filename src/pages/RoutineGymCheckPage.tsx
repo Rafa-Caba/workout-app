@@ -608,7 +608,7 @@ export function RoutineGymCheckPage() {
     }
 
     return (
-        <div className="space-y-4 md:space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             <PageHeader
                 title="Gym Check"
                 subtitle={
@@ -617,18 +617,20 @@ export function RoutineGymCheckPage() {
                         : "Daily routine checklist + device metrics + per-exercise media"
                 }
                 right={
-                    <GymCheckSessionMetrics
-                        t={t}
-                        lang={lang}
-                        busy={busy}
-                        routineExists={Boolean(routine)}
-                        doneCount={doneCount}
-                        gymCheckSessionExists={gymCheckSessionExists}
-                        onSyncToLoadedWeek={syncToLoadedWeek}
-                        onSaveGymCheckToDb={onSaveGymCheckToDb}
-                        onCreateRealSession={onCreateRealSession}
-                        onResetWeek={resetWeek}
-                    />
+                    <div className="w-full sm:w-auto">
+                        <GymCheckSessionMetrics
+                            t={t}
+                            lang={lang}
+                            busy={busy}
+                            routineExists={Boolean(routine)}
+                            doneCount={doneCount}
+                            gymCheckSessionExists={gymCheckSessionExists}
+                            onSyncToLoadedWeek={syncToLoadedWeek}
+                            onSaveGymCheckToDb={onSaveGymCheckToDb}
+                            onCreateRealSession={onCreateRealSession}
+                            onResetWeek={resetWeek}
+                        />
+                    </div>
                 }
             />
 
@@ -655,7 +657,12 @@ export function RoutineGymCheckPage() {
 
             {routine ? (
                 <div className="space-y-4">
-                    <GymCheckDayTabs items={dayTabItems} activeDay={activeDay} onSelectDay={setActiveDay} />
+                    {/* Mobile: allow horizontal scrolling for day tabs */}
+                    <div className="-mx-2 px-2 overflow-x-auto">
+                        <div className="min-w-max">
+                            <GymCheckDayTabs items={dayTabItems} activeDay={activeDay} onSelectDay={setActiveDay} />
+                        </div>
+                    </div>
 
                     {!hasExercises ? (
                         <EmptyState

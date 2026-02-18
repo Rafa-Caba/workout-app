@@ -308,23 +308,23 @@ export function MovementsPage() {
                         : "Catalog for the routines exercise selector."
                 }
                 right={
-                    <div className="flex items-center gap-2">
-                        <label className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm bg-background">
+                    <div className="flex w-full sm:w-auto items-center gap-2">
+                        <label className="w-full sm:w-auto inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm bg-background">
                             <input
                                 type="checkbox"
                                 checked={activeOnly}
                                 onChange={(e) => setActiveOnly(e.target.checked)}
                                 disabled={busy}
                             />
-                            <span>{lang === "es" ? "Solo activos" : "Active only"}</span>
+                            <span className="whitespace-nowrap">{lang === "es" ? "Solo activos" : "Active only"}</span>
                         </label>
                     </div>
                 }
             />
 
             {/* Crear + Buscar */}
-            <div className="rounded-xl border bg-card p-4 space-y-3">
-                <div className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-xl border bg-card p-3 sm:p-4 space-y-3">
+                <div className="grid gap-4 md:grid-cols-3">
                     <div className="md:col-span-1">
                         <label className="text-xs font-medium">
                             {lang === "es" ? "Buscar" : "Search"}
@@ -338,14 +338,14 @@ export function MovementsPage() {
                         />
                     </div>
 
-                    <div className="md:col-span-2 space-y-2">
+                    <div className="md:col-span-2 space-y-3">
                         <div>
                             <label className="text-xs font-medium">
                                 {lang === "es" ? "Nuevo movimiento" : "New movement"}
                             </label>
-                            <div className="mt-1 grid gap-2 md:grid-cols-4">
+                            <div className="mt-1 grid gap-2 sm:grid-cols-2 md:grid-cols-4">
                                 <input
-                                    className="rounded-md border bg-background px-3 py-2 text-sm md:col-span-2"
+                                    className="rounded-md border bg-background px-3 py-2 text-sm sm:col-span-2 md:col-span-2"
                                     value={createForm.name}
                                     onChange={(e) =>
                                         setCreateForm((p) => ({ ...p, name: e.target.value }))
@@ -389,8 +389,8 @@ export function MovementsPage() {
                         </div>
 
                         {/* Campo de imagen (Create) */}
-                        <div className="grid gap-2 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
-                            <div className="flex items-center gap-2">
+                        <div className="grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <input
                                     ref={createImageInputRef}
                                     type="file"
@@ -421,7 +421,7 @@ export function MovementsPage() {
                             </div>
 
                             {createImagePreview && isImageFile(createImageFile) ? (
-                                <div className="mt-2 md:mt-0 flex items-center gap-2">
+                                <div className="flex items-center gap-2">
                                     <div className="text-xs text-muted-foreground">
                                         {lang === "es" ? "Vista previa" : "Preview"}
                                     </div>
@@ -434,7 +434,7 @@ export function MovementsPage() {
                             ) : null}
                         </div>
 
-                        <div className="mt-2 flex items-center justify-between gap-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                             <label className="inline-flex items-center gap-2 text-sm">
                                 <input
                                     type="checkbox"
@@ -450,7 +450,7 @@ export function MovementsPage() {
                                 <span>{lang === "es" ? "Activo" : "Active"}</span>
                             </label>
 
-                            <Button className="h-9" onClick={onCreate} disabled={busy}>
+                            <Button className="h-9 w-full sm:w-auto" onClick={onCreate} disabled={busy}>
                                 {lang === "es" ? "Crear" : "Create"}
                             </Button>
                         </div>
@@ -481,7 +481,7 @@ export function MovementsPage() {
 
             {!empty ? (
                 <div className="rounded-xl border bg-card p-2 border-primary/40">
-                    <div className="divide-y grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {movements.map((m) => {
                             const isEditing = editingId === m.id;
                             const mediaItem = movementToMediaItem(m);
@@ -489,32 +489,32 @@ export function MovementsPage() {
                             return (
                                 <div
                                     key={m.id}
-                                    className="p-3 flex flex-col gap-2 md:flex-row md:items-start md:justify-between border rounded-2xl border-primary/40"
+                                    className="p-3 flex flex-col gap-3 border rounded-2xl border-primary/40"
                                 >
                                     <div className="min-w-0">
                                         {isEditing ? (
-                                            <div className="space-y-3 md:flex flex-col md:items-start md:gap-4">
-                                                <div className="flex flex-row items-center">
+                                            <div className="space-y-3">
+                                                <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                                                     {/* Columna izquierda: imagen + botones */}
-                                                    <div className="flex flex-col items-start gap-2 mr-2">
-                                                        {/* Preview actual (nueva o existente) */}
-                                                        {editImagePreview && isImageFile(editImageFile) ? (
-                                                            <img
-                                                                src={editImagePreview}
-                                                                alt="Movimiento"
-                                                                className="h-16 w-16 rounded-md border object-cover"
-                                                            />
-                                                        ) : mediaItem ? (
-                                                            <MediaCard
-                                                                item={mediaItem}
-                                                                onOpen={(it) => setSelectedMedia(it)}
-                                                                showMetaInfo={false}
-                                                                showTitle={false}
-                                                                className="w-18 md:w-17"
-                                                            />
-                                                        ) : null}
+                                                    <div className="flex flex-row sm:flex-col items-start gap-3">
+                                                        <div className="shrink-0">
+                                                            {editImagePreview && isImageFile(editImageFile) ? (
+                                                                <img
+                                                                    src={editImagePreview}
+                                                                    alt="Movimiento"
+                                                                    className="h-16 w-16 rounded-md border object-cover"
+                                                                />
+                                                            ) : mediaItem ? (
+                                                                <MediaCard
+                                                                    item={mediaItem}
+                                                                    onOpen={(it) => setSelectedMedia(it)}
+                                                                    showMetaInfo={false}
+                                                                    showTitle={false}
+                                                                    className="w-16"
+                                                                />
+                                                            ) : null}
+                                                        </div>
 
-                                                        {/* Botones de elegir / quitar imagen */}
                                                         <div className="flex flex-col gap-2">
                                                             <input
                                                                 ref={editImageInputRef}
@@ -546,8 +546,8 @@ export function MovementsPage() {
                                                         </div>
                                                     </div>
 
-                                                    {/* Columna derecha: inputs + acciones */}
-                                                    <div className="flex-1 space-y-2">
+                                                    {/* Columna derecha: inputs */}
+                                                    <div className="flex-1 min-w-0 space-y-2">
                                                         <div className="grid gap-2 md:grid-cols-3">
                                                             <input
                                                                 className="rounded-md border bg-background px-3 py-2 text-sm md:col-span-2"
@@ -573,7 +573,9 @@ export function MovementsPage() {
                                                                     }
                                                                     disabled={busy}
                                                                 />
-                                                                <span>{lang === "es" ? "Activo" : "Active"}</span>
+                                                                <span className="whitespace-nowrap">
+                                                                    {lang === "es" ? "Activo" : "Active"}
+                                                                </span>
                                                             </label>
                                                         </div>
 
@@ -603,13 +605,12 @@ export function MovementsPage() {
                                                                 placeholder={lang === "es" ? "Equipo" : "Equipment"}
                                                             />
                                                         </div>
-
-
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-2">
+
+                                                <div className="flex flex-col sm:flex-row gap-2">
                                                     <Button
-                                                        className="h-9"
+                                                        className="h-9 w-full sm:w-auto"
                                                         onClick={onSaveEdit}
                                                         disabled={busy}
                                                     >
@@ -617,7 +618,7 @@ export function MovementsPage() {
                                                     </Button>
                                                     <Button
                                                         variant="outline"
-                                                        className="h-9"
+                                                        className="h-9 w-full sm:w-auto"
                                                         onClick={cancelEdit}
                                                         disabled={busy}
                                                     >
@@ -634,11 +635,11 @@ export function MovementsPage() {
                                                         onOpen={(it) => setSelectedMedia(it)}
                                                         showMetaInfo={false}
                                                         showTitle={false}
-                                                        className="w-16"
+                                                        className="w-16 shrink-0"
                                                     />
                                                 ) : null}
 
-                                                <div>
+                                                <div className="min-w-0">
                                                     <div className="text-sm font-semibold truncate">
                                                         {m.name}{" "}
                                                         {!m.isActive ? (
@@ -648,7 +649,7 @@ export function MovementsPage() {
                                                         ) : null}
                                                     </div>
 
-                                                    <div className="text-xs text-muted-foreground">
+                                                    <div className="text-xs text-muted-foreground wrap-break-words">
                                                         {(m.muscleGroup ?? "").trim()
                                                             ? `${lang === "es" ? "Músculo" : "Muscle"}: ${m.muscleGroup}`
                                                             : lang === "es"
@@ -671,10 +672,10 @@ export function MovementsPage() {
                                     </div>
 
                                     {!isEditing ? (
-                                        <div className="flex flex-wrap gap-2">
+                                        <div className="flex flex-col sm:flex-row sm:justify-end flex-wrap gap-2">
                                             <Button
                                                 variant="outline"
-                                                className="h-9"
+                                                className="h-9 w-full sm:w-auto"
                                                 onClick={() => startEdit(m)}
                                                 disabled={busy}
                                             >
@@ -683,7 +684,7 @@ export function MovementsPage() {
 
                                             <Button
                                                 variant="outline"
-                                                className="h-9"
+                                                className="h-9 w-full sm:w-auto"
                                                 onClick={() => onToggleActive(m)}
                                                 disabled={busy}
                                             >

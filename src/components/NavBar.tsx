@@ -145,14 +145,14 @@ export function NavBar() {
     }, [appName]);
 
     return (
-        <header className="sticky top-1 z-40 border-b bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/70">
-            <div className="mx-auto max-w-6xl px-4 py-3">
+        <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/70">
+            <div className="mx-auto max-w-6xl px-3 sm:px-4 py-3">
                 {/* Row 1: Brand + acciones */}
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start sm:items-center justify-between gap-3">
                     {/* Branding */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                         {logoUrl ? (
-                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border bg-background">
+                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border bg-background shrink-0">
                                 <img
                                     src={logoUrl}
                                     alt={appName}
@@ -161,23 +161,23 @@ export function NavBar() {
                                 />
                             </div>
                         ) : (
-                            <div className="flex h-9 w-9 items-center justify-center rounded-xl border bg-background text-xs font-semibold">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl border bg-background text-xs font-semibold shrink-0">
                                 {appName.slice(0, 2).toUpperCase()}
                             </div>
                         )}
 
-                        <div className="flex flex-col">
-                            <span className="text-sm font-semibold leading-tight">
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-semibold leading-tight truncate">
                                 {appName}
                             </span>
-                            <span className="text-xs text-muted-foreground leading-tight">
+                            <span className="text-xs text-muted-foreground leading-tight truncate">
                                 {appSubtitle}
                             </span>
                         </div>
                     </div>
 
                     {/* Controles derecha */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                         {/* Mobile nav burger */}
                         <div className="md:hidden">
                             <DropdownMenu>
@@ -263,9 +263,20 @@ export function NavBar() {
                         <Button
                             variant="outline"
                             onClick={toggleLang}
-                            className="whitespace-nowrap"
+                            className="whitespace-nowrap hidden sm:inline-flex"
                         >
                             {lang === "es" ? t("lang.english") : t("lang.spanish")}
+                        </Button>
+
+                        {/* Mobile: compact lang button */}
+                        <Button
+                            variant="outline"
+                            onClick={toggleLang}
+                            className="whitespace-nowrap sm:hidden h-9 px-3"
+                            aria-label={lang === "es" ? t("lang.english") : t("lang.spanish")}
+                            title={lang === "es" ? t("lang.english") : t("lang.spanish")}
+                        >
+                            {lang === "es" ? "EN" : "ES"}
                         </Button>
 
                         {accessToken ? (
@@ -274,7 +285,7 @@ export function NavBar() {
                                     <button
                                         type="button"
                                         className={[
-                                            "h-12 w-12 ml-2 rounded-full border bg-background overflow-hidden",
+                                            "h-11 w-11 sm:h-12 sm:w-12 ml-1 sm:ml-2 rounded-full border bg-background overflow-hidden",
                                             "grid place-items-center",
                                             "hover:bg-muted/60 transition",
                                         ].join(" ")}

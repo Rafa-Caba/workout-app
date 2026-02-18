@@ -38,47 +38,63 @@ export function RoutinesJsonEditor({
     routine,
 }: Props) {
     return (
-        <div className="rounded-xl border bg-card p-4 space-y-4">
-            <div className="flex items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold">{t("routines.putJsonTitle")}</h2>
-                <Button onClick={onSave} disabled={busy || !editor}>
+        <div className="w-full min-w-0 rounded-xl border bg-card p-4 space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="text-lg font-semibold wrap-break-words">{t("routines.putJsonTitle")}</h2>
+
+                <Button
+                    type="button"
+                    className="w-full sm:w-auto whitespace-nowrap"
+                    onClick={onSave}
+                    disabled={busy || !editor}
+                >
                     {isSaving ? t("routines.saving") : t("routines.savePut")}
                 </Button>
             </div>
 
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground wrap-break-words">
                 {t("routines.putOnlyHint")} <span className="font-mono">title</span>,{" "}
-                <span className="font-mono">split</span>,{" "}
-                <span className="font-mono">plannedDays</span>,{" "}
-                <span className="font-mono">meta</span>,{" "}
-                <span className="font-mono">day/days</span>.
+                <span className="font-mono">split</span>, <span className="font-mono">plannedDays</span>,{" "}
+                <span className="font-mono">meta</span>, <span className="font-mono">day/days</span>.
             </p>
 
-            <div className="rounded-xl border bg-background p-4 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                    <div>
-                        <div className="text-sm font-semibold">{t("routines.metaTitle")}</div>
-                        <div className="text-xs text-muted-foreground">{t("routines.metaHint")}</div>
+            <div className="w-full min-w-0 rounded-xl border bg-background p-4 space-y-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                        <div className="text-sm font-semibold wrap-break-words">{t("routines.metaTitle")}</div>
+                        <div className="text-xs text-muted-foreground wrap-break-words">{t("routines.metaHint")}</div>
                     </div>
 
-                    <Button variant="outline" className="h-9" disabled={busy} onClick={onApplyMeta}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="h-9 w-full sm:w-auto whitespace-nowrap"
+                        disabled={busy}
+                        onClick={onApplyMeta}
+                    >
                         {t("routines.applyMeta")}
                     </Button>
                 </div>
 
                 <textarea
-                    className="min-h-[30] w-full rounded-md border bg-background p-3 font-mono text-xs"
+                    className="min-h-[30] w-full rounded-md border bg-background p-3 font-mono text-xs sm:text-sm leading-relaxed"
                     value={metaEditor}
                     onChange={(e) => onMetaEditorChange(e.target.value)}
                     disabled={busy}
+                    spellCheck={false}
+                    autoCapitalize="off"
+                    autoCorrect="off"
                 />
             </div>
 
             <textarea
-                className="min-h-[55] w-full rounded-md border bg-background p-3 font-mono text-xs"
+                className="min-h-[55] w-full rounded-md border bg-background p-3 font-mono text-xs sm:text-sm leading-relaxed"
                 value={editor}
                 onChange={(e) => onEditorChange(e.target.value)}
                 disabled={busy}
+                spellCheck={false}
+                autoCapitalize="off"
+                autoCorrect="off"
             />
 
             {routine ? <JsonDetails title={t("routines.debugRawRoutine")} data={routine} /> : null}

@@ -68,7 +68,7 @@ export function RoutinesAdvancedActions({
             </summary>
 
             <div className="mt-3 space-y-3">
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
                     <div className="space-y-1">
                         <label className="text-sm font-medium">{t("routines.initTitle")}</label>
                         <input
@@ -108,16 +108,26 @@ export function RoutinesAdvancedActions({
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                    <Button onClick={onInitRoutine} disabled={initDisabled}>
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                    <Button onClick={onInitRoutine} disabled={initDisabled} className="w-full sm:w-auto">
                         {initLabel}
                     </Button>
 
-                    <Button variant="outline" onClick={() => onSetArchived(true)} disabled={busy || !hasRoutine || isArchived}>
+                    <Button
+                        variant="outline"
+                        onClick={() => onSetArchived(true)}
+                        disabled={busy || !hasRoutine || isArchived}
+                        className="w-full sm:w-auto"
+                    >
                         {t("routines.archive")}
                     </Button>
 
-                    <Button variant="outline" onClick={() => onSetArchived(false)} disabled={busy || !hasRoutine || !isArchived}>
+                    <Button
+                        variant="outline"
+                        onClick={() => onSetArchived(false)}
+                        disabled={busy || !hasRoutine || !isArchived}
+                        className="w-full sm:w-auto"
+                    >
                         {t("routines.unarchive")}
                     </Button>
                 </div>

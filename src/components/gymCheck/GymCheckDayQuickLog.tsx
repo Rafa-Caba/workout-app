@@ -15,17 +15,21 @@ export function GymCheckDayQuickLog(props: Props) {
     const { lang, busy, durationMin, notes, onChangeDuration, onChangeNotes } = props;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{lang === "es" ? "Registro rápido" : "Quick log"}</CardTitle>
+        <Card className="w-full min-w-0">
+            <CardHeader className="min-w-0">
+                <CardTitle className="min-w-0 wrap-break-words">
+                    {lang === "es" ? "Registro rápido" : "Quick log"}
+                </CardTitle>
             </CardHeader>
 
-            <CardContent className="space-y-3">
-                <div className="grid gap-3 md:grid-cols-2">
-                    <div className="space-y-1">
-                        <label className="text-sm font-medium">{lang === "es" ? "Duración (min)" : "Duration (min)"}</label>
+            <CardContent className="min-w-0 space-y-3">
+                <div className="min-w-0 grid gap-3 grid-cols-1 md:grid-cols-2">
+                    <div className="min-w-0 space-y-1">
+                        <label className="text-sm font-medium">
+                            {lang === "es" ? "Duración (min)" : "Duration (min)"}
+                        </label>
                         <input
-                            className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+                            className="h-10 w-full min-w-0 rounded-lg border bg-background px-3 text-base sm:text-sm outline-none focus:ring-2"
                             value={durationMin}
                             onChange={(e) => onChangeDuration(e.target.value)}
                             placeholder={lang === "es" ? "Ej. 75" : "e.g. 75"}
@@ -34,10 +38,10 @@ export function GymCheckDayQuickLog(props: Props) {
                         />
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="min-w-0 space-y-1">
                         <label className="text-sm font-medium">{lang === "es" ? "Notas (tuyas)" : "Your notes"}</label>
                         <input
-                            className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+                            className="h-10 w-full min-w-0 rounded-lg border bg-background px-3 text-base sm:text-sm outline-none focus:ring-2"
                             value={notes}
                             onChange={(e) => onChangeNotes(e.target.value)}
                             placeholder={lang === "es" ? "Notas rápidas..." : "Quick notes..."}
@@ -45,12 +49,6 @@ export function GymCheckDayQuickLog(props: Props) {
                         />
                     </div>
                 </div>
-
-                {/* <div className="text-xs text-muted-foreground">
-                    {lang === "es"
-                        ? "Esto se guarda localmente (offline). Puedes presionar Guardar para persistir en la base de datos."
-                        : "Saved locally (offline). Press Save to persist to the database."}
-                </div> */}
             </CardContent>
         </Card>
     );

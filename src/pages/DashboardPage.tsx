@@ -214,9 +214,7 @@ export function DashboardPage() {
                                         <div>
                                             {t("dashboard.training.duration")}{" "}
                                             <span className="text-foreground">
-                                                {secondsToHhMm(
-                                                    day.training.durationSeconds
-                                                )}
+                                                {secondsToHhMm(day.training.durationSeconds)}
                                             </span>
                                         </div>
                                         <div>
@@ -253,9 +251,7 @@ export function DashboardPage() {
                                                 {t("dashboard.sleep.total")}{" "}
                                                 <span className="text-foreground">
                                                     {day.sleep.totalMinutes
-                                                        ? minutesToHhMm(
-                                                            day.sleep.totalMinutes
-                                                        )
+                                                        ? minutesToHhMm(day.sleep.totalMinutes)
                                                         : "—"}
                                                 </span>
                                             </div>
@@ -325,9 +321,7 @@ export function DashboardPage() {
                                         <div>
                                             {t("dashboard.training.duration")}{" "}
                                             <span className="text-foreground">
-                                                {secondsToHhMm(
-                                                    week.training.durationSeconds
-                                                )}
+                                                {secondsToHhMm(week.training.durationSeconds)}
                                             </span>
                                         </div>
                                         <div>
@@ -444,7 +438,7 @@ export function DashboardPage() {
                         ) : null}
 
                         {media.length > 0 ? (
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                                 {media.map((m) => {
                                     const isImage = m.resourceType === "image";
 
@@ -463,7 +457,7 @@ export function DashboardPage() {
                                                 <img
                                                     src={m.url}
                                                     alt={m.publicId}
-                                                    className="h-24 w-full object-cover"
+                                                    className="h-24 w-full object-cover sm:h-24"
                                                     loading="lazy"
                                                 />
                                             ) : (
@@ -480,12 +474,7 @@ export function DashboardPage() {
                 </Card>
             </div>
 
-            {selected ? (
-                <MediaViewerModal
-                    item={selected}
-                    onClose={() => setSelected(null)}
-                />
-            ) : null}
+            {selected ? <MediaViewerModal item={selected} onClose={() => setSelected(null)} /> : null}
         </div>
     );
 }

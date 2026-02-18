@@ -115,9 +115,10 @@ export function RoutineMediaLightbox({
             }}
         >
             <div className="absolute inset-0 bg-black/80" />
-            <div className="absolute inset-0 p-4 md:p-8 flex items-center justify-center">
+
+            <div className="absolute inset-0 p-2 sm:p-4 md:p-8 flex items-center justify-center">
                 <div className="w-full max-w-5xl rounded-2xl border bg-background shadow-xl overflow-hidden">
-                    <div className="flex items-center justify-between gap-3 p-4 border-b">
+                    <div className="flex flex-col gap-3 p-4 border-b sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0">
                             <div className="text-sm font-semibold truncate" title={fileName}>
                                 {fileName}
@@ -130,12 +131,18 @@ export function RoutineMediaLightbox({
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                            <Button variant="outline" onClick={() => window.open(url, "_blank", "noreferrer")}>
+                        <div className="flex flex-col gap-2 shrink-0 w-full sm:w-auto sm:flex-row sm:items-center">
+                            <Button
+                                variant="outline"
+                                className="w-full sm:w-auto"
+                                onClick={() => window.open(url, "_blank", "noreferrer")}
+                            >
                                 {t("media.open")}
                             </Button>
-                            <Button onClick={onDownload}>Descargar</Button>
-                            <Button variant="outline" onClick={onClose}>
+                            <Button className="w-full sm:w-auto" onClick={onDownload}>
+                                Descargar
+                            </Button>
+                            <Button variant="outline" className="w-full sm:w-auto" onClick={onClose}>
                                 ✕
                             </Button>
                         </div>

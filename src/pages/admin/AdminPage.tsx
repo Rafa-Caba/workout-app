@@ -4,9 +4,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/I18nProvider";
 
-// 👇 Usa aquí tus sections reales.
-// Si por ahora sólo tienes AdminUsersPage / AdminSettingsPage,
-// puedes importarlas y usarlas igual.
 import { AdminUsersSection } from "@/sections/admin/AdminUsersSection";
 import { AdminSettingsSection } from "@/sections/admin/AdminSettingsSection";
 
@@ -16,6 +13,7 @@ function tabButtonClass(active: boolean) {
     return cn(
         "h-9 px-3 rounded-full border text-sm transition-colors",
         "flex items-center gap-2",
+        "w-full sm:w-auto justify-center",
         active
             ? "bg-primary text-primary-foreground shadow-sm"
             : "bg-card text-muted-foreground hover:bg-muted/70"
@@ -26,10 +24,7 @@ export function AdminPage() {
     const { t, lang } = useI18n();
     const [tab, setTab] = React.useState<AdminTab>("users");
 
-    const title =
-        lang === "es"
-            ? "Panel de administración"
-            : "Admin panel";
+    const title = lang === "es" ? "Panel de administración" : "Admin panel";
 
     const subtitle =
         lang === "es"
@@ -47,7 +42,7 @@ export function AdminPage() {
                         {lang === "es" ? "Secciones de administración" : "Admin sections"}
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid gap-2 sm:flex sm:flex-wrap sm:gap-2">
                         <Button
                             type="button"
                             variant="ghost"

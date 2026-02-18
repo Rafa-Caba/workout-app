@@ -13,15 +13,20 @@ type Props = {
 
 export function RoutinesModeToggle({ mode, busy, t, onModeChange }: Props) {
     return (
-        <div className="flex items-center gap-2">
+        <div className="w-full min-w-0 flex flex-col sm:flex-row sm:items-center gap-2">
             <Button
+                type="button"
+                className="w-full sm:w-auto whitespace-nowrap"
                 variant={mode === "form" ? "default" : "outline"}
                 onClick={() => onModeChange("form")}
                 disabled={busy}
             >
                 {t("routines.modeForm")}
             </Button>
+
             <Button
+                type="button"
+                className="w-full sm:w-auto whitespace-nowrap"
                 variant={mode === "json" ? "default" : "outline"}
                 onClick={() => onModeChange("json")}
                 disabled={busy}

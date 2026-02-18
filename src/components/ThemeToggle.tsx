@@ -19,18 +19,26 @@ export function ThemeToggle() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" title="Preferencias">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    title="Preferencias"
+                    className="touch-manipulation"
+                >
                     <Settings className="h-4 w-4" />
                 </Button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" className="w-72">
+            <DropdownMenuContent
+                align="end"
+                className="w-72 max-w-[calc(100vw-1.5rem)]"
+            >
                 <DropdownMenuLabel>Preferencias</DropdownMenuLabel>
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem
                     onClick={() => setMode(mode === "dark" ? "light" : "dark")}
-                    className="flex items-center justify-between"
+                    className="flex items-center justify-between touch-manipulation"
                 >
                     <span className="flex items-center gap-2">
                         {mode === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
@@ -41,7 +49,7 @@ export function ThemeToggle() {
 
                 <DropdownMenuItem
                     onClick={() => setLang(lang === "es" ? "en" : "es")}
-                    className="flex items-center justify-between"
+                    className="flex items-center justify-between touch-manipulation"
                 >
                     <span className="flex items-center gap-2">
                         <Languages className="h-4 w-4" />
@@ -56,9 +64,13 @@ export function ThemeToggle() {
                 {PALETTES.map((p) => {
                     const selected = palette === p.value;
                     return (
-                        <DropdownMenuItem key={p.value} onClick={() => setPalette(p.value)} className="flex items-center justify-between">
-                            <span>{p.label}</span>
-                            {selected ? <Check className="h-4 w-4" /> : null}
+                        <DropdownMenuItem
+                            key={p.value}
+                            onClick={() => setPalette(p.value)}
+                            className="flex items-center justify-between touch-manipulation"
+                        >
+                            <span className="min-w-0 truncate">{p.label}</span>
+                            {selected ? <Check className="h-4 w-4 shrink-0" /> : null}
                         </DropdownMenuItem>
                     );
                 })}

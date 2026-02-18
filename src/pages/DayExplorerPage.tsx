@@ -34,7 +34,7 @@ export function DayExplorerPage() {
 
     const summary = useDaySummary(date);
 
-    // ✅ IMPORTANT: hook now expects (date, enabled)
+    // IMPORTANT: hook now expects (date, enabled)
     const day = useWorkoutDay(date, Boolean(date));
 
     const isFetching = summary.isFetching || day.isFetching;
@@ -89,9 +89,11 @@ export function DayExplorerPage() {
                 </div>
             ) : null}
 
-            {/* ✅ JSON block governed by Settings toggle (showJson) via JsonDetails component */}
+            {/* JSON block governed by Settings toggle (showJson) via JsonDetails component */}
             {isFetching ? (
-                <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">{t("common.fetching")}</div>
+                <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
+                    {t("common.fetching")}
+                </div>
             ) : null}
 
             {errorForJson ? <JsonDetails title={t("days.debug.errorJsonTitle")} data={errorForJson} defaultOpen /> : null}

@@ -59,34 +59,34 @@ export function MediaCard({
             type="button"
             onClick={() => onOpen(item)}
             className={cx(
-                "text-left rounded-xl border bg-card overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full",
+                "w-full min-w-0 text-left rounded-xl border bg-card overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 className
             )}
             title={item.publicId ?? undefined}
         >
             {/* Preview */}
-            <div className="aspect-video bg-background flex items-center justify-center shrink-0">
+            <div className="aspect-video w-full min-w-0 bg-background flex items-center justify-center shrink-0 overflow-hidden">
                 {!url ? (
-                    <span className="text-xs text-muted-foreground">{t("media.noUrl")}</span>
+                    <span className="px-3 text-xs text-muted-foreground">{t("media.noUrl")}</span>
                 ) : isImage ? (
                     <img src={url} alt={title} className="h-full w-full object-cover" />
                 ) : isVideo ? (
                     <video src={url} className="h-full w-full object-cover" muted playsInline />
                 ) : (
-                    <span className="text-sm underline">{t("media.open")}</span>
+                    <span className="px-3 text-sm underline">{t("media.open")}</span>
                 )}
             </div>
 
             {/* Content area */}
-            <div className="p-3 space-y-1 flex-1">
+            <div className="min-w-0 flex-1 space-y-1 p-3 sm:p-4">
                 {showTitle ? (
-                    <div className="text-sm font-medium line-clamp-2" title={title}>
+                    <div className="min-w-0 text-sm font-medium leading-snug wrap-break-words line-clamp-2" title={title}>
                         {title}
                     </div>
                 ) : null}
 
                 {showMetaInfo ? (
-                    <div className="text-xs text-muted-foreground flex flex-wrap gap-2 line-clamp-2">
+                    <div className="min-w-0 text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-1 wrap-break-words">
                         <span className="font-mono">{type}</span>
                         {item.format ? <span className="font-mono">{item.format}</span> : null}
                         {item.date ? <span className="font-mono">{item.date}</span> : null}
@@ -94,7 +94,7 @@ export function MediaCard({
                             <span className="font-mono">{item.sessionType}</span>
                         ) : null}
                         {item.source ? (
-                            <span className="font-mono">src:{item.source}</span>
+                            <span className="font-mono break-all">src:{item.source}</span>
                         ) : null}
                     </div>
                 ) : null}

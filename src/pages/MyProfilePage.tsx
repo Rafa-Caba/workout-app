@@ -32,15 +32,22 @@ export function MyProfilePage() {
     const initials = me?.name ? getInitials(me.name) : "U";
 
     const right = me ? (
-        <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setEditOpen(true)} disabled={loading}>
-                {t("profile.edit")}
-            </Button>
+        <div className="w-full sm:w-auto">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+                <Button
+                    className="w-full sm:w-auto"
+                    variant="outline"
+                    onClick={() => setEditOpen(true)}
+                    disabled={loading}
+                >
+                    {t("profile.edit")}
+                </Button>
+            </div>
         </div>
     ) : null;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5 sm:space-y-6">
             <PageHeader title={t("profile.title")} subtitle={t("profile.subtitle")} right={right} />
 
             {loading ? (
@@ -52,19 +59,19 @@ export function MyProfilePage() {
             ) : (
                 <>
                     <Card className="border-primary/40 bg-primary/10">
-                        <CardHeader>
+                        <CardHeader className="p-4 sm:p-6">
                             <CardTitle>{t("profile.title")}</CardTitle>
                             <CardDescription>{t("profile.subtitle")}</CardDescription>
                         </CardHeader>
 
-                        <CardContent>
-                            <div className="flex items-start gap-5">
-                                {/* Avatar (2x size) */}
+                        <CardContent className="p-4 sm:p-6">
+                            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-5">
+                                {/* Avatar */}
                                 <button
                                     type="button"
                                     onClick={() => setPicOpen(true)}
                                     className={[
-                                        "h-32 w-32 rounded-full overflow-hidden border bg-background",
+                                        "h-24 w-24 sm:h-32 sm:w-32 rounded-full overflow-hidden border bg-background",
                                         "grid place-items-center",
                                         "hover:bg-muted/60 transition",
                                         "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
@@ -80,12 +87,14 @@ export function MyProfilePage() {
                                             referrerPolicy="no-referrer"
                                         />
                                     ) : (
-                                        <span className="text-3xl font-semibold text-muted-foreground">{initials}</span>
+                                        <span className="text-2xl sm:text-3xl font-semibold text-muted-foreground">
+                                            {initials}
+                                        </span>
                                     )}
                                 </button>
 
-                                <div className="flex-1 space-y-1 min-w-0">
-                                    <div className="text-xl font-semibold truncate">{me.name}</div>
+                                <div className="flex-1 space-y-1 min-w-0 text-center sm:text-left">
+                                    <div className="text-lg sm:text-xl font-semibold truncate">{me.name}</div>
                                     <div className="text-sm text-muted-foreground truncate">{me.email}</div>
                                     <div className="text-xs text-muted-foreground">
                                         {formatNullable(me.role)} • {formatNullable(me.sex)}
@@ -94,40 +103,42 @@ export function MyProfilePage() {
                                 </div>
                             </div>
 
-                            <div className="mt-6 grid grid-cols-1 gap-2 text-sm px-3">
-                                <div className="flex justify-between gap-3">
+                            <div className="mt-5 sm:mt-6 grid grid-cols-1 gap-2 text-sm">
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-3">
                                     <span className="text-muted-foreground">{t("profile.fields.heightCm")}</span>
-                                    <span>{formatNullable(me.heightCm)}</span>
+                                    <span className="text-right wrap-break-words">{formatNullable(me.heightCm)}</span>
                                 </div>
 
-                                <div className="flex justify-between gap-3">
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-3">
                                     <span className="text-muted-foreground">{t("profile.fields.weightKg")}</span>
-                                    <span>{formatNullable(me.currentWeightKg)}</span>
+                                    <span className="text-right wrap-break-words">{formatNullable(me.currentWeightKg)}</span>
                                 </div>
 
-                                <div className="flex justify-between gap-3">
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-3">
                                     <span className="text-muted-foreground">{t("settings.subtitle") /* reuse ok */}</span>
-                                    <span>{me.units ? `${me.units.weight} / ${me.units.distance}` : "—"}</span>
+                                    <span className="text-right wrap-break-words">
+                                        {me.units ? `${me.units.weight} / ${me.units.distance}` : "—"}
+                                    </span>
                                 </div>
 
-                                <div className="flex justify-between gap-3">
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-3">
                                     <span className="text-muted-foreground">{t("profile.fields.birthDate")}</span>
-                                    <span>{formatNullable(me.birthDate)}</span>
+                                    <span className="text-right wrap-break-words">{formatNullable(me.birthDate)}</span>
                                 </div>
 
-                                <div className="flex justify-between gap-3">
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-3">
                                     <span className="text-muted-foreground">{t("profile.fields.goal")}</span>
-                                    <span>{formatNullable(me.activityGoal)}</span>
+                                    <span className="text-right wrap-break-words">{formatNullable(me.activityGoal)}</span>
                                 </div>
 
-                                <div className="flex justify-between gap-3">
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-3">
                                     <span className="text-muted-foreground">{t("profile.fields.timezone")}</span>
-                                    <span>{formatNullable(me.timezone)}</span>
+                                    <span className="text-right wrap-break-words">{formatNullable(me.timezone)}</span>
                                 </div>
                             </div>
 
-                            <div className="mt-6 flex items-center justify-end">
-                                <Button variant="outline" onClick={() => setEditOpen(true)}>
+                            <div className="mt-5 sm:mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                                <Button className="w-full sm:w-auto" variant="outline" onClick={() => setEditOpen(true)}>
                                     {t("profile.edit")}
                                 </Button>
                             </div>

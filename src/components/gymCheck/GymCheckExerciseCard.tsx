@@ -55,17 +55,17 @@ export function GymCheckExerciseCard(props: Props) {
     const inputId = `gymcheck-file-${dayKey}-${exerciseId}`;
 
     return (
-        <Card className={isDone ? "opacity-95" : ""}>
-            <CardHeader className="pb-3">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <Card className={isDone ? "opacity-95 w-full min-w-0" : "w-full min-w-0"}>
+            <CardHeader className="pb-3 min-w-0">
+                <div className="min-w-0 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                        <CardTitle className="text-base">
+                        <CardTitle className="text-base min-w-0 wrap-break-words">
                             {lang === "es" ? `Ejercicio #${index + 1}` : `Exercise #${index + 1}`}{" "}
                             <span className="text-muted-foreground">•</span>{" "}
-                            <span className="font-semibold">{formatNullable((exercise as any).name)}</span>
+                            <span className="font-semibold wrap-break-words">{formatNullable((exercise as any).name)}</span>
                         </CardTitle>
 
-                        <CardDescription className="text-xs">
+                        <CardDescription className="text-xs min-w-0 wrap-break-words">
                             {(exercise as any).notes
                                 ? formatNullable((exercise as any).notes)
                                 : lang === "es"
@@ -74,8 +74,8 @@ export function GymCheckExerciseCard(props: Props) {
                         </CardDescription>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
-                        <div>
+                    <div className="w-full sm:w-auto min-w-0 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-start sm:justify-end gap-2 sm:gap-3">
+                        <div className="min-w-0">
                             <label className="text-sm flex items-center gap-2 select-none">
                                 <input type="checkbox" checked={isDone} onChange={onToggleDone} disabled={busy} />
                                 {lang === "es" ? "Hecho" : "Done"}
@@ -100,7 +100,7 @@ export function GymCheckExerciseCard(props: Props) {
                             variant="outline"
                             onClick={() => document.getElementById(inputId)?.click()}
                             disabled={busy || uploading}
-                            className="whitespace-nowrap"
+                            className="w-full sm:w-auto whitespace-nowrap"
                         >
                             {lang === "es" ? "Subir media" : "Upload media"}
                         </Button>
@@ -108,20 +108,24 @@ export function GymCheckExerciseCard(props: Props) {
                 </div>
             </CardHeader>
 
-            <CardContent className="space-y-3">
-                <div className="grid text-sm gap-3 md:grid-cols-2">
-                    <div className="flex flex-col gap-2 justify-center mb-2 md:mb-0">
-                        <div className="flex justify-between gap-3 md:mr-5">
-                            <span className="text-muted-foreground font-extrabold">{lang === "es" ? "Series" : "Sets"}</span>
-                            <span>{formatNullable((exercise as any).sets)}</span>
+            <CardContent className="min-w-0 space-y-3">
+                <div className="min-w-0 grid text-sm gap-3 grid-cols-1 md:grid-cols-2">
+                    <div className="min-w-0 flex flex-col gap-2 justify-center mb-2 md:mb-0">
+                        <div className="min-w-0 flex justify-between gap-3 md:mr-5">
+                            <span className="text-muted-foreground font-extrabold shrink-0">
+                                {lang === "es" ? "Series" : "Sets"}
+                            </span>
+                            <span className="min-w-0 wrap-break-words text-right">{formatNullable((exercise as any).sets)}</span>
                         </div>
-                        <div className="flex justify-between gap-3 md:mr-5">
-                            <span className="text-muted-foreground font-extrabold">Reps</span>
-                            <span>{formatNullable((exercise as any).reps)}</span>
+                        <div className="min-w-0 flex justify-between gap-3 md:mr-5">
+                            <span className="text-muted-foreground font-extrabold shrink-0">Reps</span>
+                            <span className="min-w-0 wrap-break-words text-right">{formatNullable((exercise as any).reps)}</span>
                         </div>
-                        <div className="flex justify-between gap-3 md:mr-5">
-                            <span className="text-muted-foreground font-extrabold">{lang === "es" ? "Carga" : "Load"}</span>
-                            <span>{formatNullable((exercise as any).load)}</span>
+                        <div className="min-w-0 flex justify-between gap-3 md:mr-5">
+                            <span className="text-muted-foreground font-extrabold shrink-0">
+                                {lang === "es" ? "Carga" : "Load"}
+                            </span>
+                            <span className="min-w-0 wrap-break-words text-right">{formatNullable((exercise as any).load)}</span>
                         </div>
                     </div>
 

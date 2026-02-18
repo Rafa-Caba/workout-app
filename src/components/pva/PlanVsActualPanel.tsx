@@ -69,14 +69,19 @@ export function PlanVsActualPanel({ weekKey }: { weekKey: string }) {
     const busy = q.isFetching;
 
     return (
-        <div className="rounded-xl border bg-card p-4 space-y-4">
-            <div className="flex items-center justify-between gap-2">
-                <div>
-                    <div className="text-lg font-semibold">{t("routines.planVsActualTitle")}</div>
-                    <div className="text-sm text-muted-foreground">{t("routines.planVsActualHint")}</div>
+        <div className="w-full min-w-0 rounded-xl border bg-card p-4 space-y-4">
+            <div className="min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="min-w-0">
+                    <div className="text-lg font-semibold wrap-break-words">{t("routines.planVsActualTitle")}</div>
+                    <div className="text-sm text-muted-foreground wrap-break-words">{t("routines.planVsActualHint")}</div>
                 </div>
 
-                <Button variant="outline" onClick={() => q.refetch()} disabled={busy}>
+                <Button
+                    variant="outline"
+                    onClick={() => q.refetch()}
+                    disabled={busy}
+                    className="w-full sm:w-auto whitespace-nowrap"
+                >
                     {busy ? t("common.loading") : t("common.refetch")}
                 </Button>
             </div>
@@ -89,7 +94,7 @@ export function PlanVsActualPanel({ weekKey }: { weekKey: string }) {
 
             {q.data ? (
                 <>
-                    <div className="grid gap-4 sm:grid-cols-4">
+                    <div className="grid gap-3 grid-cols-2 sm:gap-4 sm:grid-cols-4">
                         <StatCard label={t("pva.planned")} value={norm.planned ?? "—"} />
                         <StatCard label={t("pva.actual")} value={norm.actual ?? "—"} />
                         <StatCard label={t("pva.matched")} value={norm.matched ?? "—"} />

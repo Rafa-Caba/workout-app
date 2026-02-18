@@ -127,8 +127,8 @@ export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
     const readiness = computeReadiness(score, dayRpe);
 
     return (
-        <div className="rounded-2xl border bg-card p-4 space-y-3">
-            <div className="flex items-start justify-between gap-3">
+        <div className="w-full min-w-0 rounded-2xl border bg-card p-4 space-y-3">
+            <div className="min-w-0 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                 <div className="text-sm font-semibold">{t("days.sleep.title")}</div>
 
                 {!sleep ? (
@@ -136,7 +136,7 @@ export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
                 ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-2 w-full">
+            <div className="w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <BadgePill emoji="🛌" label={t("days.sleep.total")} value={total} />
                 <BadgePill emoji="🏆" label={t("days.sleep.score")} value={scoreText} />
 

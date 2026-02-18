@@ -73,9 +73,9 @@ export function ProfilePicModal({
         >
             <div className="absolute inset-0 bg-black/80" />
 
-            <div className="absolute inset-0 p-4 md:p-8 flex items-center justify-center">
+            <div className="absolute inset-0 p-3 sm:p-4 md:p-8 flex items-center justify-center">
                 <div className="w-full max-w-3xl rounded-2xl border bg-background shadow-xl overflow-hidden">
-                    <div className="flex items-center justify-between gap-3 p-4 border-b">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 border-b">
                         <div className="min-w-0">
                             <div className="text-sm font-semibold truncate" title={user.name ?? "User"}>
                                 {user.name ?? "User"}
@@ -83,12 +83,13 @@ export function ProfilePicModal({
                             <div className="text-xs text-muted-foreground truncate">{user.email ?? ""}</div>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                             {avatarUrl ? (
                                 <Button
                                     variant="outline"
                                     onClick={() => window.open(avatarUrl, "_blank", "noreferrer")}
                                     disabled={busy}
+                                    className="h-9 px-3 text-sm"
                                 >
                                     {t("media.open")}
                                 </Button>
@@ -102,21 +103,37 @@ export function ProfilePicModal({
                                 onChange={onUploadFile}
                             />
 
-                            <Button variant="outline" onClick={onPickFile} disabled={busy}>
+                            <Button
+                                variant="outline"
+                                onClick={onPickFile}
+                                disabled={busy}
+                                className="h-9 px-3 text-sm"
+                            >
                                 {t("profile.picModal.change")}
                             </Button>
 
-                            <Button variant="destructive" onClick={onRemovePic} disabled={busy || !avatarUrl}>
+                            <Button
+                                variant="destructive"
+                                onClick={onRemovePic}
+                                disabled={busy || !avatarUrl}
+                                className="h-9 px-3 text-sm"
+                            >
                                 {t("common.remove")}
                             </Button>
 
-                            <Button variant="outline" onClick={onClose} disabled={busy} aria-label="Close">
+                            <Button
+                                variant="outline"
+                                onClick={onClose}
+                                disabled={busy}
+                                aria-label="Close"
+                                className="h-9 w-9 px-0"
+                            >
                                 ✕
                             </Button>
                         </div>
                     </div>
 
-                    <div className="p-6 bg-black/5">
+                    <div className="p-4 sm:p-6 bg-black/5">
                         <div className="w-full flex items-center justify-center">
                             <div className="w-full max-w-xl aspect-square rounded-2xl border bg-background overflow-hidden grid place-items-center">
                                 {avatarUrl ? (

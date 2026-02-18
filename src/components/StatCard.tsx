@@ -10,10 +10,10 @@ export function StatCard({
     hint?: React.ReactNode;
 }) {
     return (
-        <div className="rounded-xl border bg-card p-4">
-            <div className="text-sm text-muted-foreground">{label}</div>
-            <div className="mt-2 text-2xl font-semibold">{value}</div>
-            {hint ? <div className="mt-2 text-xs text-muted-foreground">{hint}</div> : null}
+        <div className="rounded-xl border bg-card p-4 min-w-0">
+            <div className="text-sm text-muted-foreground wrap-break-words">{label}</div>
+            <div className="mt-2 text-2xl font-semibold tabular-nums wrap-break-words">{value}</div>
+            {hint ? <div className="mt-2 text-xs text-muted-foreground wrap-break-words">{hint}</div> : null}
         </div>
     );
 }

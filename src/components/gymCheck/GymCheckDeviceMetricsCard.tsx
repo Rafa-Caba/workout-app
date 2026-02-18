@@ -37,10 +37,10 @@ function Field({
     inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
 }) {
     return (
-        <label className="space-y-1">
+        <label className="w-full min-w-0 space-y-1">
             <div className="text-xs font-medium opacity-80">{label}</div>
             <input
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2"
+                className="w-full min-w-0 rounded-md border bg-background px-3 py-2 text-base sm:text-sm outline-none focus:ring-2"
                 type={type}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
@@ -78,17 +78,17 @@ export function GymCheckDeviceMetricsCard({
 }) {
     return (
         <details
-            className="rounded-lg border bg-card p-4"
+            className="w-full min-w-0 rounded-lg border bg-card p-4"
             open={metricsOpen}
             onToggle={(e) => onToggleOpen((e.currentTarget as HTMLDetailsElement).open)}
         >
             <summary className="cursor-pointer select-none list-none">
-                <div className="flex items-center justify-between gap-2">
-                    <div>
-                        <div className="text-sm font-semibold">
+                <div className="min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="min-w-0">
+                        <div className="text-sm font-semibold wrap-break-words">
                             {lang === "es" ? "Métricas del dispositivo" : "Device metrics"}
                         </div>
-                        <div className="text-xs opacity-70">
+                        <div className="text-xs opacity-70 wrap-break-words">
                             {lang === "es"
                                 ? "Gym Check - Guardados al crear la sesión real."
                                 : "Gym Check - Saved when creating the real session."}
@@ -107,7 +107,7 @@ export function GymCheckDeviceMetricsCard({
                 </div>
             </summary>
 
-            <div className="mt-3 grid gap-3 grid-cols-2 md:grid-cols-5">
+            <div className="mt-3 w-full min-w-0 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 <Field
                     label={lang === "es" ? "Hora inicio" : "Start time"}
                     type="time"

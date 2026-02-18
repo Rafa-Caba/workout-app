@@ -142,29 +142,28 @@ export function DaySessionsPanel({
 
     console.log({ sessions });
 
-
     const trainingSource = day.training?.source ?? null;
     const dayRpe = day.training?.dayEffortRpe ?? null;
 
     if (!sessions.length) {
         return (
-            <div className="rounded-2xl border bg-card p-4">
+            <div className="w-full min-w-0 rounded-2xl border bg-card p-4">
                 <div className="text-sm text-muted-foreground">{t("days.sessions.empty")}</div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-3">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div className="w-full min-w-0 space-y-3">
+            <div className="min-w-0 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div className="text-sm font-semibold">{t("days.sessions.title")}</div>
 
                 {(trainingSource || isFiniteNumber(dayRpe)) ? (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="min-w-0 flex flex-wrap gap-2">
                         {trainingSource ? (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-muted-foreground wrap-break-words">
                                 {t("days.training.source")}:{" "}
-                                <span className="font-mono text-foreground">{trainingSource}</span>
+                                <span className="font-mono text-foreground break-all">{trainingSource}</span>
                             </span>
                         ) : null}
 
@@ -211,25 +210,25 @@ export function DaySessionsPanel({
                     const loggedSets = countLoggedSets(exercises);
 
                     return (
-                        <div key={buildSessionKey(s, idx)} className="rounded-2xl border bg-card overflow-hidden">
+                        <div key={buildSessionKey(s, idx)} className="w-full min-w-0 rounded-2xl border bg-card overflow-hidden">
                             <div className="p-4 border-b">
                                 {/* stack on mobile to avoid squeezing badges */}
-                                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                                <div className="min-w-0 flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                                     <div className="min-w-0 w-full">
-                                        <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                                            <div className="text-base font-semibold truncate">
+                                        <div className="min-w-0 flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+                                            <div className="min-w-0 text-base font-semibold wrap-break-words sm:truncate">
                                                 {t("days.sessions.dayPrefix")} {sessionTitle}
                                             </div>
 
                                             {sid ? (
-                                                <div className="text-xs text-muted-foreground">
+                                                <div className="text-xs text-muted-foreground wrap-break-words">
                                                     {t("days.sessions.sessionId")}:{" "}
-                                                    <span className="font-mono text-foreground">{sid}</span>
+                                                    <span className="font-mono text-foreground break-all">{sid}</span>
                                                 </div>
                                             ) : null}
                                         </div>
 
-                                        <div className="mt-3 grid grid-cols-2 gap-2 w-full">
+                                        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full min-w-0">
                                             <BadgePill emoji="⏱️" label={t("days.sessions.duration")} value={dur} />
                                             <BadgePill emoji="📎" label={t("days.sessions.media")} value={`${mediaCount}`} />
 
@@ -289,27 +288,27 @@ export function DaySessionsPanel({
                                     </div>
 
                                     {s.notes ? (
-                                        <div className="w-full md:w-auto md:max-w-[45%] text-xs text-muted-foreground line-clamp-3 md:text-right">
+                                        <div className="w-full md:w-auto md:max-w-[45%] text-xs text-muted-foreground wrap-break-words line-clamp-3 md:text-right">
                                             {s.notes}
                                         </div>
                                     ) : null}
                                 </div>
                             </div>
 
-                            <div className="p-4 space-y-4">
+                            <div className="p-4 space-y-4 min-w-0">
                                 {/* Exercises mini list */}
                                 {exercises && exercises.length ? (
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 min-w-0">
                                         <div className="text-xs font-semibold text-muted-foreground">
                                             {t("days.sessions.exercisesList")} ({exercises.length})
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 min-w-0">
                                             {exercises.slice(0, 8).map((ex) => {
                                                 const setCount = Array.isArray(ex.sets) ? ex.sets.length : 0;
                                                 return (
-                                                    <div key={ex.id} className="rounded-xl border bg-background px-3 py-2 min-w-0">
-                                                        <div className="text-sm font-medium truncate">{ex.name}</div>
-                                                        <div className="text-xs text-muted-foreground">
+                                                    <div key={ex.id} className="min-w-0 rounded-xl border bg-background px-3 py-2">
+                                                        <div className="min-w-0 text-sm font-medium wrap-break-words sm:truncate">{ex.name}</div>
+                                                        <div className="min-w-0 text-xs text-muted-foreground wrap-break-words">
                                                             {t("days.sessions.sets")}:{" "}
                                                             <span className="font-mono text-foreground">{setCount || "—"}</span>
                                                             {ex.notes ? (
@@ -333,9 +332,9 @@ export function DaySessionsPanel({
 
                                 {/* Media thumbnails */}
                                 {Array.isArray(s.media) && s.media.length ? (
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 min-w-0">
                                         <div className="text-xs font-semibold text-muted-foreground">{t("days.sessions.mediaGrid")}</div>
-                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 min-w-0">
                                             {s.media.map((m) => {
                                                 const item = toMediaLikeItem(m, {
                                                     date: day.date,
@@ -350,17 +349,17 @@ export function DaySessionsPanel({
                                                     <button
                                                         key={m.publicId}
                                                         type="button"
-                                                        className="rounded-lg border bg-background overflow-hidden hover:shadow-sm transition-shadow"
+                                                        className="w-full min-w-0 rounded-lg border bg-background overflow-hidden hover:shadow-sm transition-shadow"
                                                         onClick={() => onOpenMedia(item)}
                                                         title={m.publicId}
                                                     >
-                                                        <div className="aspect-square flex items-center justify-center bg-black/5">
+                                                        <div className="aspect-square w-full flex items-center justify-center bg-black/5 overflow-hidden">
                                                             {isImage ? (
                                                                 <img src={item.url} alt={m.publicId} className="h-full w-full object-cover" />
                                                             ) : isVideo ? (
                                                                 <video src={item.url} className="h-full w-full object-cover" muted playsInline />
                                                             ) : (
-                                                                <span className="text-xs text-muted-foreground">{t("media.open")}</span>
+                                                                <span className="px-2 text-xs text-muted-foreground">{t("media.open")}</span>
                                                             )}
                                                         </div>
                                                     </button>

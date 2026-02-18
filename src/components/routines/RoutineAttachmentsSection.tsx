@@ -136,16 +136,17 @@ export function RoutineAttachmentsSection({
             </div>
 
             <div className="rounded-xl border bg-background p-3 space-y-3">
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                     <input
                         id="routine-upload-input"
                         type="file"
                         multiple
                         onChange={onPickFiles}
-                        className="text-sm"
+                        className="text-sm w-full sm:w-auto"
                         disabled={busy}
                     />
-                    <Button onClick={upload} disabled={busy || files.length === 0}>
+
+                    <Button onClick={upload} disabled={busy || files.length === 0} className="w-full sm:w-auto">
                         {files.length === 0 ? t("routines.upload") : `${t("routines.upload")} (${files.length})`}
                     </Button>
 
@@ -181,21 +182,16 @@ export function RoutineAttachmentsSection({
             {items.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("routines.noAttachments")}</p>
             ) : (
-                // <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="grid gap-4 sm:grid-cols-4 lg:grid-cols-6">
                     {items.map((item) => (
-                        <div
-                            key={`${item.publicId}-${item.createdAt ?? ""}`}
-                            className="relative flex flex-col pb-3"
-                        >
+                        <div key={`${item.publicId}-${item.createdAt ?? ""}`} className="relative flex flex-col pb-3">
                             <MediaCard item={item} onOpen={(it) => setSelected(it)} />
 
                             <div className="mt-3 pt-2 border-t flex items-center gap-2" />
-                            <div className="mt-3 flex items-center gap-2">
-
+                            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
                                 <Button
                                     variant="outline"
-                                    className="h-8 px-3"
+                                    className="h-8 px-3 w-full sm:w-auto"
                                     onClick={() => window.open(item.url, "_blank", "noreferrer")}
                                     disabled={!item.url}
                                     type="button"
@@ -205,7 +201,7 @@ export function RoutineAttachmentsSection({
 
                                 <Button
                                     variant="outline"
-                                    className="h-8 px-3"
+                                    className="h-8 px-3 w-full sm:w-auto"
                                     onClick={() => item.publicId && requestDelete(item.publicId)}
                                     disabled={!item.publicId || busy}
                                     type="button"
@@ -224,12 +220,16 @@ export function RoutineAttachmentsSection({
                         <AlertDialogTitle>{t("routines.confirmDeleteTitle")}</AlertDialogTitle>
                         <AlertDialogDescription>
                             {t("routines.confirmDeleteDesc")}{" "}
-                            {deleteCloudinary ? t("routines.confirmDeleteCloudinaryYes") : t("routines.confirmDeleteCloudinaryNo")}
+                            {deleteCloudinary
+                                ? t("routines.confirmDeleteCloudinaryYes")
+                                : t("routines.confirmDeleteCloudinaryNo")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel disabled={busy}>{t("routines.cancel")}</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} disabled={busy}>
+                    <AlertDialogFooter className="flex flex-col gap-2 sm:flex-row sm:gap-2">
+                        <AlertDialogCancel disabled={busy} className="w-full sm:w-auto">
+                            {t("routines.cancel")}
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} disabled={busy} className="w-full sm:w-auto">
                             {lang === "es" ? "Eliminar" : "Delete"}
                         </AlertDialogAction>
                     </AlertDialogFooter>

@@ -113,54 +113,62 @@ export function WeeklySummaryPage() {
     const hasMediaCountPerType = extracted.bySessionType.some((r) => typeof (r as any).mediaCount === "number");
 
     return (
-        <div className="space-y-6">
+        <div className="px-4 sm:px-0 space-y-6">
             <PageHeader title={t("pages.weeks.title")} subtitle={t("pages.weeks.subtitle")} />
 
             <div className="rounded-xl border bg-card p-4 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                    <Button variant={tab === "week" ? "default" : "outline"} onClick={() => setTab("week")}>
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2">
+                    <Button
+                        className="w-full sm:w-auto"
+                        variant={tab === "week" ? "default" : "outline"}
+                        onClick={() => setTab("week")}
+                    >
                         {t("tabs.week")}
                     </Button>
-                    <Button variant={tab === "range" ? "default" : "outline"} onClick={() => setTab("range")}>
+                    <Button
+                        className="w-full sm:w-auto"
+                        variant={tab === "range" ? "default" : "outline"}
+                        onClick={() => setTab("range")}
+                    >
                         {t("tabs.range")}
                     </Button>
                 </div>
 
                 {tab === "week" ? (
                     <div className="space-y-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <label className="text-sm">
-                                {t("week.pickDateInWeek")}{" "}
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+                            <label className="text-sm w-full sm:w-auto">
+                                <span className="block sm:inline">{t("week.pickDateInWeek")}</span>{" "}
                                 <input
                                     type="date"
-                                    className="ml-2 rounded-md border bg-background px-3 py-2 text-sm"
+                                    className="mt-1 sm:mt-0 sm:ml-2 w-full sm:w-auto h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
                                     value={weekDate}
                                     onChange={(e) => setWeekDate(e.target.value)}
                                 />
                             </label>
 
-                            <div className="grid gap-2 grid-cols-2">
-                                <Button variant="outline" onClick={goPrevWeek} disabled={isFetching}>
+                            <div className="w-full sm:w-auto flex gap-2">
+                                <Button className="flex-1 sm:flex-none" variant="outline" onClick={goPrevWeek} disabled={isFetching}>
                                     {t("week.prev")}
                                 </Button>
-                                <Button variant="outline" onClick={goNextWeek} disabled={isFetching}>
+                                <Button className="flex-1 sm:flex-none" variant="outline" onClick={goNextWeek} disabled={isFetching}>
                                     {t("week.next")}
                                 </Button>
                             </div>
 
-                            <div className="ml-auto text-xs text-muted-foreground">
+                            <div className="sm:ml-auto text-xs text-muted-foreground wrap-break-words">
                                 {t("week.selectedWeekKey")}:{" "}
                                 <span className="font-mono text-foreground">{derivedWeekKey}</span>
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 text-sm">
-                            <div className="rounded-md border bg-background px-3 py-2">
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 text-sm">
+                            <div className="rounded-md border bg-background px-3 py-2 w-full sm:w-auto">
                                 <span className="text-muted-foreground">{t("week.weekRange")}:</span>{" "}
                                 <span className="font-mono">{weekRangeLabel}</span>
                             </div>
 
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-xs text-muted-foreground wrap-break-words sm:ml-auto">
                                 {t("week.loaded")}:{" "}
                                 <span className="font-mono">{runWeekKey}</span>{" "}
                                 <Button
@@ -176,28 +184,28 @@ export function WeeklySummaryPage() {
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-wrap items-center gap-2">
-                        <label className="text-sm">
-                            {t("common.from")}{" "}
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+                        <label className="text-sm w-full sm:w-auto">
+                            <span className="block sm:inline">{t("common.from")}</span>{" "}
                             <input
                                 type="date"
-                                className="ml-2 rounded-md border bg-background px-3 py-2 text-sm"
+                                className="mt-1 sm:mt-0 sm:ml-2 w-full sm:w-auto h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
                                 value={from}
                                 onChange={(e) => setFrom(e.target.value)}
                             />
                         </label>
 
-                        <label className="text-sm">
-                            {t("common.to")}{" "}
+                        <label className="text-sm w-full sm:w-auto">
+                            <span className="block sm:inline">{t("common.to")}</span>{" "}
                             <input
                                 type="date"
-                                className="ml-2 rounded-md border bg-background px-3 py-2 text-sm"
+                                className="mt-1 sm:mt-0 sm:ml-2 w-full sm:w-auto h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
                                 value={to}
                                 onChange={(e) => setTo(e.target.value)}
                             />
                         </label>
 
-                        <span className="ml-auto text-xs text-muted-foreground">
+                        <span className="sm:ml-auto text-xs text-muted-foreground wrap-break-words">
                             {t("week.loaded")}:{" "}
                             <span className="font-mono">{runFrom}</span> → <span className="font-mono">{runTo}</span>
                         </span>
@@ -234,47 +242,44 @@ export function WeeklySummaryPage() {
                             <StatCard label={t("weeks.kpi.sleepAvgRemMin")} value={extracted.kpis.sleepAvgRem} />
                             <StatCard label={t("weeks.kpi.sleepAvgDeepMin")} value={extracted.kpis.sleepAvgDeep} />
 
-                            <StatCard
-                                label={t("weeks.kpi.hr")}
-                                value={`${extracted.kpis.avgHr} / ${extracted.kpis.maxHr}`}
-                            />
+                            <StatCard label={t("weeks.kpi.hr")} value={`${extracted.kpis.avgHr} / ${extracted.kpis.maxHr}`} />
                         </div>
 
                         {extracted.bySessionType.length > 0 ? (
                             <div className="rounded-xl border bg-background p-4">
                                 <div className="text-sm font-medium">{t("weeks.byType.title")}</div>
 
-                                <div className="mt-3 overflow-auto">
-                                    <table className="w-full text-sm">
-                                        <thead className="text-muted-foreground">
-                                            <tr className="border-b">
-                                                <th className="py-2 text-left font-medium">{t("weeks.byType.type")}</th>
-                                                <th className="py-2 text-right font-medium">{t("weeks.byType.sessions")}</th>
-                                                <th className="py-2 text-right font-medium">{t("weeks.byType.durationMin")}</th>
-                                                <th className="py-2 text-right font-medium">{t("weeks.byType.kcal")}</th>
-
-                                                {hasMediaCountPerType ? (
-                                                    <th className="py-2 text-right font-medium">{t("weeks.byType.media")}</th>
-                                                ) : null}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {extracted.bySessionType.map((row, idx) => (
-                                                <tr key={`${row.sessionType}-${idx}`} className="border-b last:border-b-0">
-                                                    <td className="py-2">{row.sessionType}</td>
-                                                    <td className="py-2 text-right">{row.sessionsCount}</td>
-                                                    <td className="py-2 text-right">{row.durationMinutes}</td>
-                                                    <td className="py-2 text-right">{row.activeKcal}</td>
+                                <div className="mt-3 overflow-auto -mx-4 sm:mx-0">
+                                    <div className="min-w-[180] sm:min-w-0 px-4 sm:px-0">
+                                        <table className="w-full text-sm">
+                                            <thead className="text-muted-foreground">
+                                                <tr className="border-b">
+                                                    <th className="py-2 text-left font-medium">{t("weeks.byType.type")}</th>
+                                                    <th className="py-2 text-right font-medium">{t("weeks.byType.sessions")}</th>
+                                                    <th className="py-2 text-right font-medium">{t("weeks.byType.durationMin")}</th>
+                                                    <th className="py-2 text-right font-medium">{t("weeks.byType.kcal")}</th>
 
                                                     {hasMediaCountPerType ? (
-                                                        <td className="py-2 text-right">
-                                                            {(row as any).mediaCount ?? "—"}
-                                                        </td>
+                                                        <th className="py-2 text-right font-medium">{t("weeks.byType.media")}</th>
                                                     ) : null}
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {extracted.bySessionType.map((row, idx) => (
+                                                    <tr key={`${row.sessionType}-${idx}`} className="border-b last:border-b-0">
+                                                        <td className="py-2">{row.sessionType}</td>
+                                                        <td className="py-2 text-right">{row.sessionsCount}</td>
+                                                        <td className="py-2 text-right">{row.durationMinutes}</td>
+                                                        <td className="py-2 text-right">{row.activeKcal}</td>
+
+                                                        {hasMediaCountPerType ? (
+                                                            <td className="py-2 text-right">{(row as any).mediaCount ?? "—"}</td>
+                                                        ) : null}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         ) : null}
@@ -285,14 +290,10 @@ export function WeeklySummaryPage() {
 
                 {tab === "range" && rangeQuery.isSuccess ? (
                     <>
-                        {showEmptyForZero ? null : (
-                            <JsonDetails title={t("weeks.json.rangeTitle")} data={rangeQuery.data} />
-                        )}
+                        {showEmptyForZero ? null : <JsonDetails title={t("weeks.json.rangeTitle")} data={rangeQuery.data} />}
 
                         {/* If it's empty but backend still returned JSON, keep it accessible */}
-                        {showEmptyForZero ? (
-                            <JsonDetails title={t("weeks.json.rangeTitle")} data={rangeQuery.data} />
-                        ) : null}
+                        {showEmptyForZero ? <JsonDetails title={t("weeks.json.rangeTitle")} data={rangeQuery.data} /> : null}
                     </>
                 ) : null}
             </div>

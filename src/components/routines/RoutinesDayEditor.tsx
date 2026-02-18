@@ -29,7 +29,6 @@ type Props = {
 
     attachmentOptions: AttachmentOption[];
 
-    // ✅ NEW
     movementOptions?: MovementOption[];
 
     exerciseUploadBusy: boolean;
@@ -68,16 +67,17 @@ export function RoutinesDayEditor({
     return (
         <div className="space-y-4">
             {/* Header: día + botón agregar ejercicio */}
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                     <span>{t("routines.day")}</span>
                     <span className="inline-flex items-center rounded-full border border-secondary/60 bg-primary/20 px-2 py-0.5 text-[11px] font-mono">
                         {activePlan.dayKey}
                     </span>
                 </div>
+
                 <Button
                     variant="outline"
-                    className="h-8 px-3"
+                    className="h-9 px-3 w-full sm:w-auto"
                     onClick={() => onAddExercise(activePlan.dayKey as DayKey)}
                     disabled={busy}
                 >
@@ -155,14 +155,13 @@ export function RoutinesDayEditor({
 
             {/* Lista de ejercicios del día */}
             <div className="rounded-xl border border-dashed bg-card/60 p-4 space-y-3">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-start justify-between gap-2">
                     <div className="text-xs font-medium text-muted-foreground">
                         {lang === "es" ? "Ejercicios del día" : "Day exercises"}
                     </div>
                     {exercises.length > 0 ? (
-                        <div className="text-[11px] font-mono text-muted-foreground">
-                            {exercises.length}{" "}
-                            {lang === "es" ? "ejercicio(s)" : "exercise(s)"}
+                        <div className="text-[11px] font-mono text-muted-foreground shrink-0">
+                            {exercises.length} {lang === "es" ? "ejercicio(s)" : "exercise(s)"}
                         </div>
                     ) : null}
                 </div>
@@ -170,19 +169,14 @@ export function RoutinesDayEditor({
                 <div className="space-y-3 border-primary/80">
                     {exercises.map((ex, idx) => {
                         const exerciseId = ex.id;
-                        const selectedIds = Array.isArray(ex.attachmentPublicIds)
-                            ? ex.attachmentPublicIds
-                            : [];
+                        const selectedIds = Array.isArray(ex.attachmentPublicIds) ? ex.attachmentPublicIds : [];
 
                         const isThisUploading =
                             exerciseUploadBusy &&
-                            uploadingExercise?.dayKey ===
-                            (activePlan.dayKey as DayKey) &&
+                            uploadingExercise?.dayKey === (activePlan.dayKey as DayKey) &&
                             uploadingExercise?.exerciseId === exerciseId;
 
-                        const pendingFiles = getPendingFilesForExercise(
-                            exerciseId
-                        );
+                        const pendingFiles = getPendingFilesForExercise(exerciseId);
 
                         return (
                             <RoutinesExerciseCard
@@ -194,97 +188,48 @@ export function RoutinesDayEditor({
                                 attachmentOptions={attachmentOptions}
                                 selectedIds={selectedIds}
                                 pendingFiles={pendingFiles}
-                                onPickFiles={(files) =>
-                                    onPickFilesForExercise(exerciseId, files)
-                                }
-                                onRemovePending={(fileIndex) =>
-                                    onRemovePendingForExercise(
-                                        exerciseId,
-                                        fileIndex
-                                    )
-                                }
+                                onPickFiles={(files) => onPickFilesForExercise(exerciseId, files)}
+                                onRemovePending={(fileIndex) => onRemovePendingForExercise(exerciseId, fileIndex)}
                                 busy={busy}
                                 isThisUploading={isThisUploading}
                                 t={t}
                                 lang={lang}
                                 ph={ph}
-                                onRemove={() =>
-                                    onRemoveExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx
-                                    )
-                                }
-                                onChangeMovement={({
-                                    movementId,
-                                    movementName,
-                                }) => {
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        {
-                                            movementId,
-                                            movementName,
-                                            // keep display name synced (you can still edit afterwards)
-                                            name: movementName ?? ex.name,
-                                        }
-                                    );
+                                onRemove={() => onRemoveExercise(activePlan.dayKey as DayKey, idx)}
+                                onChangeMovement={({ movementId, movementName }) => {
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, {
+                                        movementId,
+                                        movementName,
+                                        // keep display name synced (you can still edit afterwards)
+                                        name: movementName ?? ex.name,
+                                    });
                                 }}
                                 onChangeName={(next) =>
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        { name: next }
-                                    )
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, { name: next })
                                 }
                                 onChangeNotes={(next) =>
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        { notes: next || undefined }
-                                    )
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, { notes: next || undefined })
                                 }
                                 onChangeSets={(next) =>
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        { sets: next || undefined }
-                                    )
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, { sets: next || undefined })
                                 }
                                 onChangeReps={(next) =>
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        { reps: next || undefined }
-                                    )
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, { reps: next || undefined })
                                 }
                                 onChangeRpe={(next) =>
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        { rpe: next || undefined }
-                                    )
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, { rpe: next || undefined })
                                 }
                                 onChangeLoad={(next) =>
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        { load: next || undefined }
-                                    )
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, { load: next || undefined })
                                 }
                                 onToggleAttachment={(publicId) => {
                                     const curr = new Set(selectedIds);
                                     if (curr.has(publicId)) curr.delete(publicId);
                                     else curr.add(publicId);
 
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        {
-                                            attachmentPublicIds: Array.from(
-                                                curr
-                                            ),
-                                        }
-                                    );
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, {
+                                        attachmentPublicIds: Array.from(curr),
+                                    });
                                 }}
                             />
                         );
@@ -292,9 +237,7 @@ export function RoutinesDayEditor({
 
                     {exercises.length === 0 ? (
                         <div className="text-xs text-muted-foreground">
-                            {lang === "es"
-                                ? "Agrega tu primer ejercicio para este día."
-                                : "Add your first exercise for this day."}
+                            {lang === "es" ? "Agrega tu primer ejercicio para este día." : "Add your first exercise for this day."}
                         </div>
                     ) : null}
                 </div>

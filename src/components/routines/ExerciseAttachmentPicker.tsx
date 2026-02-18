@@ -149,7 +149,13 @@ export function ExerciseAttachmentPicker({
         onPickFiles(files);
     }
 
-    function openLinkedInModal(opt: { publicId: string; url: string; resourceType?: string; originalName?: string | null; label: string }) {
+    function openLinkedInModal(opt: {
+        publicId: string;
+        url: string;
+        resourceType?: string;
+        originalName?: string | null;
+        label: string;
+    }) {
         const url = opt.url ?? "";
         if (!url) return;
 

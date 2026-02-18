@@ -156,12 +156,20 @@ export function MediaPage() {
         <div className="space-y-6">
             <PageHeader title={t("pages.media.title")} subtitle={t("pages.media.subtitle")} />
 
-            <div className="rounded-xl border bg-card p-4 space-y-3">
+            <div className="rounded-xl border bg-card p-3 sm:p-4 space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
-                    <Button variant={tab === "browse" ? "default" : "outline"} onClick={() => setTab("browse")}>
+                    <Button
+                        className="flex-1 sm:flex-none"
+                        variant={tab === "browse" ? "default" : "outline"}
+                        onClick={() => setTab("browse")}
+                    >
                         {t("tabs.browse")}
                     </Button>
-                    <Button variant={tab === "stats" ? "default" : "outline"} onClick={() => setTab("stats")}>
+                    <Button
+                        className="flex-1 sm:flex-none"
+                        variant={tab === "stats" ? "default" : "outline"}
+                        onClick={() => setTab("stats")}
+                    >
                         {t("tabs.stats")}
                     </Button>
                 </div>
@@ -185,49 +193,52 @@ export function MediaPage() {
                 </div>
 
                 {tab === "browse" ? (
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                         <Button
                             variant="outline"
                             onClick={loadNextPage}
                             disabled={!nextCursor || mediaQuery.isFetching}
                             title={!nextCursor ? t("media.noNextCursorHint") : ""}
+                            className="w-full sm:w-auto"
                         >
                             {t("media.nextPage")}
                         </Button>
 
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground wrap-break-words">
                             {t("media.loadedItems")}: <span className="font-mono">{allItems.length}</span>
                             {nextCursor ? (
                                 <>
                                     {" "}
-                                    • {t("media.nextCursor")}: <span className="font-mono">{nextCursor}</span>
+                                    • {t("media.nextCursor")}: <span className="font-mono break-all">{nextCursor}</span>
                                 </>
                             ) : null}
                         </span>
                     </div>
                 ) : (
-                    <div className="flex flex-wrap items-center gap-2">
-                        <label className="text-sm">
-                            {t("common.from")}{" "}
-                            <input
-                                type="date"
-                                className="ml-2 rounded-md border bg-background px-3 py-2 text-sm"
-                                value={from}
-                                onChange={(e) => setFrom(e.target.value)}
-                            />
-                        </label>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <div className="grid w-full gap-2 sm:flex sm:w-auto sm:items-center">
+                            <label className="text-sm flex items-center justify-between gap-2">
+                                <span className="shrink-0">{t("common.from")}</span>
+                                <input
+                                    type="date"
+                                    className="w-full sm:w-auto rounded-md border bg-background px-3 py-2 text-sm"
+                                    value={from}
+                                    onChange={(e) => setFrom(e.target.value)}
+                                />
+                            </label>
 
-                        <label className="text-sm">
-                            {t("common.to")}{" "}
-                            <input
-                                type="date"
-                                className="ml-2 rounded-md border bg-background px-3 py-2 text-sm"
-                                value={to}
-                                onChange={(e) => setTo(e.target.value)}
-                            />
-                        </label>
+                            <label className="text-sm flex items-center justify-between gap-2">
+                                <span className="shrink-0">{t("common.to")}</span>
+                                <input
+                                    type="date"
+                                    className="w-full sm:w-auto rounded-md border bg-background px-3 py-2 text-sm"
+                                    value={to}
+                                    onChange={(e) => setTo(e.target.value)}
+                                />
+                            </label>
+                        </div>
 
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground wrap-break-words">
                             {t("week.loaded")}: <span className="font-mono">{runFrom}</span> → <span className="font-mono">{runTo}</span>
                         </span>
                     </div>
@@ -243,7 +254,7 @@ export function MediaPage() {
                     ) : null}
 
                     {allItems.length > 0 ? (
-                        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
+                        <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
                             <StatCard label={t("media.kpi.itemsTotal")} value={allItems.length} />
                             <StatCard label={t("media.kpi.pages")} value={pages.length} />
                             <StatCard label={t("media.kpi.nextCursor")} value={nextCursor ?? "—"} />
@@ -251,7 +262,7 @@ export function MediaPage() {
                     ) : null}
 
                     {allItems.length > 0 ? (
-                        <div className="grid gap-4 grid-cols-3 sm:grid-cols-4 lg:grid-cols-5">
+                        <div className="grid gap-2 sm:gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                             {allItems.map((item) => (
                                 <MediaCard
                                     key={`${item.publicId}-${item.createdAt}`}
@@ -274,25 +285,25 @@ export function MediaPage() {
 
                     {statsQuery.data ? (
                         <>
-                            <div className="grid gap-4 grid-cols-3 sm:grid-cols-3">
+                            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
                                 <StatCard label={t("media.stats.total")} value={statsQuery.data.totals.items} />
                                 <StatCard label={t("media.stats.images")} value={statsQuery.data.totals.images} />
                                 <StatCard label={t("media.stats.videos")} value={statsQuery.data.totals.videos} />
                             </div>
 
                             <div className="rounded-xl border bg-card overflow-hidden">
-                                <div className="p-4 border-b">
+                                <div className="p-3 sm:p-4 border-b">
                                     <div className="text-sm font-semibold">Por día</div>
                                     <div className="text-xs text-muted-foreground">
                                         {statsQuery.data.range.from} → {statsQuery.data.range.to}
                                     </div>
                                 </div>
 
-                                <div className="p-4 overflow-auto">
+                                <div className="p-3 sm:p-4 overflow-x-auto">
                                     {statsQuery.data.byDay.length === 0 ? (
                                         <div className="text-sm text-muted-foreground">Sin datos en el rango.</div>
                                     ) : (
-                                        <table className="w-full text-sm">
+                                        <table className="min-w-[130] w-full text-sm">
                                             <thead className="text-left text-muted-foreground">
                                                 <tr>
                                                     <th className="py-2 pr-4">{t("common.date")}</th>

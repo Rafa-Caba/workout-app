@@ -131,52 +131,64 @@ export function SleepPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5 sm:space-y-6">
             <PageHeader
                 title={t("sleep.title")}
                 subtitle={t("sleep.subtitle")}
                 right={
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" onClick={() => query.refetch()} disabled={query.isFetching || isSaving}>
-                            {t("common.refetch")}
-                        </Button>
+                    <div className="w-full sm:w-auto">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+                            <Button
+                                className="w-full sm:w-auto"
+                                variant="outline"
+                                onClick={() => query.refetch()}
+                                disabled={query.isFetching || isSaving}
+                            >
+                                {t("common.refetch")}
+                            </Button>
 
-                        <Button onClick={onSave} disabled={query.isFetching || isSaving}>
-                            {isSaving ? t("common.saving") : t("common.save")}
-                        </Button>
+                            <Button className="w-full sm:w-auto" onClick={onSave} disabled={query.isFetching || isSaving}>
+                                {isSaving ? t("common.saving") : t("common.save")}
+                            </Button>
+                        </div>
                     </div>
                 }
             />
 
-            <div className="rounded-xl border bg-card p-4">
-                <div className="flex flex-wrap items-end gap-3">
-                    <div className="space-y-1">
+            <div className="rounded-xl border bg-card p-3 sm:p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-3">
+                    <div className="w-full md:w-auto space-y-1">
                         <label className="text-sm font-medium">{t("common.date")}</label>
                         <input
                             type="date"
-                            className="rounded-md border bg-background px-3 py-2 text-sm"
+                            className="w-full md:w-auto rounded-md border bg-background px-3 py-2 text-sm"
                             value={date}
                             onChange={(e) => setDate(e.target.value)}
                         />
                     </div>
 
-                    <div className="ml-auto flex flex-wrap items-center gap-2">
-                        <div className="rounded-lg border bg-background px-3 py-2 text-sm">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2 md:ml-auto">
+                        <div className="w-full sm:w-auto rounded-lg border bg-background px-3 py-2 text-sm">
                             <div className="text-xs text-muted-foreground">{t("sleep.summary.timeAsleep")}</div>
                             <div className="font-mono">{minutesToHhMm(total)}</div>
                         </div>
 
-                        <div className="rounded-lg border bg-background px-3 py-2 text-sm">
+                        <div className="w-full sm:w-auto rounded-lg border bg-background px-3 py-2 text-sm">
                             <div className="text-xs text-muted-foreground">{t("sleep.summary.score")}</div>
                             <div className="font-mono">{score == null ? "—" : score}</div>
                         </div>
 
-                        <div className="rounded-lg border bg-background px-3 py-2 text-sm">
+                        <div className="w-full sm:w-auto rounded-lg border bg-background px-3 py-2 text-sm">
                             <div className="text-xs text-muted-foreground">{t("sleep.summary.stagesSum")}</div>
                             <div className="font-mono">{stageSum > 0 ? `${stageSum} min` : "—"}</div>
                         </div>
 
-                        <Button variant="outline" onClick={onClear} disabled={query.isFetching || isSaving}>
+                        <Button
+                            className="w-full sm:w-auto"
+                            variant="outline"
+                            onClick={onClear}
+                            disabled={query.isFetching || isSaving}
+                        >
                             {t("sleep.clear")}
                         </Button>
                     </div>
@@ -184,7 +196,7 @@ export function SleepPage() {
             </div>
 
             {query.isFetching ? (
-                <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">{t("common.fetching")}</div>
+                <div className="rounded-xl border bg-card p-3 sm:p-4 text-sm text-muted-foreground">{t("common.fetching")}</div>
             ) : null}
 
             {query.isError ? <JsonDetails title={t("sleep.errorJsonTitle")} data={query.error} defaultOpen /> : null}
@@ -194,8 +206,8 @@ export function SleepPage() {
             ) : null}
 
             {/* Form */}
-            <div className="rounded-xl border bg-card p-4 space-y-4">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border bg-card p-3 sm:p-4 space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="space-y-1">
                         <label className="text-sm font-medium">{t("sleep.fields.timeAsleepMinutes")}</label>
                         <input
@@ -270,7 +282,7 @@ export function SleepPage() {
                         />
                     </div>
 
-                    <div className="space-y-1 md:col-span-2 lg:col-span-2">
+                    <div className="space-y-1 sm:col-span-2 lg:col-span-2">
                         <label className="text-sm font-medium">{t("sleep.fields.source")}</label>
                         <input
                             placeholder={t("sleep.placeholders.source")}

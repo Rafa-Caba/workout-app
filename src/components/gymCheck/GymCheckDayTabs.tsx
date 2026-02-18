@@ -14,15 +14,17 @@ export function GymCheckDayTabs(props: Props) {
     const { items, activeDay, onSelectDay } = props;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Plan por día</CardTitle>
-                <CardDescription>Selecciona el día para marcar ejercicios y subir media.</CardDescription>
+        <Card className="w-full min-w-0">
+            <CardHeader className="min-w-0">
+                <CardTitle className="min-w-0 wrap-break-words">Plan por día</CardTitle>
+                <CardDescription className="min-w-0 wrap-break-words">
+                    Selecciona el día para marcar ejercicios y subir media.
+                </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-4">
-                <div className="-mx-2 px-2 overflow-x-auto">
-                    <div className="flex items-center gap-2 w-max">
+            <CardContent className="min-w-0 space-y-4">
+                <div className="-mx-3 px-3 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="flex items-center gap-2 w-max min-w-full">
                         {items.map((d) => {
                             const active = d.dayKey === activeDay;
                             return (
@@ -31,7 +33,8 @@ export function GymCheckDayTabs(props: Props) {
                                     type="button"
                                     onClick={() => onSelectDay(d.dayKey)}
                                     className={[
-                                        "text-sm rounded-lg px-3 py-2 border transition whitespace-nowrap",
+                                        "shrink-0 text-base sm:text-sm rounded-lg px-3 py-2 border transition whitespace-nowrap",
+                                        "min-h-10",
                                         active
                                             ? "bg-primary text-primary-foreground border-transparent shadow-sm"
                                             : "bg-background hover:bg-muted/60",

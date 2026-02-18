@@ -33,31 +33,32 @@ export function GymCheckPlanInfo(props: Props) {
     const { lang, activeDay, dayLabels, activePlan } = props;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{lang === "es" ? "Plan (info)" : "Plan (info)"}</CardTitle>
+        <Card className="w-full min-w-0">
+            <CardHeader className="min-w-0">
+                <CardTitle className="min-w-0 wrap-break-words">{lang === "es" ? "Plan (info)" : "Plan (info)"}</CardTitle>
             </CardHeader>
 
-            <CardContent className="space-y-2">
-                <div className="text-sm font-semibold">
+            <CardContent className="min-w-0 space-y-2">
+                <div className="min-w-0 text-sm font-semibold wrap-break-words">
                     {lang === "es" ? `Día ${dayLabels[activeDay].es}` : `Day ${dayLabels[activeDay].en}`}
                 </div>
 
-                <div className="text-xs text-muted-foreground space-y-1">
-                    <div>
+                <div className="min-w-0 text-xs text-muted-foreground space-y-1">
+                    <div className="min-w-0 wrap-break-words">
                         <span className="font-semibold">{lang === "es" ? "Tipo" : "Type"}:</span>{" "}
                         {formatNullable((activePlan as any).sessionType)}
                     </div>
-                    <div>
+                    <div className="min-w-0 wrap-break-words">
                         <span className="font-semibold">{lang === "es" ? "Enfoque" : "Focus"}:</span>{" "}
                         {formatNullable((activePlan as any).focus)}
                     </div>
-                    <div>
-                        <span className="font-semibold">Tags:</span> {getTagsText(activePlan)}
+                    <div className="min-w-0 wrap-break-words">
+                        <span className="font-semibold">Tags:</span>{" "}
+                        <span className="wrap-break-words">{getTagsText(activePlan)}</span>
                     </div>
-                    <div>
+                    <div className="min-w-0 wrap-break-words">
                         <span className="font-semibold">{lang === "es" ? "Notas" : "Notes"}:</span>{" "}
-                        {formatNullable((activePlan as any).notes)}
+                        <span className="wrap-break-words">{formatNullable((activePlan as any).notes)}</span>
                     </div>
                 </div>
             </CardContent>

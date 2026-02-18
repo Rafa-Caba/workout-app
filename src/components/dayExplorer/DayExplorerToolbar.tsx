@@ -27,17 +27,17 @@ export function DayExplorerToolbar({
     onTabChange,
 }: Props) {
     return (
-        <div className="rounded-2xl border bg-card p-4">
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                <div className="space-y-2">
+        <div className="w-full min-w-0 rounded-2xl border bg-card p-4">
+            <div className="min-w-0 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div className="min-w-0 space-y-2">
                     <div className="text-xs text-muted-foreground">{t("days.toolbar.date")}</div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="min-w-0 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                         <input
                             type="date"
                             value={date}
                             onChange={(e) => onDateChange(e.target.value)}
-                            className="h-10 rounded-xl border bg-background px-3 text-sm"
+                            className="h-10 w-full sm:w-auto min-w-0 rounded-xl border bg-background px-3 text-base sm:text-sm"
                         />
 
                         {isFetching ? (
@@ -46,11 +46,12 @@ export function DayExplorerToolbar({
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <Button
                         type="button"
                         variant={tab === "summary" ? "default" : "outline"}
                         onClick={() => onTabChange("summary")}
+                        className="w-full sm:w-auto"
                     >
                         {t("days.toolbar.tab.summary")}
                     </Button>
@@ -59,6 +60,7 @@ export function DayExplorerToolbar({
                         type="button"
                         variant={tab === "raw" ? "default" : "outline"}
                         onClick={() => onTabChange("raw")}
+                        className="w-full sm:w-auto"
                     >
                         {t("days.toolbar.tab.raw")}
                     </Button>

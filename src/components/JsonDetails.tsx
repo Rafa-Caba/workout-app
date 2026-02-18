@@ -51,11 +51,11 @@ export function JsonDetails({ title, data, defaultOpen = false }: JsonDetailsPro
             open={isOpen}
             onToggle={(e) => setIsOpen((e.target as HTMLDetailsElement).open)}
         >
-            <summary className="cursor-pointer text-sm font-medium">
+            <summary className="cursor-pointer text-sm font-medium select-none">
                 {title ?? t("json.title")}
             </summary>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
                 <Button
                     variant="outline"
                     className="h-8 px-3"
@@ -64,6 +64,7 @@ export function JsonDetails({ title, data, defaultOpen = false }: JsonDetailsPro
                 >
                     {t("json.copy")}
                 </Button>
+
                 {isEmpty ? (
                     <span className="text-xs text-muted-foreground">
                         {t("json.noDataInline")}
@@ -72,7 +73,7 @@ export function JsonDetails({ title, data, defaultOpen = false }: JsonDetailsPro
             </div>
 
             {!isEmpty ? (
-                <pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap text-xs text-muted-foreground">
+                <pre className="mt-2 max-h-[60vh] sm:max-h-80 overflow-auto whitespace-pre-wrap wrap-break-words text-xs text-muted-foreground">
                     {text}
                 </pre>
             ) : (

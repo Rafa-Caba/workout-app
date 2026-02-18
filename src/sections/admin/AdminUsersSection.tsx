@@ -64,7 +64,6 @@ export function AdminUsersSection() {
 
     const isEditing = !!form.id;
 
-    // Cargar lista cuando cambien filtros/página
     React.useEffect(() => {
         void loadUsers();
     }, [page, search, roleFilter, activeFilter, loadUsers]);
@@ -104,10 +103,7 @@ export function AdminUsersSection() {
                     role: form.role,
                     sex: form.sex || null,
                     isActive: form.isActive,
-                    // Sólo enviar password si no está vacío
-                    ...(form.password.trim()
-                        ? { password: form.password.trim() }
-                        : {}),
+                    ...(form.password.trim() ? { password: form.password.trim() } : {}),
                 });
             } else {
                 await createUser({
@@ -140,19 +136,18 @@ export function AdminUsersSection() {
         await removeUser(user.id);
     }
 
-    const totalPages =
-        total > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+    const totalPages = total > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
 
     return (
         <div className="space-y-4">
-            <Card>
-                <CardHeader>
+            <Card className="w-full">
+                <CardHeader className="p-4 sm:p-6">
                     <CardTitle className="text-base">
                         {lang === "es" ? "Usuarios (Admin)" : "Users (Admin)"}
                     </CardTitle>
                 </CardHeader>
 
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
                     {/* Filtros */}
                     <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                         <div className="grid gap-2 md:grid-cols-3 md:w-2/3">
@@ -164,11 +159,7 @@ export function AdminUsersSection() {
                                     className="h-9 w-full rounded-md border bg-background px-3 text-sm"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    placeholder={
-                                        lang === "es"
-                                            ? "Nombre o email..."
-                                            : "Name or email..."
-                                    }
+                                    placeholder={lang === "es" ? "Nombre o email..." : "Name or email..."}
                                 />
                             </div>
 
@@ -179,19 +170,11 @@ export function AdminUsersSection() {
                                 <select
                                     className="h-9 w-full rounded-md border bg-background px-3 text-sm"
                                     value={roleFilter}
-                                    onChange={(e) =>
-                                        setRoleFilter(e.target.value as any)
-                                    }
+                                    onChange={(e) => setRoleFilter(e.target.value as any)}
                                 >
-                                    <option value="all">
-                                        {lang === "es" ? "Todos" : "All"}
-                                    </option>
-                                    <option value="admin">
-                                        {lang === "es" ? "Admins" : "Admins"}
-                                    </option>
-                                    <option value="user">
-                                        {lang === "es" ? "Usuarios" : "Users"}
-                                    </option>
+                                    <option value="all">{lang === "es" ? "Todos" : "All"}</option>
+                                    <option value="admin">{lang === "es" ? "Admins" : "Admins"}</option>
+                                    <option value="user">{lang === "es" ? "Usuarios" : "Users"}</option>
                                 </select>
                             </div>
 
@@ -202,32 +185,18 @@ export function AdminUsersSection() {
                                 <select
                                     className="h-9 w-full rounded-md border bg-background px-3 text-sm"
                                     value={activeFilter}
-                                    onChange={(e) =>
-                                        setActiveFilter(e.target.value as any)
-                                    }
+                                    onChange={(e) => setActiveFilter(e.target.value as any)}
                                 >
-                                    <option value="all">
-                                        {lang === "es" ? "Todos" : "All"}
-                                    </option>
-                                    <option value="active">
-                                        {lang === "es" ? "Activos" : "Active"}
-                                    </option>
-                                    <option value="inactive">
-                                        {lang === "es" ? "Inactivos" : "Inactive"}
-                                    </option>
+                                    <option value="all">{lang === "es" ? "Todos" : "All"}</option>
+                                    <option value="active">{lang === "es" ? "Activos" : "Active"}</option>
+                                    <option value="inactive">{lang === "es" ? "Inactivos" : "Inactive"}</option>
                                 </select>
                             </div>
                         </div>
 
                         <div className="flex items-center justify-end">
-                            <Button
-                                type="button"
-                                onClick={openCreateForm}
-                                disabled={loading}
-                            >
-                                {lang === "es"
-                                    ? "Nuevo usuario"
-                                    : "New user"}
+                            <Button type="button" onClick={openCreateForm} disabled={loading} className="w-full md:w-auto">
+                                {lang === "es" ? "Nuevo usuario" : "New user"}
                             </Button>
                         </div>
                     </div>
@@ -235,40 +204,34 @@ export function AdminUsersSection() {
                     {/* Estado de carga / error */}
                     {loading ? (
                         <div className="text-xs text-muted-foreground">
-                            {lang === "es"
-                                ? "Cargando usuarios..."
-                                : "Loading users..."}
+                            {lang === "es" ? "Cargando usuarios..." : "Loading users..."}
                         </div>
                     ) : null}
 
                     {error ? (
-                        <div className="text-xs text-red-500">
-                            {error}
-                        </div>
+                        <div className="text-xs text-red-500 wrap-break-words">{error}</div>
                     ) : null}
 
                     {/* Tabla */}
                     <div className="overflow-x-auto rounded-lg border border-primary/40">
-                        <table className="min-w-full text-sm">
+                        <table className="min-w-[225] w-full text-sm">
                             <thead className="bg-primary/20">
                                 <tr className="text-left">
-                                    <th className="px-3 py-2 font-medium">
+                                    <th className="px-3 py-2 font-medium whitespace-nowrap">
                                         {lang === "es" ? "Foto perfil" : "Profile"}
                                     </th>
-                                    <th className="px-3 py-2 font-medium">Nombre</th>
-                                    <th className="px-3 py-2 font-medium">Email</th>
-                                    <th className="px-3 py-2 font-medium">
+                                    <th className="px-3 py-2 font-medium whitespace-nowrap">Nombre</th>
+                                    <th className="px-3 py-2 font-medium whitespace-nowrap">Email</th>
+                                    <th className="px-3 py-2 font-medium whitespace-nowrap">
                                         {lang === "es" ? "Rol" : "Role"}
                                     </th>
-                                    <th className="px-3 py-2 font-medium">
+                                    <th className="px-3 py-2 font-medium whitespace-nowrap">
                                         {lang === "es" ? "Estado" : "Status"}
                                     </th>
-                                    <th className="px-3 py-2 font-medium">
-                                        {lang === "es"
-                                            ? "Último acceso"
-                                            : "Last login"}
+                                    <th className="px-3 py-2 font-medium whitespace-nowrap">
+                                        {lang === "es" ? "Último acceso" : "Last login"}
                                     </th>
-                                    <th className="px-3 py-2 font-medium">
+                                    <th className="px-3 py-2 font-medium whitespace-nowrap">
                                         {lang === "es" ? "Acciones" : "Actions"}
                                     </th>
                                 </tr>
@@ -277,10 +240,7 @@ export function AdminUsersSection() {
                             <tbody>
                                 {items.length === 0 ? (
                                     <tr>
-                                        <td
-                                            colSpan={7}
-                                            className="px-3 py-4 text-center text-xs text-muted-foreground"
-                                        >
+                                        <td colSpan={7} className="px-3 py-4 text-center text-xs text-muted-foreground">
                                             {lang === "es"
                                                 ? "No hay usuarios que coincidan con los filtros."
                                                 : "No users match the current filters."}
@@ -291,10 +251,7 @@ export function AdminUsersSection() {
                                         const hasProfilePic = !!u.profilePicUrl;
 
                                         return (
-                                            <tr
-                                                key={u.id}
-                                                className="border-t border-border/60"
-                                            >
+                                            <tr key={u.id} className="border-t border-border/60">
                                                 {/* Foto perfil con modal */}
                                                 <td className="px-3 py-2">
                                                     {hasProfilePic ? (
@@ -308,24 +265,16 @@ export function AdminUsersSection() {
 
                                                                 const mediaItem: MediaFeedItem = {
                                                                     source: "adminSettings",
-                                                                    publicId:
-                                                                        u.profilePicUrl ??
-                                                                        `user_${u.id}`,
+                                                                    publicId: u.profilePicUrl ?? `user_${u.id}`,
                                                                     url: u.profilePicUrl!,
                                                                     resourceType: "image",
                                                                     format: null,
                                                                     createdAt,
-                                                                    meta: {
-                                                                        userId: u.id,
-                                                                        userName: u.name,
-                                                                    },
+                                                                    meta: { userId: u.id, userName: u.name },
                                                                     date: null,
                                                                     weekKey: "admin-user",
                                                                     sessionId: null,
-                                                                    sessionType:
-                                                                        lang === "es"
-                                                                            ? "Foto de perfil"
-                                                                            : "Profile picture",
+                                                                    sessionType: lang === "es" ? "Foto de perfil" : "Profile picture",
                                                                     dayNotes: null,
                                                                     dayTags: null,
                                                                 };
@@ -333,11 +282,7 @@ export function AdminUsersSection() {
                                                                 setSelectedMedia(mediaItem);
                                                             }}
                                                             className="flex h-12 w-12 mx-auto items-center justify-center overflow-hidden rounded-full border bg-background"
-                                                            title={
-                                                                lang === "es"
-                                                                    ? "Ver foto de perfil"
-                                                                    : "View profile picture"
-                                                            }
+                                                            title={lang === "es" ? "Ver foto de perfil" : "View profile picture"}
                                                         >
                                                             <img
                                                                 src={u.profilePicUrl!}
@@ -347,32 +292,26 @@ export function AdminUsersSection() {
                                                             />
                                                         </button>
                                                     ) : (
-                                                        <div className="flex h-9 w-9 items-center justify-center rounded-full border bg-background text-[11px] font-semibold text-muted-foreground">
+                                                        <div className="flex h-9 w-9 mx-auto items-center justify-center rounded-full border bg-background text-[11px] font-semibold text-muted-foreground">
                                                             {getInitials(u.name)}
                                                         </div>
                                                     )}
                                                 </td>
 
                                                 <td className="px-3 py-2">
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium">
-                                                            {u.name}
-                                                        </span>
-                                                        <span className="text-[11px] text-muted-foreground">
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-medium truncate">{u.name}</span>
+                                                        <span className="text-[11px] text-muted-foreground truncate">
                                                             id: {u.id}
                                                         </span>
                                                     </div>
                                                 </td>
                                                 <td className="px-3 py-2">
-                                                    <span className="text-xs font-mono">
-                                                        {u.email}
-                                                    </span>
+                                                    <span className="text-xs font-mono">{u.email}</span>
                                                 </td>
                                                 <td className="px-3 py-2">
-                                                    <span className="text-xs rounded-full bg-muted px-2 py-1">
-                                                        {u.role === "admin"
-                                                            ? "admin"
-                                                            : "user"}
+                                                    <span className="text-xs rounded-full bg-muted px-2 py-1 whitespace-nowrap">
+                                                        {u.role === "admin" ? "admin" : "user"}
                                                     </span>
                                                 </td>
                                                 <td className="px-3 py-2">
@@ -394,12 +333,12 @@ export function AdminUsersSection() {
                                                     </span>
                                                 </td>
                                                 <td className="px-3 py-2">
-                                                    <span className="text-xs text-muted-foreground font-mono">
+                                                    <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">
                                                         {u.lastLoginAt ?? "—"}
                                                     </span>
                                                 </td>
                                                 <td className="px-3 py-2">
-                                                    <div className="flex gap-2">
+                                                    <div className="flex flex-wrap gap-2">
                                                         <Button
                                                             type="button"
                                                             variant="outline"
@@ -407,9 +346,7 @@ export function AdminUsersSection() {
                                                             className="h-7 px-2 text-xs"
                                                             onClick={() => openEditForm(u)}
                                                         >
-                                                            {lang === "es"
-                                                                ? "Editar"
-                                                                : "Edit"}
+                                                            {lang === "es" ? "Editar" : "Edit"}
                                                         </Button>
                                                         <Button
                                                             type="button"
@@ -418,9 +355,7 @@ export function AdminUsersSection() {
                                                             className="h-7 px-2 text-xs"
                                                             onClick={() => handleDelete(u)}
                                                         >
-                                                            {lang === "es"
-                                                                ? "Eliminar"
-                                                                : "Delete"}
+                                                            {lang === "es" ? "Eliminar" : "Delete"}
                                                         </Button>
                                                     </div>
                                                 </td>
@@ -434,7 +369,7 @@ export function AdminUsersSection() {
 
                     {/* Paginación */}
                     {total > pageSize ? (
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs text-muted-foreground">
                             <div>
                                 {lang === "es"
                                     ? `Mostrando página ${page} de ${totalPages}, total ${total} usuario(s).`
@@ -469,8 +404,8 @@ export function AdminUsersSection() {
 
             {/* Formulario crear/editar */}
             {formOpen ? (
-                <Card className="border-dashed border-primary/30">
-                    <CardHeader>
+                <Card className="border-dashed border-primary/30 w-full">
+                    <CardHeader className="p-4 sm:p-6">
                         <CardTitle className="text-base">
                             {isEditing
                                 ? lang === "es"
@@ -481,16 +416,11 @@ export function AdminUsersSection() {
                                     : "New user"}
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <form
-                            onSubmit={handleSubmit}
-                            className="space-y-4"
-                        >
+                    <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+                        <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid gap-3 md:grid-cols-2">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-medium">
-                                        Nombre
-                                    </label>
+                                    <label className="text-xs font-medium">Nombre</label>
                                     <input
                                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                         value={form.name}
@@ -505,9 +435,7 @@ export function AdminUsersSection() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-xs font-medium">
-                                        Email
-                                    </label>
+                                    <label className="text-xs font-medium">Email</label>
                                     <input
                                         type="email"
                                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -525,9 +453,7 @@ export function AdminUsersSection() {
                                 {!isEditing ? (
                                     <div className="space-y-1">
                                         <label className="text-xs font-medium">
-                                            {lang === "es"
-                                                ? "Contraseña"
-                                                : "Password"}
+                                            {lang === "es" ? "Contraseña" : "Password"}
                                         </label>
                                         <input
                                             type="password"
@@ -550,9 +476,7 @@ export function AdminUsersSection() {
                                 ) : (
                                     <div className="space-y-1">
                                         <label className="text-xs font-medium">
-                                            {lang === "es"
-                                                ? "Nueva contraseña (opcional)"
-                                                : "New password (optional)"}
+                                            {lang === "es" ? "Nueva contraseña (opcional)" : "New password (optional)"}
                                         </label>
                                         <input
                                             type="password"
@@ -574,9 +498,7 @@ export function AdminUsersSection() {
                                 )}
 
                                 <div className="space-y-1">
-                                    <label className="text-xs font-medium">
-                                        Rol
-                                    </label>
+                                    <label className="text-xs font-medium">Rol</label>
                                     <select
                                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                         value={form.role}
@@ -593,9 +515,7 @@ export function AdminUsersSection() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-xs font-medium">
-                                        Sexo
-                                    </label>
+                                    <label className="text-xs font-medium">Sexo</label>
                                     <select
                                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                         value={form.sex}
@@ -606,20 +526,10 @@ export function AdminUsersSection() {
                                             }))
                                         }
                                     >
-                                        <option value="">
-                                            {lang === "es"
-                                                ? "Sin especificar"
-                                                : "Unspecified"}
-                                        </option>
-                                        <option value="male">
-                                            {lang === "es" ? "Hombre" : "Male"}
-                                        </option>
-                                        <option value="female">
-                                            {lang === "es" ? "Mujer" : "Female"}
-                                        </option>
-                                        <option value="other">
-                                            {lang === "es" ? "Otro" : "Other"}
-                                        </option>
+                                        <option value="">{lang === "es" ? "Sin especificar" : "Unspecified"}</option>
+                                        <option value="male">{lang === "es" ? "Hombre" : "Male"}</option>
+                                        <option value="female">{lang === "es" ? "Mujer" : "Female"}</option>
+                                        <option value="other">{lang === "es" ? "Otro" : "Other"}</option>
                                     </select>
                                 </div>
 
@@ -637,26 +547,17 @@ export function AdminUsersSection() {
                                             }))
                                         }
                                     >
-                                        <option value="1">
-                                            {lang === "es" ? "Activo" : "Active"}
-                                        </option>
-                                        <option value="0">
-                                            {lang === "es" ? "Inactivo" : "Inactive"}
-                                        </option>
+                                        <option value="1">{lang === "es" ? "Activo" : "Active"}</option>
+                                        <option value="0">{lang === "es" ? "Inactivo" : "Inactive"}</option>
                                     </select>
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-end gap-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={closeForm}
-                                    disabled={saving}
-                                >
+                            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-2">
+                                <Button type="button" variant="outline" onClick={closeForm} disabled={saving} className="w-full sm:w-auto">
                                     {lang === "es" ? "Cancelar" : "Cancel"}
                                 </Button>
-                                <Button type="submit" disabled={saving}>
+                                <Button type="submit" disabled={saving} className="w-full sm:w-auto">
                                     {saving
                                         ? lang === "es"
                                             ? "Guardando..."
@@ -671,12 +572,8 @@ export function AdminUsersSection() {
                 </Card>
             ) : null}
 
-            {/* Modal de media */}
             {selectedMedia ? (
-                <MediaViewerModal
-                    item={selectedMedia}
-                    onClose={() => setSelectedMedia(null)}
-                />
+                <MediaViewerModal item={selectedMedia} onClose={() => setSelectedMedia(null)} />
             ) : null}
         </div>
     );

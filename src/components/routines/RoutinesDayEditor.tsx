@@ -27,6 +27,8 @@ type Props = {
 
     ph: Placeholders;
 
+    scrollRootEl?: HTMLElement | null;
+
     attachmentOptions: AttachmentOption[];
 
     movementOptions?: MovementOption[];
@@ -43,6 +45,44 @@ type Props = {
     onUpdatePlan: (dayKey: DayKey, patch: Partial<DayPlan>) => void;
     onUpdateExercise: (dayKey: DayKey, idx: number, patch: Partial<ExerciseItem>) => void;
 };
+
+function getOverflowY(el: HTMLElement): string {
+    try {
+        return window.getComputedStyle(el).overflowY;
+    } catch {
+        return "";
+    }
+}
+
+function findScrollRoot(startEl: HTMLElement): HTMLElement | Window {
+    // Radix ScrollArea viewport
+    const radixViewport = startEl.closest("[data-radix-scroll-area-viewport]") as HTMLElement | null;
+    if (radixViewport) return radixViewport;
+
+    // Nearest overflow-y auto/scroll parent
+    let p: HTMLElement | null = startEl.parentElement;
+    while (p) {
+        const oy = getOverflowY(p);
+        if (oy === "auto" || oy === "scroll") return p;
+        p = p.parentElement;
+    }
+
+    return window;
+}
+
+function isWindow(v: HTMLElement | Window): v is Window {
+    return v === window;
+}
+
+function getViewportBounds(root: HTMLElement | Window): { top: number; bottom: number } {
+    if (isWindow(root)) {
+        const h = window.innerHeight || document.documentElement.clientHeight || 0;
+        return { top: 0, bottom: h };
+    }
+
+    const r = root.getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom };
+}
 
 export function RoutinesDayEditor({
     activePlan,
@@ -61,12 +101,87 @@ export function RoutinesDayEditor({
     onRemoveExercise,
     onUpdatePlan,
     onUpdateExercise,
+    scrollRootEl
 }: Props) {
     const exercises = activePlan.exercises ?? [];
 
+    // Track when the "real" header button is visible.
+    const addBtnWrapRef = React.useRef<HTMLDivElement | null>(null);
+    const [showStickyAdd, setShowStickyAdd] = React.useState(false);
+
+    function canScroll(el: HTMLElement | null | undefined) {
+        if (!el) return true; // viewport siempre “scrolleable”
+        return el.scrollHeight > el.clientHeight + 1;
+    }
+
+    React.useEffect(() => {
+        const sentinel = addBtnWrapRef.current;
+        if (!sentinel) return;
+
+        if (scrollRootEl && !canScroll(scrollRootEl)) {
+            setShowStickyAdd(false);
+            return;
+        }
+
+        setShowStickyAdd(false);
+
+        let raf1 = 0;
+        let raf2 = 0;
+
+        let hasScrolled = false;
+
+        const root = scrollRootEl ?? null;
+
+        const onScroll = () => {
+            const top = scrollRootEl ? scrollRootEl.scrollTop : window.scrollY;
+            hasScrolled = top > 8;
+            if (!hasScrolled) setShowStickyAdd(false);
+        };
+
+        const scrollTarget: EventTarget = scrollRootEl ?? window;
+        scrollTarget.addEventListener("scroll", onScroll, { passive: true });
+        onScroll();
+
+        const isMdUp =
+            typeof window !== "undefined"
+                ? window.matchMedia("(min-width: 768px)").matches
+                : false;
+
+        const rootMargin = isMdUp ? "-72px 0px 0px 0px" : "0px 0px 0px 0px";
+
+        const io = new IntersectionObserver(
+            ([entry]) => {
+                if (!hasScrolled) {
+                    setShowStickyAdd(false);
+                    return;
+                }
+                setShowStickyAdd(!entry.isIntersecting);
+            },
+            {
+                root,
+                threshold: 0,
+                rootMargin,
+            }
+        );
+
+        io.observe(sentinel);
+
+        raf1 = requestAnimationFrame(() => {
+            raf2 = requestAnimationFrame(() => {
+                if (!hasScrolled) setShowStickyAdd(false);
+            });
+        });
+
+        return () => {
+            io.disconnect();
+            scrollTarget.removeEventListener("scroll", onScroll as any);
+            if (raf1) cancelAnimationFrame(raf1);
+            if (raf2) cancelAnimationFrame(raf2);
+        };
+    }, [scrollRootEl]);
+
     return (
         <div className="space-y-4">
-            {/* Header: día + botón agregar ejercicio */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                     <span>{t("routines.day")}</span>
@@ -75,17 +190,19 @@ export function RoutinesDayEditor({
                     </span>
                 </div>
 
-                <Button
-                    variant="outline"
-                    className="h-9 px-3 w-full sm:w-auto"
-                    onClick={() => onAddExercise(activePlan.dayKey as DayKey)}
-                    disabled={busy}
-                >
-                    {t("routines.addExercise")}
-                </Button>
+                <div className="w-full sm:w-auto">
+                    <div ref={addBtnWrapRef} className="h-px w-full" aria-hidden="true" />
+                    <Button
+                        variant="outline"
+                        className="h-9 px-3 w-full sm:w-auto"
+                        onClick={() => onAddExercise(activePlan.dayKey as DayKey)}
+                        disabled={busy}
+                    >
+                        {t("routines.addExercise")}
+                    </Button>
+                </div>
             </div>
 
-            {/* Meta del día (sessionType, focus, tags, notes) */}
             <div className="rounded-xl border bg-card/80 p-4 space-y-3">
                 <div className="grid gap-3 md:grid-cols-2">
                     <div className="space-y-1">
@@ -153,7 +270,6 @@ export function RoutinesDayEditor({
                 </div>
             </div>
 
-            {/* Lista de ejercicios del día */}
             <div className="rounded-xl border border-dashed bg-card/60 p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                     <div className="text-xs font-medium text-muted-foreground">
@@ -200,13 +316,10 @@ export function RoutinesDayEditor({
                                     onUpdateExercise(activePlan.dayKey as DayKey, idx, {
                                         movementId,
                                         movementName,
-                                        // keep display name synced (you can still edit afterwards)
                                         name: movementName ?? ex.name,
                                     });
                                 }}
-                                onChangeName={(next) =>
-                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, { name: next })
-                                }
+                                onChangeName={(next) => onUpdateExercise(activePlan.dayKey as DayKey, idx, { name: next })}
                                 onChangeNotes={(next) =>
                                     onUpdateExercise(activePlan.dayKey as DayKey, idx, { notes: next || undefined })
                                 }
@@ -242,6 +355,45 @@ export function RoutinesDayEditor({
                     ) : null}
                 </div>
             </div>
+
+            {showStickyAdd ? (
+                <div
+                    className="
+                        fixed inset-x-0 z-40 md:z-50
+                        border-t md:border rounded-none md:rounded-xl
+                        bg-card/95
+                        backdrop-blur supports-backdrop-filter:bg-card/70
+                        md:backdrop-blur-none md:bg-card
+                        pointer-events-none
+                        bottom-[calc(env(safe-area-inset-bottom)+50px)]
+                        sm:bottom-[calc(env(safe-area-inset-bottom)+15px)]
+                    "
+                    style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+                >
+                    <div className="mx-auto max-w-6xl px-3 sm:px-4 py-2">
+                        <div
+                            className="
+                                pointer-events-auto
+                                flex items-center gap-2
+                                justify-stretch
+                                sm:justify-start
+                                md:justify-between
+                            "
+                        >
+                            <Button
+                                variant="outline"
+                                className="h-9 px-3 w-full sm:w-auto shadow-sm"
+                                onClick={() => onAddExercise(activePlan.dayKey as DayKey)}
+                                disabled={busy}
+                            >
+                                {t("routines.addExercise")}
+                            </Button>
+
+                            <div className="hidden md:block w-full" />
+                        </div>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 }

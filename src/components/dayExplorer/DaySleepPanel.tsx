@@ -1,6 +1,7 @@
 import React from "react";
 import type { WorkoutDay, WorkoutSession } from "@/types/workoutDay.types";
 import { BadgePill } from "@/components/dayExplorer/BadgePill";
+import { calcSleepEfficiencyPct } from "@/utils/dayExplorer";
 
 type TFn = (key: any, vars?: any) => string;
 
@@ -61,10 +62,8 @@ function computeReadiness(sleepScore: number | null, rpe: number | null): number
 
     if (isFiniteNumber(rpe)) {
         if (rpe >= 6) {
-            // heavier day => reduce readiness
             value -= (rpe - 5) * 6; // rpe 8 => -18, rpe 10 => -30
         } else {
-            // easy day => small boost
             value += (5 - rpe) * 2; // rpe 3 => +4
         }
     }
@@ -75,8 +74,10 @@ function computeReadiness(sleepScore: number | null, rpe: number | null): number
 export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
     const sleep = day.sleep ?? null;
 
-    // Always render; use null-safe values.
+    console.log({ sleep });
+
     const timeAsleepMin = sleep?.timeAsleepMinutes ?? null;
+    const timeInBedMinDirect = sleep?.timeInBedMinutes ?? null; // ✅ NEW
     const score = sleep?.score ?? null;
 
     const remMin = sleep?.remMinutes ?? null;
@@ -87,7 +88,6 @@ export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
     const total = formatMinutes(timeAsleepMin);
     const scoreText = isFiniteNumber(score) ? `${Math.round(score)}` : null;
 
-    // Percent of time asleep
     const remPct =
         isFiniteNumber(remMin) && isFiniteNumber(timeAsleepMin) && timeAsleepMin > 0
             ? (remMin / timeAsleepMin) * 100
@@ -98,10 +98,12 @@ export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
             ? (deepMin / timeAsleepMin) * 100
             : null;
 
-    // Efficiency needs time in bed (try reading from raw)
-    let inBedMinutes: number | null = null;
-    if (sleep?.raw && isRecord(sleep.raw)) {
-        inBedMinutes =
+    let timeInBedMin: number | null = isFiniteNumber(timeInBedMinDirect)
+        ? timeInBedMinDirect
+        : null;
+
+    if (!isFiniteNumber(timeInBedMin) && sleep?.raw && isRecord(sleep.raw)) {
+        timeInBedMin =
             pickNumber(sleep.raw, [
                 "timeInBedMinutes",
                 "inBedMinutes",
@@ -111,18 +113,16 @@ export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
             ]) ?? null;
     }
 
-    const efficiencyPct =
-        isFiniteNumber(timeAsleepMin) && isFiniteNumber(inBedMinutes) && inBedMinutes > 0
-            ? (timeAsleepMin / inBedMinutes) * 100
-            : null;
+    const efficiencyPct = calcSleepEfficiencyPct(timeAsleepMin, timeInBedMin);
 
     // RPE for readiness
     const sessions: WorkoutSession[] = Array.isArray(day.training?.sessions)
         ? (day.training!.sessions as WorkoutSession[])
         : [];
 
-    const dayRpe =
-        isFiniteNumber(day.training?.dayEffortRpe) ? (day.training!.dayEffortRpe as number) : computeAvgRpeFromSessions(sessions);
+    const dayRpe = isFiniteNumber(day.training?.dayEffortRpe)
+        ? (day.training!.dayEffortRpe as number)
+        : computeAvgRpeFromSessions(sessions);
 
     const readiness = computeReadiness(score, dayRpe);
 
@@ -140,8 +140,16 @@ export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
                 <BadgePill emoji="🛌" label={t("days.sleep.total")} value={total} />
                 <BadgePill emoji="🏆" label={t("days.sleep.score")} value={scoreText} />
 
-                <BadgePill emoji="💤" label={t("days.sleep.efficiency")} value={formatPercent(efficiencyPct)} />
-                <BadgePill emoji="🔁" label={t("days.sleep.readiness")} value={isFiniteNumber(readiness) ? `${readiness}` : null} />
+                <BadgePill
+                    emoji="💤"
+                    label={t("days.sleep.efficiency")}
+                    value={formatPercent(efficiencyPct)}
+                />
+                <BadgePill
+                    emoji="🔁"
+                    label={t("days.sleep.readiness")}
+                    value={isFiniteNumber(readiness) ? `${readiness}` : null}
+                />
 
                 <BadgePill emoji="🧠" label={t("days.sleep.remPct")} value={formatPercent(remPct)} />
                 <BadgePill emoji="🌙" label={t("days.sleep.deepPct")} value={formatPercent(deepPct)} />

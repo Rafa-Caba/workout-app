@@ -34,6 +34,24 @@ function getInitials(name: string): string {
     return (first + (second ?? "")).toUpperCase();
 }
 
+type PurgeCleanupItem = { model: string; deletedCount: number };
+type PurgeResult = {
+    id: string;
+    message: string;
+    cleanup?: {
+        items: PurgeCleanupItem[];
+        totalDeleted: number;
+    };
+};
+
+function formatDeletedCount(n: number): string {
+    try {
+        return new Intl.NumberFormat("es-MX").format(n);
+    } catch {
+        return String(n);
+    }
+}
+
 export function AdminUsersSection() {
     const { lang } = useI18n();
 
@@ -55,12 +73,20 @@ export function AdminUsersSection() {
         createUser,
         updateUser,
         removeUser,
+        purgeUser,
     } = useAdminUsersStore();
 
     const [formOpen, setFormOpen] = React.useState(false);
     const [form, setForm] = React.useState<UserFormValues>(emptyForm);
     const [saving, setSaving] = React.useState(false);
     const [selectedMedia, setSelectedMedia] = React.useState<MediaFeedItem | null>(null);
+
+    // Purge modal state
+    const [purgeOpen, setPurgeOpen] = React.useState(false);
+    const [purgeTarget, setPurgeTarget] = React.useState<AdminUser | null>(null);
+    const [purgeConfirmText, setPurgeConfirmText] = React.useState("");
+    const [purging, setPurging] = React.useState(false);
+    const [purgeResult, setPurgeResult] = React.useState<PurgeResult | null>(null);
 
     const isEditing = !!form.id;
 
@@ -127,8 +153,8 @@ export function AdminUsersSection() {
         if (
             !window.confirm(
                 lang === "es"
-                    ? `¿Eliminar usuario "${user.name}"?`
-                    : `Delete user "${user.name}"?`
+                    ? `¿Desactivar usuario "${user.name}"?`
+                    : `Deactivate user "${user.name}"?`
             )
         ) {
             return;
@@ -136,7 +162,41 @@ export function AdminUsersSection() {
         await removeUser(user.id);
     }
 
+    function openPurgeModal(user: AdminUser) {
+        setPurgeTarget(user);
+        setPurgeConfirmText("");
+        setPurgeResult(null);
+        setPurgeOpen(true);
+    }
+
+    function closePurgeModal() {
+        setPurgeOpen(false);
+        setPurgeTarget(null);
+        setPurgeConfirmText("");
+        setPurging(false);
+        setPurgeResult(null);
+    }
+
+    async function handleConfirmPurge() {
+        if (!purgeTarget) return;
+
+        setPurging(true);
+        try {
+            const result: PurgeResult = await purgeUser(purgeTarget.id);
+            setPurgeResult(result);
+
+            // refresca lista (por si el usuario desaparece)
+            await loadUsers();
+        } catch {
+            // si tu store ya setea error global, con esto basta
+        } finally {
+            setPurging(false);
+        }
+    }
+
     const totalPages = total > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+
+    const purgeIsUnlocked = purgeConfirmText.trim().toUpperCase() === "PURGE";
 
     return (
         <div className="space-y-4">
@@ -348,6 +408,7 @@ export function AdminUsersSection() {
                                                         >
                                                             {lang === "es" ? "Editar" : "Edit"}
                                                         </Button>
+
                                                         <Button
                                                             type="button"
                                                             variant="outline"
@@ -356,6 +417,18 @@ export function AdminUsersSection() {
                                                             onClick={() => handleDelete(u)}
                                                         >
                                                             {lang === "es" ? "Eliminar" : "Delete"}
+                                                        </Button>
+
+                                                        {/* 👇 NUEVO: Purge */}
+                                                        <Button
+                                                            type="button"
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            className="h-7 px-2 text-xs text-white"
+                                                            onClick={() => openPurgeModal(u)}
+                                                            disabled={loading}
+                                                        >
+                                                            {lang === "es" ? "Purgar" : "Purge"}
                                                         </Button>
                                                     </div>
                                                 </td>
@@ -574,6 +647,161 @@ export function AdminUsersSection() {
 
             {selectedMedia ? (
                 <MediaViewerModal item={selectedMedia} onClose={() => setSelectedMedia(null)} />
+            ) : null}
+
+            {/* ✅ Purge Modal */}
+            {purgeOpen ? (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    <div className="w-full max-w-lg rounded-xl border bg-background shadow-xl">
+                        <div className="p-4 sm:p-5 border-b">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="space-y-1">
+                                    <h3 className="text-base font-semibold">
+                                        {lang === "es" ? "Purgar usuario" : "Purge user"}
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground">
+                                        {lang === "es"
+                                            ? "Esto eliminará permanentemente al usuario y sus datos relacionados. Esta acción no se puede deshacer."
+                                            : "This will permanently delete the user and related data. This action cannot be undone."}
+                                    </p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 px-2"
+                                    onClick={closePurgeModal}
+                                    disabled={purging}
+                                >
+                                    {lang === "es" ? "Cerrar" : "Close"}
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="p-4 sm:p-5 space-y-4">
+                            {purgeTarget ? (
+                                <div className="rounded-lg border bg-muted/30 p-3">
+                                    <div className="text-sm font-medium truncate">{purgeTarget.name}</div>
+                                    <div className="text-xs text-muted-foreground font-mono truncate">{purgeTarget.email}</div>
+                                    <div className="text-[11px] text-muted-foreground font-mono truncate">id: {purgeTarget.id}</div>
+                                </div>
+                            ) : null}
+
+                            {!purgeResult ? (
+                                <>
+                                    <div className="space-y-2">
+                                        <div className="text-xs font-medium text-red-600 dark:text-red-400">
+                                            {lang === "es"
+                                                ? "Advertencia: esto borrará datos (días, rutinas, tokens, métricas, etc.)."
+                                                : "Warning: this will delete data (days, routines, tokens, metrics, etc.)."}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            {lang === "es"
+                                                ? 'Para confirmar, escribe "PURGE" en el campo.'
+                                                : 'To confirm, type "PURGE" in the field.'}
+                                        </p>
+
+                                        <input
+                                            className="h-9 w-full rounded-md border bg-background px-3 text-sm font-mono"
+                                            value={purgeConfirmText}
+                                            onChange={(e) => setPurgeConfirmText(e.target.value)}
+                                            placeholder='PURGE'
+                                            disabled={purging}
+                                        />
+                                    </div>
+
+                                    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={closePurgeModal}
+                                            disabled={purging}
+                                            className="w-full sm:w-auto"
+                                        >
+                                            {lang === "es" ? "Cancelar" : "Cancel"}
+                                        </Button>
+
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            onClick={handleConfirmPurge}
+                                            disabled={!purgeIsUnlocked || purging}
+                                            className="w-full sm:w-auto"
+                                        >
+                                            {purging
+                                                ? lang === "es"
+                                                    ? "Purgando..."
+                                                    : "Purging..."
+                                                : lang === "es"
+                                                    ? "Confirmar purga"
+                                                    : "Confirm purge"}
+                                        </Button>
+                                    </div>
+
+                                    <p className="text-[11px] text-muted-foreground">
+                                        {lang === "es"
+                                            ? "Tip: si solo quieres desactivar el acceso, usa “Eliminar” (desactiva)."
+                                            : "Tip: if you only want to disable access, use “Delete” (deactivates)."}
+                                    </p>
+                                </>
+                            ) : (
+                                <div className="space-y-3">
+                                    <div className="rounded-lg border bg-emerald-500/10 p-3">
+                                        <div className="text-sm font-medium">
+                                            {lang === "es" ? "Purga completada" : "Purge completed"}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {purgeResult.message}
+                                        </div>
+                                    </div>
+
+                                    {purgeResult.cleanup?.items?.length ? (
+                                        <div className="rounded-lg border p-3">
+                                            <div className="text-xs font-semibold mb-2">
+                                                {lang === "es" ? "Reporte de limpieza" : "Cleanup report"}
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                {purgeResult.cleanup.items.map((it) => (
+                                                    <div key={it.model} className="flex items-center justify-between gap-3 text-xs">
+                                                        <span className="font-mono">{it.model}</span>
+                                                        <span className="font-mono text-muted-foreground">
+                                                            {formatDeletedCount(it.deletedCount)}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                                <div className="mt-2 border-t pt-2 flex items-center justify-between text-xs">
+                                                    <span className="font-semibold">
+                                                        {lang === "es" ? "Total eliminado" : "Total deleted"}
+                                                    </span>
+                                                    <span className="font-mono font-semibold">
+                                                        {formatDeletedCount(purgeResult.cleanup.totalDeleted)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-xs text-muted-foreground">
+                                            {lang === "es"
+                                                ? "No se recibió reporte de limpieza."
+                                                : "No cleanup report received."}
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-end">
+                                        <Button type="button" onClick={closePurgeModal}>
+                                            {lang === "es" ? "Listo" : "Done"}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             ) : null}
         </div>
     );

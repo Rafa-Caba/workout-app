@@ -13,7 +13,25 @@ import {
     deleteAdminUser,
     fetchAdminUsers,
     updateAdminUser,
+    purgeAdminUser,
 } from "@/services/admin/adminUsers.service";
+
+type AdminUsersQuery = {
+    page: number;
+    pageSize: number;
+    search?: string;
+    role?: "admin" | "user";
+    isActive?: boolean;
+};
+
+export type AdminUserPurgeResponse = {
+    id: string;
+    message: string;
+    cleanup?: {
+        items: { model: string; deletedCount: number }[];
+        totalDeleted: number;
+    };
+};
 
 type AdminUsersState = {
     items: AdminUser[];
@@ -37,12 +55,27 @@ type AdminUsersState = {
     loadUsers: () => Promise<void>;
 
     createUser: (payload: AdminUserCreatePayload) => Promise<AdminUser | null>;
-    updateUser: (
-        id: string,
-        payload: AdminUserUpdatePayload
-    ) => Promise<AdminUser | null>;
+    updateUser: (id: string, payload: AdminUserUpdatePayload) => Promise<AdminUser | null>;
+
+    // Soft delete (desactivar)
     removeUser: (id: string) => Promise<boolean>;
+
+    // Hard delete + cleanup report
+    purgeUser: (id: string) => Promise<AdminUserPurgeResponse>;
 };
+
+function getErrorMessage(e: unknown, fallback: string): string {
+    if (typeof e === "object" && e !== null) {
+        const anyErr = e as any;
+        return (
+            anyErr?.response?.data?.error?.message ??
+            anyErr?.response?.data?.message ??
+            anyErr?.message ??
+            fallback
+        );
+    }
+    return fallback;
+}
 
 export const useAdminUsersStore = create<AdminUsersState>((set, get) => ({
     items: [],
@@ -79,16 +112,14 @@ export const useAdminUsersStore = create<AdminUsersState>((set, get) => ({
         set({ loading: true, error: null });
 
         try {
-            const query: any = {
+            const query: AdminUsersQuery = {
                 page,
                 pageSize,
             };
 
             if (search.trim()) query.search = search.trim();
             if (roleFilter !== "all") query.role = roleFilter;
-            if (activeFilter !== "all") {
-                query.isActive = activeFilter === "active";
-            }
+            if (activeFilter !== "all") query.isActive = activeFilter === "active";
 
             const data: AdminUserListResponse = await fetchAdminUsers(query);
 
@@ -100,15 +131,10 @@ export const useAdminUsersStore = create<AdminUsersState>((set, get) => ({
                 loading: false,
                 error: null,
             });
-        } catch (e: any) {
-            const msg =
-                e?.response?.data?.error?.message ??
-                e?.message ??
-                "No se pudieron cargar los usuarios.";
+        } catch (e: unknown) {
+            const msg = getErrorMessage(e, "No se pudieron cargar los usuarios.");
             set({ loading: false, error: msg });
-            toast.error("Error al cargar usuarios", {
-                description: msg,
-            });
+            toast.error("Error al cargar usuarios", { description: msg });
         }
     },
 
@@ -116,14 +142,10 @@ export const useAdminUsersStore = create<AdminUsersState>((set, get) => ({
         try {
             const user = await createAdminUser(payload);
             toast.success("Usuario creado");
-            // recargar lista (mantiene filtros/página)
             await get().loadUsers();
             return user;
-        } catch (e: any) {
-            const msg =
-                e?.response?.data?.error?.message ??
-                e?.message ??
-                "No se pudo crear el usuario.";
+        } catch (e: unknown) {
+            const msg = getErrorMessage(e, "No se pudo crear el usuario.");
             toast.error("Error al crear usuario", { description: msg });
             return null;
         }
@@ -134,17 +156,13 @@ export const useAdminUsersStore = create<AdminUsersState>((set, get) => ({
             const user = await updateAdminUser(id, payload);
             toast.success("Usuario actualizado");
 
-            // actualizar en memoria sin forzar refetch completo
             set((state) => ({
                 items: state.items.map((u) => (u.id === id ? user : u)),
             }));
 
             return user;
-        } catch (e: any) {
-            const msg =
-                e?.response?.data?.error?.message ??
-                e?.message ??
-                "No se pudo actualizar el usuario.";
+        } catch (e: unknown) {
+            const msg = getErrorMessage(e, "No se pudo actualizar el usuario.");
             toast.error("Error al actualizar usuario", { description: msg });
             return null;
         }
@@ -153,7 +171,7 @@ export const useAdminUsersStore = create<AdminUsersState>((set, get) => ({
     async removeUser(id) {
         try {
             await deleteAdminUser(id);
-            toast.success("Usuario eliminado");
+            toast.success("Usuario desactivado");
 
             set((state) => ({
                 items: state.items.filter((u) => u.id !== id),
@@ -161,13 +179,34 @@ export const useAdminUsersStore = create<AdminUsersState>((set, get) => ({
             }));
 
             return true;
-        } catch (e: any) {
-            const msg =
-                e?.response?.data?.error?.message ??
-                e?.message ??
-                "No se pudo eliminar el usuario.";
+        } catch (e: unknown) {
+            const msg = getErrorMessage(e, "No se pudo eliminar el usuario.");
             toast.error("Error al eliminar usuario", { description: msg });
             return false;
+        }
+    },
+
+    async purgeUser(id) {
+        try {
+            const result = await purgeAdminUser(id);
+
+            toast.success("Usuario purgado", {
+                description:
+                    result?.cleanup?.totalDeleted !== undefined
+                        ? `Total eliminado: ${result.cleanup.totalDeleted}`
+                        : "Purga completada.",
+            });
+
+            set((state) => ({
+                items: state.items.filter((u) => u.id !== id),
+                total: Math.max(0, state.total - 1),
+            }));
+
+            return result;
+        } catch (e: unknown) {
+            const msg = getErrorMessage(e, "No se pudo purgar el usuario.");
+            toast.error("Error al purgar usuario", { description: msg });
+            throw e;
         }
     },
 }));

@@ -1,4 +1,6 @@
 import * as React from "react";
+import { useI18n } from "@/i18n/I18nProvider";
+import { DeviceSelect } from "../DeviceSelect";
 
 type MetricsUiState = {
     startAtTime: string; // "HH:mm"
@@ -76,6 +78,8 @@ export function GymCheckDeviceMetricsCard({
 
     onCommit: () => void;
 }) {
+    const { t } = useI18n();
+
     return (
         <details
             className="w-full min-w-0 rounded-lg border bg-card p-4"
@@ -94,16 +98,6 @@ export function GymCheckDeviceMetricsCard({
                                 : "Gym Check - Saved when creating the real session."}
                         </div>
                     </div>
-
-                    {/* <div className="text-xs opacity-70">
-                        {metricsHasAny
-                            ? lang === "es"
-                                ? "Con datos"
-                                : "Has data"
-                            : lang === "es"
-                                ? "Colapsado"
-                                : "Collapsed"}
-                    </div> */}
                 </div>
             </summary>
 
@@ -220,13 +214,23 @@ export function GymCheckDeviceMetricsCard({
                     disabled={busy}
                 />
 
-                <Field
-                    label={lang === "es" ? "Fuente" : "Source"}
-                    value={metricsUi.trainingSource}
-                    onChange={(v) => onMetricsUiChange({ trainingSource: v })}
-                    onBlur={onCommit}
-                    placeholder="Apple Watch"
+                <DeviceSelect
+                    t={t}
+                    value={metricsUi.trainingSource?.trim() ? metricsUi.trainingSource : null}
+                    onChange={(v) => {
+                        onMetricsUiChange({ trainingSource: v ?? "" });
+                    }}
+                    allowOther
                     disabled={busy}
+                    labelKey={lang === "es" ? "Dispositivo" : "Device"}
+                    placeholderKey="device.placeholder"
+                    onBlur={onCommit}
+                    otherLabelKey="device.other"
+                    otherPlaceholderKey="device.otherPlaceholder"
+                    otherHintKey="device.otherHint"
+                    className="w-full min-w-0"
+                    selectClassName="w-full min-w-0 rounded-md border bg-background px-3 py-2 text-base sm:text-sm outline-none focus:ring-2"
+                    inputClassName="w-full min-w-0 rounded-md border bg-background px-3 py-2 text-base sm:text-sm outline-none focus:ring-2"
                 />
                 <Field
                     label={lang === "es" ? "RPE del día" : "Day RPE"}

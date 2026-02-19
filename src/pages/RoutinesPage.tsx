@@ -213,7 +213,14 @@ export function RoutinesPage() {
 
     const routine = (routineQuery.data ?? null) as WorkoutRoutineWeek | null;
 
-    // ✅ refs to avoid stale state during async save/upload flows
+    const scrollRootRef = React.useRef<HTMLDivElement | null>(null);
+    const [scrollRootEl, setScrollRootEl] = React.useState<HTMLElement | null>(null);
+
+    React.useLayoutEffect(() => {
+        if (scrollRootRef.current) setScrollRootEl(scrollRootRef.current);
+    }, []);
+
+    // refs to avoid stale state during async save/upload flows
     const routineRef = React.useRef<WorkoutRoutineWeek | null>(routine);
     React.useEffect(() => {
         routineRef.current = routine;
@@ -420,7 +427,7 @@ export function RoutinesPage() {
         );
     }, [putBody, mode]);
 
-    // ✅ Tabs filter list
+    // Tabs filter list
     const [statusFilter, setStatusFilter] = React.useState<WorkoutRoutineStatus>("active");
     const listQuery = useRoutineWeeksList(statusFilter);
     const weeksList = listQuery.data ?? [];
@@ -641,7 +648,6 @@ export function RoutinesPage() {
             if (mode === "form") {
                 const updatedPlans = await uploadPendingExerciseFilesIfAny();
 
-                // ✅ keep meta.plan in sync (UI helper)
                 const baseMeta = isRecord(putBody.meta) ? putBody.meta : null;
                 const nextMeta = setPlanIntoMeta(baseMeta, updatedPlans);
 
@@ -789,8 +795,6 @@ export function RoutinesPage() {
     // Gating and UI helpers
     const listEmpty = !listQuery.isFetching && weeksList.length === 0;
 
-    // ✅ In "active" tab we ALWAYS want the picker/editor area visible
-    // so the user can initialize the first routine.
     const showEditorArea =
         statusFilter === "active"
             ? true
@@ -901,10 +905,6 @@ export function RoutinesPage() {
                 </div>
             </div>
 
-            {/* ✅ Editor area:
-                - In "active": SIEMPRE visible (aunque listEmpty)
-                - In "archived": solo si hay semanas en esa lista
-            */}
             {showEditorArea ? (
                 <>
                     <RoutinesWeekPickerCard
@@ -977,6 +977,7 @@ export function RoutinesPage() {
                                 }
                                 plans={plans}
                                 movementOptions={movementOptions}
+                                scrollRootEl={scrollRootEl}
                             />
 
                             {/* <PlanVsActualPanel weekKey={runWeekKey} /> */}
@@ -1010,7 +1011,6 @@ export function RoutinesPage() {
                         </>
                     ) : null}
 
-                    {/* ✅ Adjuntos solo tienen sentido cuando hay rutina cargada */}
                     {routine ? (
                         <RoutineAttachmentsSection
                             t={t}
@@ -1025,7 +1025,6 @@ export function RoutinesPage() {
                 </>
             ) : null}
 
-            {/* Empty state for the selected tab */}
             {!showEditorArea && listEmpty ? (
                 <EmptyState
                     title={

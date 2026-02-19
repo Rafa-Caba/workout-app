@@ -140,8 +140,6 @@ export function DaySessionsPanel({
 
     const sessions = React.useMemo(() => dedupeSessionsById(sessionsRaw), [sessionsRaw]);
 
-    console.log({ sessions });
-
     const trainingSource = day.training?.source ?? null;
     const dayRpe = day.training?.dayEffortRpe ?? null;
 

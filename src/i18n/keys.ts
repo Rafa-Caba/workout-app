@@ -305,6 +305,44 @@ export const i18nKeys = [
     "days.debug.summaryJsonTitle",
     "days.debug.dayJsonTitle",
 
+    // Devices:
+    "device.label",
+    "device.placeholder",
+    "device.other",
+    "device.otherPlaceholder",
+    "device.otherHint",
+
+    "device.options.appleWatch",
+    "device.options.iphone",
+    "device.options.ipad",
+    "device.options.macHealthKit",
+
+    "device.options.garminWatch",
+    "device.options.garminConnect",
+
+    "device.options.androidPhone",
+    "device.options.googleFit",
+
+    "device.options.fitbit",
+    "device.options.fitbitCharge",
+    "device.options.fitbitVersa",
+    "device.options.fitbitSense",
+
+    "device.options.ouraRing",
+    "device.options.whoop",
+
+    "device.options.polarWatch",
+    "device.options.suuntoWatch",
+    "device.options.corosWatch",
+
+    "device.options.samsungGalaxyWatch",
+    "device.options.xiaomiMiBand",
+    "device.options.huaweiWatch",
+
+    "device.options.withings",
+    "device.options.strava",
+    "device.options.manual",
+
     // Weeks
     "weeks.toast.weekLoaded",
     "weeks.toast.rangeLoaded",
@@ -733,6 +771,10 @@ export const i18nKeys = [
     "sleep.summary.timeAsleep",
     "sleep.summary.score",
     "sleep.summary.stagesSum",
+    "sleep.summary.timeInBed",
+    "sleep.summary.efficiency",
+    "sleep.fields.timeInBedMinutes",
+    "sleep.hints.timeInBedMinutes",
 
     "sleep.fields.timeAsleepMinutes",
     "sleep.fields.score",

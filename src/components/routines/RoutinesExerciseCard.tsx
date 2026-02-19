@@ -5,6 +5,8 @@ import type { AttachmentOption } from "@/utils/routines/attachments";
 import type { ExerciseItem, DayKey } from "@/utils/routines/plan";
 import type { I18nKey } from "@/i18n/translations";
 import { cn } from "@/lib/utils";
+import { useSettingsStore } from "@/state/settings.store";
+import { normalizeDefaultRpe } from "@/utils/defaults";
 
 type TFn = (key: I18nKey) => string;
 
@@ -90,11 +92,21 @@ export function RoutinesExerciseCard({
     const hasMovements = Array.isArray(movementOptions) && movementOptions.length > 0;
     const hasMovementMapping = !!exercise.movementId;
 
+    const defaults = useSettingsStore((s) => s.settings.defaults);
+    const defaultRpeNorm = normalizeDefaultRpe(defaults?.defaultRpe ?? null);
+
+    const plannedRpeSelectValue =
+        exercise.rpe != null
+            ? String(exercise.rpe)
+            : defaultRpeNorm != null
+                ? `__default__:${defaultRpeNorm}`
+                : "";
+
     return (
         <div
             className={cn(
                 "w-full min-w-0 rounded-xl border p-4 space-y-4 transition-colors shadow-sm",
-                hasMovementMapping ? "border-primary/30 bg-primary/5" : "border-primary/30 bg-primary/5"
+                hasMovementMapping ? "border-primary/30 bg-primary/5" : "border-border bg-card"
             )}
         >
             {/* Header ejercicio + botón eliminar */}
@@ -225,15 +237,52 @@ export function RoutinesExerciseCard({
                 </div>
 
                 <div className="space-y-1 min-w-0">
-                    <label className="text-xs font-medium">{lang === "es" ? "RPE (planeado)" : "Planned RPE"}</label>
-                    <input
+                    <label className="text-xs font-medium">
+                        {lang === "es" ? "RPE (planeado)" : "Planned RPE"}
+                    </label>
+
+                    <select
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={exercise.rpe ?? ""}
-                        onChange={(ev) => onChangeRpe(ev.target.value)}
+                        value={plannedRpeSelectValue}
                         disabled={busy}
-                        placeholder={lang === "es" ? "Ej. 8" : "e.g. 8"}
-                        inputMode="decimal"
-                    />
+                        onChange={(ev) => {
+                            const v = ev.target.value;
+
+                            if (!v) {
+                                onChangeRpe("");
+                                return;
+                            }
+
+                            if (v.startsWith("__default__:")) {
+                                onChangeRpe("");
+                                return;
+                            }
+
+                            onChangeRpe(v);
+                        }}
+                    >
+                        <option value="">{lang === "es" ? "— (sin RPE)" : "— (no RPE)"}</option>
+
+                        {defaultRpeNorm != null ? (
+                            <option value={defaultRpeNorm}>
+                                {lang === "es"
+                                    ? `Por defecto (${defaultRpeNorm})`
+                                    : `Default (${defaultRpeNorm})`}
+                            </option>
+                        ) : null}
+
+                        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                            <option key={n} value={String(n)}>
+                                {n}
+                            </option>
+                        ))}
+                    </select>
+
+                    <div className="text-[11px] text-muted-foreground">
+                        {lang === "es"
+                            ? "Si eliges “Por defecto”, se usa el valor de Ajustes sin guardarlo en la rutina."
+                            : "If you pick “Default”, it uses your Settings value without saving it into the routine."}
+                    </div>
                 </div>
 
                 <div className="space-y-1 min-w-0">

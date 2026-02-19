@@ -39,6 +39,23 @@ export async function updateAdminUser(
     return res.data;
 }
 
-export async function deleteAdminUser(id: string): Promise<void> {
-    await api.delete(`/admin/users/${id}`);
+// Soft delete (desactivar)
+export async function deleteAdminUser(id: string): Promise<{ id: string; message: string }> {
+    const { data } = await api.delete(`/admin/users/${id}`);
+    return data;
+}
+
+export type AdminUserPurgeResponse = {
+    id: string;
+    message: string;
+    cleanup?: {
+        items: { model: string; deletedCount: number }[];
+        totalDeleted: number;
+    };
+};
+
+// Hard delete + cleanup report
+export async function purgeAdminUser(id: string): Promise<AdminUserPurgeResponse> {
+    const { data } = await api.delete(`/admin/users/${id}/purge`);
+    return data;
 }

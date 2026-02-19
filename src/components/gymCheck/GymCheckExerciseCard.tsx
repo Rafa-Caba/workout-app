@@ -123,6 +123,12 @@ export function GymCheckExerciseCard(props: Props) {
                         </div>
                         <div className="min-w-0 flex justify-between gap-3 md:mr-5">
                             <span className="text-muted-foreground font-extrabold shrink-0">
+                                {lang === "es" ? "RPE - Índice) de Esfuerzo Percibido" : "RPE - (Rate of Perceived Exertion)"}
+                            </span>
+                            <span className="min-w-0 wrap-break-words text-right">{formatNullable((exercise).rpe)}</span>
+                        </div>
+                        <div className="min-w-0 flex justify-between gap-3 md:mr-5">
+                            <span className="text-muted-foreground font-extrabold shrink-0">
                                 {lang === "es" ? "Carga" : "Load"}
                             </span>
                             <span className="min-w-0 wrap-break-words text-right">{formatNullable((exercise as any).load)}</span>

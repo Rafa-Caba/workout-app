@@ -2,7 +2,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useSettingsStore } from "@/state/settings.store";
+import { useAppSettingsStore } from "@/state/appSettings.store";
 
 function safeStringify(v: unknown) {
     try {
@@ -21,10 +21,8 @@ type JsonDetailsProps = {
 export function JsonDetails({ title, data, defaultOpen = false }: JsonDetailsProps) {
     const { t } = useI18n();
 
-    // 🔧 Usa el flag persistido en Admin Settings (settings.debug.showJson)
-    const showJson = useSettingsStore((s) => s.settings.debug?.showJson ?? false);
+    const showJson = useAppSettingsStore((s) => s.settings.debug?.showJson ?? false);
 
-    // Si el admin apagó el JSON debug desde Admin Settings, no mostramos nada
     if (!showJson) return null;
 
     const [isOpen, setIsOpen] = React.useState<boolean>(defaultOpen);

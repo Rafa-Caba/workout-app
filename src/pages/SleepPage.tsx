@@ -14,6 +14,8 @@ import { useWorkoutDay } from "@/hooks/useWorkoutDay";
 import { useUpdateSleep } from "@/hooks/useUpdateSleep";
 
 import type { SleepBlock } from "@/types/workoutDay.types";
+import { calcSleepEfficiencyPct } from "@/utils/dayExplorer";
+import { DeviceSelect } from "@/components/DeviceSelect";
 
 function toastApiError(e: unknown, fallback: string) {
     const err = e as Partial<ApiError> | undefined;
@@ -47,6 +49,11 @@ function parseNullableScore(v: string): number | null {
     return Math.max(0, Math.min(100, n));
 }
 
+function formatPercent(p: number | null): string {
+    if (typeof p !== "number" || !Number.isFinite(p)) return "—";
+    return `${Math.round(p)}%`;
+}
+
 export function SleepPage() {
     const { t } = useI18n();
     const today = React.useMemo(() => new Date(), []);
@@ -57,6 +64,10 @@ export function SleepPage() {
 
     const [form, setForm] = React.useState<SleepBlock>({
         timeAsleepMinutes: null,
+
+        // ✅ NEW
+        timeInBedMinutes: null,
+
         score: null,
 
         awakeMinutes: null,
@@ -75,6 +86,7 @@ export function SleepPage() {
 
         setForm({
             timeAsleepMinutes: sleep?.timeAsleepMinutes ?? null,
+            timeInBedMinutes: sleep?.timeInBedMinutes ?? null, // ✅ NEW
             score: sleep?.score ?? null,
 
             awakeMinutes: sleep?.awakeMinutes ?? null,
@@ -98,13 +110,20 @@ export function SleepPage() {
     const isSaving = updateSleep.isPending;
 
     const total = form.timeAsleepMinutes ?? null;
+    const inBed = form.timeInBedMinutes ?? null; // ✅ NEW
     const score = form.score ?? null;
 
     const stageSum =
-        (form.awakeMinutes ?? 0) + (form.remMinutes ?? 0) + (form.coreMinutes ?? 0) + (form.deepMinutes ?? 0);
+        (form.awakeMinutes ?? 0) +
+        (form.remMinutes ?? 0) +
+        (form.coreMinutes ?? 0) +
+        (form.deepMinutes ?? 0);
+
+    const efficiencyPct = calcSleepEfficiencyPct(form.timeAsleepMinutes, form.timeInBedMinutes);
 
     const hasAnySleepValue =
         form.timeAsleepMinutes != null ||
+        form.timeInBedMinutes != null || // ✅ NEW
         form.score != null ||
         form.awakeMinutes != null ||
         form.remMinutes != null ||
@@ -116,7 +135,7 @@ export function SleepPage() {
         try {
             await updateSleep.mutateAsync({ date, sleep: form });
             toast.success(t("sleep.toast.saved"));
-        } catch (e) {
+        } catch {
             // handled by effect
         }
     };
@@ -125,7 +144,7 @@ export function SleepPage() {
         try {
             await updateSleep.mutateAsync({ date, sleep: null });
             toast.success(t("sleep.toast.cleared"));
-        } catch (e) {
+        } catch {
             // handled by effect
         }
     };
@@ -147,7 +166,11 @@ export function SleepPage() {
                                 {t("common.refetch")}
                             </Button>
 
-                            <Button className="w-full sm:w-auto" onClick={onSave} disabled={query.isFetching || isSaving}>
+                            <Button
+                                className="w-full sm:w-auto"
+                                onClick={onSave}
+                                disabled={query.isFetching || isSaving}
+                            >
                                 {isSaving ? t("common.saving") : t("common.save")}
                             </Button>
                         </div>
@@ -173,6 +196,18 @@ export function SleepPage() {
                             <div className="font-mono">{minutesToHhMm(total)}</div>
                         </div>
 
+                        {/* ✅ NEW: Time in bed */}
+                        <div className="w-full sm:w-auto rounded-lg border bg-background px-3 py-2 text-sm">
+                            <div className="text-xs text-muted-foreground">{t("sleep.summary.timeInBed")}</div>
+                            <div className="font-mono">{minutesToHhMm(inBed)}</div>
+                        </div>
+
+                        {/* ✅ NEW: Efficiency */}
+                        <div className="w-full sm:w-auto rounded-lg border bg-background px-3 py-2 text-sm">
+                            <div className="text-xs text-muted-foreground">{t("sleep.summary.efficiency")}</div>
+                            <div className="font-mono">{formatPercent(efficiencyPct)}</div>
+                        </div>
+
                         <div className="w-full sm:w-auto rounded-lg border bg-background px-3 py-2 text-sm">
                             <div className="text-xs text-muted-foreground">{t("sleep.summary.score")}</div>
                             <div className="font-mono">{score == null ? "—" : score}</div>
@@ -196,7 +231,9 @@ export function SleepPage() {
             </div>
 
             {query.isFetching ? (
-                <div className="rounded-xl border bg-card p-3 sm:p-4 text-sm text-muted-foreground">{t("common.fetching")}</div>
+                <div className="rounded-xl border bg-card p-3 sm:p-4 text-sm text-muted-foreground">
+                    {t("common.fetching")}
+                </div>
             ) : null}
 
             {query.isError ? <JsonDetails title={t("sleep.errorJsonTitle")} data={query.error} defaultOpen /> : null}
@@ -225,6 +262,24 @@ export function SleepPage() {
                         <div className="text-xs text-muted-foreground">{t("sleep.hints.timeAsleepMinutes")}</div>
                     </div>
 
+                    {/* ✅ NEW: time in bed */}
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium">{t("sleep.fields.timeInBedMinutes")}</label>
+                        <input
+                            inputMode="numeric"
+                            placeholder="e.g. 480"
+                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                            value={numOrEmpty(form.timeInBedMinutes)}
+                            onChange={(e) =>
+                                setForm((p) => ({
+                                    ...p,
+                                    timeInBedMinutes: parseNullableInt(e.target.value),
+                                }))
+                            }
+                        />
+                        <div className="text-xs text-muted-foreground">{t("sleep.hints.timeInBedMinutes")}</div>
+                    </div>
+
                     <div className="space-y-1">
                         <label className="text-sm font-medium">{t("sleep.fields.score")}</label>
                         <input
@@ -248,7 +303,9 @@ export function SleepPage() {
                             inputMode="numeric"
                             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                             value={numOrEmpty(form.awakeMinutes)}
-                            onChange={(e) => setForm((p) => ({ ...p, awakeMinutes: parseNullableInt(e.target.value) }))}
+                            onChange={(e) =>
+                                setForm((p) => ({ ...p, awakeMinutes: parseNullableInt(e.target.value) }))
+                            }
                         />
                     </div>
 
@@ -268,7 +325,9 @@ export function SleepPage() {
                             inputMode="numeric"
                             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                             value={numOrEmpty(form.coreMinutes)}
-                            onChange={(e) => setForm((p) => ({ ...p, coreMinutes: parseNullableInt(e.target.value) }))}
+                            onChange={(e) =>
+                                setForm((p) => ({ ...p, coreMinutes: parseNullableInt(e.target.value) }))
+                            }
                         />
                     </div>
 
@@ -278,24 +337,18 @@ export function SleepPage() {
                             inputMode="numeric"
                             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                             value={numOrEmpty(form.deepMinutes)}
-                            onChange={(e) => setForm((p) => ({ ...p, deepMinutes: parseNullableInt(e.target.value) }))}
+                            onChange={(e) =>
+                                setForm((p) => ({ ...p, deepMinutes: parseNullableInt(e.target.value) }))
+                            }
                         />
                     </div>
 
                     <div className="space-y-1 sm:col-span-2 lg:col-span-2">
-                        <label className="text-sm font-medium">{t("sleep.fields.source")}</label>
-                        <input
-                            placeholder={t("sleep.placeholders.source")}
-                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                            value={form.source ?? ""}
-                            onChange={(e) =>
-                                setForm((p) => ({
-                                    ...p,
-                                    source: e.target.value.trim() ? e.target.value : null,
-                                }))
-                            }
+                        <DeviceSelect
+                            t={t}
+                            value={form.source}
+                            onChange={(v) => setForm((p) => ({ ...p, source: v }))}
                         />
-                        {/* <div className="text-xs text-muted-foreground">{t("sleep.hints.source")}</div> */}
                     </div>
                 </div>
             </div>

@@ -108,6 +108,9 @@ export type TrainingBlock = {
  */
 export type SleepBlock = {
     timeAsleepMinutes: number | null;
+
+    timeInBedMinutes: number | null;
+
     score: number | null;
 
     awakeMinutes: number | null;
@@ -118,6 +121,7 @@ export type SleepBlock = {
     source: string | null; // maxlength 120
     raw: unknown | null; // Schema.Types.Mixed
 };
+
 
 /**
  * Mirrors WorkoutDaySchema (+ toJSON transform)

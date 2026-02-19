@@ -44,3 +44,11 @@ export function buildDayExplorerKpis(summary: unknown): DayExplorerKpis | null {
 
     return { trainingSeconds, activeKcal, sleepMinutes };
 }
+
+export function calcSleepEfficiencyPct(
+    timeAsleepMinutes: number | null | undefined,
+    timeInBedMinutes: number | null | undefined
+): number | null {
+    if (!timeAsleepMinutes || !timeInBedMinutes || timeInBedMinutes <= 0) return null;
+    return Math.round((timeAsleepMinutes / timeInBedMinutes) * 100);
+}

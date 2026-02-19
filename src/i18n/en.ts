@@ -249,6 +249,45 @@ export const en: Record<I18nKey, string> = {
     "days.debug.summaryJsonTitle": "Summary (JSON)",
     "days.debug.dayJsonTitle": "Full Day (JSON)",
 
+    // Devices:
+    "device.label": "Device",
+    "device.placeholder": "Select a device…",
+    "device.other": "Other…",
+    "device.otherPlaceholder": "Type the device…",
+    "device.otherHint": "Examples: “Apple Watch S8”, “Garmin Forerunner 265”, “Treadmill”.",
+
+    "device.options.appleWatch": "Apple Watch",
+    "device.options.iphone": "iPhone",
+    "device.options.ipad": "iPad",
+    "device.options.macHealthKit": "Mac (HealthKit import)",
+
+    "device.options.garminWatch": "Garmin Watch",
+    "device.options.garminConnect": "Garmin Connect",
+
+    "device.options.androidPhone": "Android Phone",
+    "device.options.googleFit": "Google Fit",
+
+    "device.options.fitbit": "Fitbit",
+    "device.options.fitbitCharge": "Fitbit Charge",
+    "device.options.fitbitVersa": "Fitbit Versa",
+    "device.options.fitbitSense": "Fitbit Sense",
+
+    "device.options.ouraRing": "Oura Ring",
+    "device.options.whoop": "WHOOP",
+
+    "device.options.polarWatch": "Polar Watch",
+    "device.options.suuntoWatch": "Suunto Watch",
+    "device.options.corosWatch": "COROS Watch",
+
+    "device.options.samsungGalaxyWatch": "Samsung Galaxy Watch",
+    "device.options.xiaomiMiBand": "Xiaomi Mi Band",
+    "device.options.huaweiWatch": "Huawei Watch",
+
+    "device.options.withings": "Withings",
+    "device.options.strava": "Strava",
+    "device.options.manual": "Manual / No device",
+
+
     // Weeks
     "weeks.toast.weekLoaded": "Weekly summary loaded",
     "weeks.toast.rangeLoaded": "Range summary loaded",
@@ -756,6 +795,10 @@ export const en: Record<I18nKey, string> = {
     "sleep.summary.timeAsleep": "Time asleep",
     "sleep.summary.score": "Sleep Score",
     "sleep.summary.stagesSum": "Stages sum",
+    "sleep.summary.timeInBed": "Time in bed",
+    "sleep.summary.efficiency": "Efficiency",
+    "sleep.fields.timeInBedMinutes": "Time in bed (minutes)",
+    "sleep.hints.timeInBedMinutes": "Example: 480 (8h)",
 
     "sleep.fields.timeAsleepMinutes": "Time asleep (min)",
     "sleep.fields.score": "Score",

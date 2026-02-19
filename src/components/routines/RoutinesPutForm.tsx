@@ -58,7 +58,6 @@ type Props = {
     exerciseUploadBusy: boolean;
     uploadingExercise: { dayKey: DayKey; exerciseId: string } | null;
 
-    // pending is exerciseId-based
     getPendingExerciseFiles: (exerciseId: string) => File[];
     onAddPendingExerciseFiles: (exerciseId: string, files: File[]) => void;
     onClearPendingExerciseFiles: (exerciseId: string, fileIndex?: number) => void;
@@ -77,6 +76,8 @@ type Props = {
 
     debugPlansTitle: string;
     plans: DayPlan[];
+
+    scrollRootEl?: HTMLElement | null;
 };
 
 export function RoutinesPutForm({
@@ -116,10 +117,35 @@ export function RoutinesPutForm({
     debugPlansTitle,
     plans,
     movementOptions,
+    scrollRootEl,
 }: Props) {
     const showJson = useSettingsStore((s) => s.settings.debug.showJson);
-
     const planned = (putBody.plannedDays ?? []) as string[];
+
+    const topSaveRef = React.useRef<HTMLDivElement | null>(null);
+    const [showStickySave, setShowStickySave] = React.useState(false);
+
+    React.useEffect(() => {
+        const el = topSaveRef.current;
+        if (!el) return;
+
+        setShowStickySave(false);
+
+        const io = new IntersectionObserver(
+            ([entry]) => {
+                // show sticky only when header button is NOT visible
+                setShowStickySave(!entry.isIntersecting);
+            },
+            {
+                root: scrollRootEl ?? null,
+                threshold: 0.01,
+                rootMargin: "-72px 0px 0px 0px",
+            }
+        );
+
+        io.observe(el);
+        return () => io.disconnect();
+    }, [scrollRootEl]);
 
     return (
         <div className="w-full min-w-0 space-y-4">
@@ -135,13 +161,15 @@ export function RoutinesPutForm({
                         </div>
                     </div>
 
-                    <Button
-                        onClick={onSave}
-                        disabled={busy || isSaving}
-                        className="h-9 w-full sm:w-auto whitespace-nowrap"
-                    >
-                        {lang === "es" ? "Guardar (PUT)" : "Save (PUT)"}
-                    </Button>
+                    <div ref={topSaveRef} className="w-full sm:w-auto">
+                        <Button
+                            onClick={onSave}
+                            disabled={busy || isSaving}
+                            className="h-9 w-full sm:w-auto whitespace-nowrap"
+                        >
+                            {lang === "es" ? "Guardar (PUT)" : "Save (PUT)"}
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
@@ -253,8 +281,32 @@ export function RoutinesPutForm({
                     onUpdatePlan={onUpdatePlan}
                     onUpdateExercise={onUpdateExercise}
                     movementOptions={movementOptions}
+                    scrollRootEl={scrollRootEl}
                 />
             </div>
+
+            {/* Sticky Save (PUT) */}
+            {showStickySave ? (
+                <div
+                    className={[
+                        "fixed inset-x-0 bottom-0 z-50",
+                        "border-t bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/70",
+                    ].join(" ")}
+                    style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+                >
+                    <div className="mx-auto max-w-6xl px-3 sm:px-4 py-2">
+                        <div className="flex items-center justify-end">
+                            <Button
+                                onClick={onSave}
+                                disabled={busy || isSaving}
+                                className="h-9 w-full sm:w-auto whitespace-nowrap"
+                            >
+                                {lang === "es" ? "Guardar (PUT)" : "Save (PUT)"}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
 
             {/* Debug JSON blocks */}
             {showJson && (

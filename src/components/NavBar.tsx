@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { Menu } from "lucide-react";
-import { useAdminSettingsStore } from "@/state/adminSettings.store";
+import { useAppSettingsStore } from "@/state/appSettings.store";
+import { useThemeSyncFromAppSettings } from "@/hooks/useThemeSyncFromAppSettings";
 
 function TopNavLink({
     to,
@@ -69,7 +70,9 @@ type NavItem = {
 export function NavBar() {
     const { t, lang, setLang } = useI18n();
 
-    const { loadSettings } = useAdminSettingsStore();
+    // AppSettings (public, for everyone)
+    const appSettings = useAppSettingsStore((s) => s.settings);
+    const loadAppSettings = useAppSettingsStore((s) => s.loadAppSettings);
 
     const user = useAuthStore((s) => s.user);
     const accessToken = useAuthStore((s) => s.accessToken);
@@ -80,25 +83,25 @@ export function NavBar() {
 
     const pathname = location.pathname;
 
-    const adminSettings = useAdminSettingsStore((s) => s.settings);
+    // Sync server theme defaults if user has no explicit local preference saved
+    useThemeSyncFromAppSettings();
 
     React.useEffect(() => {
-        void loadSettings();
-    }, [loadSettings]);
+        void loadAppSettings();
+    }, [loadAppSettings]);
 
     const appName =
-        adminSettings?.appName && adminSettings.appName.trim().length > 0
-            ? adminSettings.appName
+        appSettings?.appName && appSettings.appName.trim().length > 0
+            ? appSettings.appName
             : "Workout App";
 
+    // Public endpoint does not include subtitle; keep local fallback
     const appSubtitle =
-        adminSettings?.appSubtitle && adminSettings.appSubtitle.trim().length > 0
-            ? adminSettings.appSubtitle
-            : lang === "es"
-                ? "Seguimiento de entrenamiento y sueño"
-                : "Training & sleep tracker";
+        lang === "es"
+            ? "Seguimiento de entrenamiento y sueño"
+            : "Training & sleep tracker";
 
-    const logoUrl = adminSettings?.appLogoUrl ?? null;
+    const logoUrl = appSettings?.logoUrl ?? null;
 
     const inInsights =
         pathname === "/insights" || pathname.startsWith("/insights/");
@@ -127,7 +130,6 @@ export function NavBar() {
             { label: t("nav.trends"), to: "/trends", end: true },
             { label: t("nav.media"), to: "/media", end: true },
             { label: t("nav.pva"), to: "/plan-vs-actual", end: true },
-            // Admin sólo visible si el usuario es admin
             { label: "Admin", to: "/admin", end: true, adminOnly: true },
         ],
         [t]
@@ -139,7 +141,6 @@ export function NavBar() {
         return pathname === item.to || pathname.startsWith(item.to + "/");
     }
 
-    // Opcional: título del documento basado en appName
     React.useEffect(() => {
         document.title = appName;
     }, [appName]);
@@ -268,7 +269,6 @@ export function NavBar() {
                             {lang === "es" ? t("lang.english") : t("lang.spanish")}
                         </Button>
 
-                        {/* Mobile: compact lang button */}
                         <Button
                             variant="outline"
                             onClick={toggleLang}
@@ -328,11 +328,7 @@ export function NavBar() {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         ) : (
-                            <Button
-                                asChild
-                                variant="outline"
-                                className="whitespace-nowrap"
-                            >
+                            <Button asChild variant="outline" className="whitespace-nowrap">
                                 <Link to="/login">{t("auth.login")}</Link>
                             </Button>
                         )}

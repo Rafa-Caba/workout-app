@@ -215,6 +215,7 @@ export async function updateSleepForDay(date: string, sleep: Partial<SleepBlock>
 
     const normalized: SleepBlock = {
         timeAsleepMinutes: coerceNullableInt(sleep.timeAsleepMinutes),
+        timeInBedMinutes: coerceNullableInt(sleep.timeInBedMinutes),
         score: coerceNullableScore(sleep.score),
 
         awakeMinutes: coerceNullableInt(sleep.awakeMinutes),

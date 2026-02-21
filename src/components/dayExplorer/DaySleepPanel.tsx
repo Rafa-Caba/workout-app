@@ -74,8 +74,6 @@ function computeReadiness(sleepScore: number | null, rpe: number | null): number
 export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
     const sleep = day.sleep ?? null;
 
-    console.log({ sleep });
-
     const timeAsleepMin = sleep?.timeAsleepMinutes ?? null;
     const timeInBedMinDirect = sleep?.timeInBedMinutes ?? null; // ✅ NEW
     const score = sleep?.score ?? null;

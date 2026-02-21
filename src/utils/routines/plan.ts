@@ -16,7 +16,7 @@ export type ExerciseItem = {
     sets?: string;
     reps?: string;
 
-    // ✅ NEW (planned)
+    // (planned)
     rpe?: string;
 
     load?: string;
@@ -24,7 +24,7 @@ export type ExerciseItem = {
 
     attachmentPublicIds?: string[];
 
-    // ✅ NEW: Movement catalog link + snapshot (UI)
+    // Movement catalog link + snapshot (UI)
     movementId?: string;
     movementName?: string;
 };
@@ -42,7 +42,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
     return typeof v === "object" && v !== null;
 }
 
-/** ✅ Important: arrays are objects too, so we must exclude them. */
+/** Important: arrays are objects too, so we must exclude them. */
 function isPlainRecord(v: unknown): v is Record<string, unknown> {
     return isRecord(v) && !Array.isArray(v);
 }
@@ -94,7 +94,6 @@ function normalizeExerciseItem(e: unknown): ExerciseItem | null {
 
         attachmentPublicIds,
 
-        // ✅ NEW
         movementId: cleanUiStrOrUndef((e as any).movementId),
         movementName: cleanUiStrOrUndef((e as any).movementName),
     };
@@ -189,7 +188,6 @@ export function setPlanIntoMeta(meta: Record<string, unknown> | null | undefined
                 notes: e.notes ?? null,
                 attachmentPublicIds: e.attachmentPublicIds ?? null,
 
-                // ✅ NEW
                 movementId: e.movementId ?? null,
                 movementName: e.movementName ?? null,
             })) ?? null,
@@ -248,7 +246,6 @@ export function plansToRoutineDays(weekKey: string, plans: DayPlan[]): WorkoutRo
                         id: e.id || makeId(),
                         name: (e.name ?? "").trim(),
 
-                        // ✅ NEW: movement fields to backend
                         movementId: cleanStrOrNull(e.movementId),
                         movementName: cleanStrOrNull(e.movementName),
 

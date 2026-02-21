@@ -6,6 +6,9 @@ import type { AdminUser, AdminUserRole } from "@/types/adminUser.types";
 import { useI18n } from "@/i18n/I18nProvider";
 import { MediaViewerModal } from "@/components/media/MediaViewerModal";
 import type { MediaFeedItem } from "@/types/media.types";
+import { fetchAdminTrainers } from "@/services/admin/adminUsers.service";
+
+type CoachMode = "NONE" | "TRAINER" | "TRAINEE";
 
 type UserFormValues = {
     id?: string;
@@ -15,6 +18,10 @@ type UserFormValues = {
     role: AdminUserRole;
     sex: "male" | "female" | "other" | "";
     isActive: boolean;
+
+    // Coaching (NEW)
+    coachMode: CoachMode;
+    assignedTrainer: string | null; // User id
 };
 
 const emptyForm: UserFormValues = {
@@ -24,6 +31,9 @@ const emptyForm: UserFormValues = {
     role: "user",
     sex: "",
     isActive: true,
+
+    coachMode: "NONE",
+    assignedTrainer: null,
 };
 
 function getInitials(name: string): string {
@@ -50,6 +60,23 @@ function formatDeletedCount(n: number): string {
     } catch {
         return String(n);
     }
+}
+
+function shortId(id: string | null | undefined): string {
+    if (!id) return "—";
+    if (id.length <= 10) return id;
+    return `${id.slice(0, 6)}…${id.slice(-4)}`;
+}
+
+function coachModeLabel(mode: CoachMode, lang: string): string {
+    if (lang === "es") {
+        if (mode === "TRAINER") return "Trainer";
+        if (mode === "TRAINEE") return "Trainee";
+        return "None";
+    }
+    if (mode === "TRAINER") return "Trainer";
+    if (mode === "TRAINEE") return "Trainee";
+    return "None";
 }
 
 export function AdminUsersSection() {
@@ -81,6 +108,11 @@ export function AdminUsersSection() {
     const [saving, setSaving] = React.useState(false);
     const [selectedMedia, setSelectedMedia] = React.useState<MediaFeedItem | null>(null);
 
+    // Trainers list (for assignedTrainer select)
+    const [trainersLoading, setTrainersLoading] = React.useState(false);
+    const [trainersError, setTrainersError] = React.useState<string | null>(null);
+    const [trainers, setTrainers] = React.useState<AdminUser[]>([]);
+
     // Purge modal state
     const [purgeOpen, setPurgeOpen] = React.useState(false);
     const [purgeTarget, setPurgeTarget] = React.useState<AdminUser | null>(null);
@@ -93,6 +125,46 @@ export function AdminUsersSection() {
     React.useEffect(() => {
         void loadUsers();
     }, [page, search, roleFilter, activeFilter, loadUsers]);
+
+    React.useEffect(() => {
+        // Load trainers for the "assignedTrainer" dropdown.
+        // Keep this separate from store so it doesn't affect list paging filters.
+        let alive = true;
+
+        async function loadTrainers() {
+            setTrainersLoading(true);
+            setTrainersError(null);
+
+            try {
+                const res = await fetchAdminTrainers({ page: 1, limit: 200 });
+                if (!alive) return;
+                setTrainers(Array.isArray(res.items) ? res.items : []);
+            } catch (e: any) {
+                if (!alive) return;
+                const msg =
+                    e?.response?.data?.error?.message ??
+                    e?.response?.data?.message ??
+                    e?.message ??
+                    (lang === "es" ? "No se pudieron cargar trainers." : "Could not load trainers.");
+                setTrainersError(msg);
+            } finally {
+                if (!alive) return;
+                setTrainersLoading(false);
+            }
+        }
+
+        void loadTrainers();
+
+        return () => {
+            alive = false;
+        };
+    }, [lang]);
+
+    const trainersById = React.useMemo(() => {
+        const map = new Map<string, AdminUser>();
+        for (const t of trainers) map.set(t.id, t);
+        return map;
+    }, [trainers]);
 
     function openCreateForm() {
         setForm(emptyForm);
@@ -108,6 +180,9 @@ export function AdminUsersSection() {
             role: user.role,
             sex: user.sex ?? "",
             isActive: user.isActive,
+
+            coachMode: ((user as any).coachMode ?? "NONE") as CoachMode,
+            assignedTrainer: ((user as any).assignedTrainer ?? null) as string | null,
         });
         setFormOpen(true);
     }
@@ -117,9 +192,62 @@ export function AdminUsersSection() {
         setForm(emptyForm);
     }
 
+    function setCoachMode(next: CoachMode) {
+        setForm((f) => {
+            // Cross-field consistency on the client:
+            // - TRAINEE requires assignedTrainer (we don't auto-pick to avoid wrong assignments)
+            // - otherwise assignedTrainer must be null
+            if (next === "TRAINEE") return { ...f, coachMode: next };
+            return { ...f, coachMode: next, assignedTrainer: null };
+        });
+    }
+
+    function setAssignedTrainer(nextId: string) {
+        setForm((f) => ({
+            ...f,
+            assignedTrainer: nextId ? nextId : null,
+        }));
+    }
+
+    function canSubmitForm(): { ok: boolean; reason?: string } {
+        const nameOk = form.name.trim().length > 0;
+        const emailOk = form.email.trim().length > 0;
+
+        if (!nameOk) return { ok: false, reason: lang === "es" ? "Nombre requerido." : "Name is required." };
+        if (!emailOk) return { ok: false, reason: lang === "es" ? "Email requerido." : "Email is required." };
+
+        // On create, password is required
+        if (!isEditing && !form.password.trim()) {
+            return { ok: false, reason: lang === "es" ? "Contraseña requerida." : "Password is required." };
+        }
+
+        // Coaching rules
+        if (form.coachMode === "TRAINEE" && !form.assignedTrainer) {
+            return {
+                ok: false,
+                reason:
+                    lang === "es"
+                        ? "Si el usuario es TRAINEE, debes asignar un trainer."
+                        : "If user is TRAINEE, you must assign a trainer.",
+            };
+        }
+
+        return { ok: true };
+    }
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+
+        const gate = canSubmitForm();
+        if (!gate.ok) return;
+
         setSaving(true);
+
+        // Prepare consistent coaching payload for BE validators:
+        // - TRAINEE -> assignedTrainer required
+        // - otherwise -> assignedTrainer must be null
+        const coachMode: CoachMode = form.coachMode ?? "NONE";
+        const assignedTrainer = coachMode === "TRAINEE" ? form.assignedTrainer : null;
 
         try {
             if (isEditing && form.id) {
@@ -130,7 +258,11 @@ export function AdminUsersSection() {
                     sex: form.sex || null,
                     isActive: form.isActive,
                     ...(form.password.trim() ? { password: form.password.trim() } : {}),
-                });
+
+                    // Coaching (NEW)
+                    coachMode,
+                    assignedTrainer,
+                } as any);
             } else {
                 await createUser({
                     name: form.name,
@@ -139,7 +271,11 @@ export function AdminUsersSection() {
                     role: form.role,
                     sex: form.sex || null,
                     isActive: form.isActive,
-                });
+
+                    // Coaching (NEW)
+                    coachMode,
+                    assignedTrainer,
+                } as any);
             }
 
             setSaving(false);
@@ -152,9 +288,7 @@ export function AdminUsersSection() {
     async function handleDelete(user: AdminUser) {
         if (
             !window.confirm(
-                lang === "es"
-                    ? `¿Desactivar usuario "${user.name}"?`
-                    : `Deactivate user "${user.name}"?`
+                lang === "es" ? `¿Desactivar usuario "${user.name}"?` : `Deactivate user "${user.name}"?`
             )
         ) {
             return;
@@ -185,18 +319,58 @@ export function AdminUsersSection() {
             const result: PurgeResult = await purgeUser(purgeTarget.id);
             setPurgeResult(result);
 
-            // refresca lista (por si el usuario desaparece)
+            // refresh list
             await loadUsers();
         } catch {
-            // si tu store ya setea error global, con esto basta
+            // store already handles global errors/toasts
         } finally {
             setPurging(false);
         }
     }
 
-    const totalPages = total > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+    /**
+ * Formats an ISO datetime like "2026-02-20T17:22:23.257Z"
+ * into: "Feb 20, 2026 - 17:22" (or localized for es).
+ */
+    function formatLastLogin(iso: string | null | undefined, lang: string): string {
+        if (!iso) return "—";
 
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return "—";
+
+        const locale = lang === "es" ? "es-MX" : "en-US";
+
+        try {
+            // "Feb 20, 2026"
+            const datePart = new Intl.DateTimeFormat(locale, {
+                year: "numeric",
+                month: "short",
+                day: "2-digit",
+            }).format(d);
+
+            // "17:22" (24h for both; adjust if you want 12h for en)
+            const timePart = new Intl.DateTimeFormat(locale, {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+            }).format(d);
+
+            return `${datePart} - ${timePart}`;
+        } catch {
+            // Fallback (still human-ish)
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            const hh = String(d.getHours()).padStart(2, "0");
+            const mm = String(d.getMinutes()).padStart(2, "0");
+            return `${y}-${m}-${day} - ${hh}:${mm}`;
+        }
+    }
+
+    const totalPages = total > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
     const purgeIsUnlocked = purgeConfirmText.trim().toUpperCase() === "PURGE";
+
+    const submitGate = canSubmitForm();
 
     return (
         <div className="space-y-4">
@@ -212,9 +386,7 @@ export function AdminUsersSection() {
                     <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                         <div className="grid gap-2 md:grid-cols-3 md:w-2/3">
                             <div className="space-y-1">
-                                <label className="text-xs font-medium">
-                                    {lang === "es" ? "Buscar" : "Search"}
-                                </label>
+                                <label className="text-xs font-medium">{lang === "es" ? "Buscar" : "Search"}</label>
                                 <input
                                     className="h-9 w-full rounded-md border bg-background px-3 text-sm"
                                     value={search}
@@ -224,9 +396,7 @@ export function AdminUsersSection() {
                             </div>
 
                             <div className="space-y-1">
-                                <label className="text-xs font-medium">
-                                    {lang === "es" ? "Rol" : "Role"}
-                                </label>
+                                <label className="text-xs font-medium">{lang === "es" ? "Rol" : "Role"}</label>
                                 <select
                                     className="h-9 w-full rounded-md border bg-background px-3 text-sm"
                                     value={roleFilter}
@@ -239,9 +409,7 @@ export function AdminUsersSection() {
                             </div>
 
                             <div className="space-y-1">
-                                <label className="text-xs font-medium">
-                                    {lang === "es" ? "Estado" : "Status"}
-                                </label>
+                                <label className="text-xs font-medium">{lang === "es" ? "Estado" : "Status"}</label>
                                 <select
                                     className="h-9 w-full rounded-md border bg-background px-3 text-sm"
                                     value={activeFilter}
@@ -255,7 +423,12 @@ export function AdminUsersSection() {
                         </div>
 
                         <div className="flex items-center justify-end">
-                            <Button type="button" onClick={openCreateForm} disabled={loading} className="w-full md:w-auto">
+                            <Button
+                                type="button"
+                                onClick={openCreateForm}
+                                disabled={loading}
+                                className="w-full md:w-auto"
+                            >
                                 {lang === "es" ? "Nuevo usuario" : "New user"}
                             </Button>
                         </div>
@@ -268,9 +441,7 @@ export function AdminUsersSection() {
                         </div>
                     ) : null}
 
-                    {error ? (
-                        <div className="text-xs text-red-500 wrap-break-words">{error}</div>
-                    ) : null}
+                    {error ? <div className="text-xs text-red-500 wrap-break-words">{error}</div> : null}
 
                     {/* Tabla */}
                     <div className="overflow-x-auto rounded-lg border border-primary/40">
@@ -285,6 +456,15 @@ export function AdminUsersSection() {
                                     <th className="px-3 py-2 font-medium whitespace-nowrap">
                                         {lang === "es" ? "Rol" : "Role"}
                                     </th>
+
+                                    {/* NEW columns */}
+                                    <th className="px-3 py-2 font-medium whitespace-nowrap">
+                                        {lang === "es" ? "Coaching" : "Coaching"}
+                                    </th>
+                                    <th className="px-3 py-2 font-medium whitespace-nowrap">
+                                        {lang === "es" ? "Trainer" : "Trainer"}
+                                    </th>
+
                                     <th className="px-3 py-2 font-medium whitespace-nowrap">
                                         {lang === "es" ? "Estado" : "Status"}
                                     </th>
@@ -300,7 +480,7 @@ export function AdminUsersSection() {
                             <tbody>
                                 {items.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-3 py-4 text-center text-xs text-muted-foreground">
+                                        <td colSpan={9} className="px-3 py-4 text-center text-xs text-muted-foreground">
                                             {lang === "es"
                                                 ? "No hay usuarios que coincidan con los filtros."
                                                 : "No users match the current filters."}
@@ -309,6 +489,10 @@ export function AdminUsersSection() {
                                 ) : (
                                     items.map((u) => {
                                         const hasProfilePic = !!u.profilePicUrl;
+
+                                        const coachMode = ((u as any).coachMode ?? "NONE") as CoachMode;
+                                        const assignedTrainerId = ((u as any).assignedTrainer ?? null) as string | null;
+                                        const assignedTrainerUser = assignedTrainerId ? trainersById.get(assignedTrainerId) : undefined;
 
                                         return (
                                             <tr key={u.id} className="border-t border-border/60">
@@ -334,14 +518,15 @@ export function AdminUsersSection() {
                                                                     date: null,
                                                                     weekKey: "admin-user",
                                                                     sessionId: null,
-                                                                    sessionType: lang === "es" ? "Foto de perfil" : "Profile picture",
+                                                                    sessionType:
+                                                                        lang === "es" ? "Foto de perfil" : "Profile picture",
                                                                     dayNotes: null,
                                                                     dayTags: null,
                                                                 };
 
                                                                 setSelectedMedia(mediaItem);
                                                             }}
-                                                            className="flex h-12 w-12 mx-auto items-center justify-center overflow-hidden rounded-full border bg-background"
+                                                            className="flex h-15 w-15 mx-auto items-center justify-center overflow-hidden rounded-full border bg-background"
                                                             title={lang === "es" ? "Ver foto de perfil" : "View profile picture"}
                                                         >
                                                             <img
@@ -352,7 +537,7 @@ export function AdminUsersSection() {
                                                             />
                                                         </button>
                                                     ) : (
-                                                        <div className="flex h-9 w-9 mx-auto items-center justify-center rounded-full border bg-background text-[11px] font-semibold text-muted-foreground">
+                                                        <div className="flex h-10 w-10 mx-auto items-center justify-center rounded-full border bg-background text-[11px] font-semibold text-muted-foreground">
                                                             {getInitials(u.name)}
                                                         </div>
                                                     )}
@@ -366,14 +551,40 @@ export function AdminUsersSection() {
                                                         </span>
                                                     </div>
                                                 </td>
+
                                                 <td className="px-3 py-2">
                                                     <span className="text-xs font-mono">{u.email}</span>
                                                 </td>
+
                                                 <td className="px-3 py-2">
                                                     <span className="text-xs rounded-full bg-muted px-2 py-1 whitespace-nowrap">
                                                         {u.role === "admin" ? "admin" : "user"}
                                                     </span>
                                                 </td>
+
+                                                {/* Coaching mode */}
+                                                <td className="px-3 py-2">
+                                                    <span className="text-xs rounded-full bg-muted px-2 py-1 whitespace-nowrap">
+                                                        {coachModeLabel(coachMode, lang)}
+                                                    </span>
+                                                </td>
+
+                                                {/* Assigned trainer */}
+                                                <td className="px-3 py-2">
+                                                    {coachMode === "TRAINEE" ? (
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="text-xs font-medium truncate">
+                                                                {assignedTrainerUser?.name ?? (assignedTrainerId ? shortId(assignedTrainerId) : "—")}
+                                                            </span>
+                                                            <span className="text-[11px] text-muted-foreground font-mono truncate">
+                                                                {assignedTrainerId ? `id: ${assignedTrainerId}` : "—"}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground">—</span>
+                                                    )}
+                                                </td>
+
                                                 <td className="px-3 py-2">
                                                     <span
                                                         className={
@@ -383,22 +594,18 @@ export function AdminUsersSection() {
                                                                 : "text-muted-foreground")
                                                         }
                                                     >
-                                                        {u.isActive
-                                                            ? lang === "es"
-                                                                ? "Activo"
-                                                                : "Active"
-                                                            : lang === "es"
-                                                                ? "Inactivo"
-                                                                : "Inactive"}
+                                                        {u.isActive ? (lang === "es" ? "Activo" : "Active") : (lang === "es" ? "Inactivo" : "Inactive")}
                                                     </span>
                                                 </td>
+
                                                 <td className="px-3 py-2">
                                                     <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">
-                                                        {u.lastLoginAt ?? "—"}
+                                                        {formatLastLogin(u.lastLoginAt, lang)}
                                                     </span>
                                                 </td>
+
                                                 <td className="px-3 py-2">
-                                                    <div className="flex flex-wrap gap-2">
+                                                    <div className="flex gap-2">
                                                         <Button
                                                             type="button"
                                                             variant="outline"
@@ -419,7 +626,6 @@ export function AdminUsersSection() {
                                                             {lang === "es" ? "Eliminar" : "Delete"}
                                                         </Button>
 
-                                                        {/* 👇 NUEVO: Purge */}
                                                         <Button
                                                             type="button"
                                                             variant="destructive"
@@ -489,6 +695,7 @@ export function AdminUsersSection() {
                                     : "New user"}
                         </CardTitle>
                     </CardHeader>
+
                     <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid gap-3 md:grid-cols-2">
@@ -497,12 +704,7 @@ export function AdminUsersSection() {
                                     <input
                                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                         value={form.name}
-                                        onChange={(e) =>
-                                            setForm((f) => ({
-                                                ...f,
-                                                name: e.target.value,
-                                            }))
-                                        }
+                                        onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                                         required
                                     />
                                 </div>
@@ -513,12 +715,7 @@ export function AdminUsersSection() {
                                         type="email"
                                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                         value={form.email}
-                                        onChange={(e) =>
-                                            setForm((f) => ({
-                                                ...f,
-                                                email: e.target.value,
-                                            }))
-                                        }
+                                        onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                                         required
                                     />
                                 </div>
@@ -532,12 +729,7 @@ export function AdminUsersSection() {
                                             type="password"
                                             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                             value={form.password}
-                                            onChange={(e) =>
-                                                setForm((f) => ({
-                                                    ...f,
-                                                    password: e.target.value,
-                                                }))
-                                            }
+                                            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                                             required
                                         />
                                         <p className="text-[11px] text-muted-foreground">
@@ -555,12 +747,7 @@ export function AdminUsersSection() {
                                             type="password"
                                             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                             value={form.password}
-                                            onChange={(e) =>
-                                                setForm((f) => ({
-                                                    ...f,
-                                                    password: e.target.value,
-                                                }))
-                                            }
+                                            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                                         />
                                         <p className="text-[11px] text-muted-foreground">
                                             {lang === "es"
@@ -575,12 +762,7 @@ export function AdminUsersSection() {
                                     <select
                                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                         value={form.role}
-                                        onChange={(e) =>
-                                            setForm((f) => ({
-                                                ...f,
-                                                role: e.target.value as AdminUserRole,
-                                            }))
-                                        }
+                                        onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as AdminUserRole }))}
                                     >
                                         <option value="user">user</option>
                                         <option value="admin">admin</option>
@@ -592,12 +774,7 @@ export function AdminUsersSection() {
                                     <select
                                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                         value={form.sex}
-                                        onChange={(e) =>
-                                            setForm((f) => ({
-                                                ...f,
-                                                sex: e.target.value as any,
-                                            }))
-                                        }
+                                        onChange={(e) => setForm((f) => ({ ...f, sex: e.target.value as any }))}
                                     >
                                         <option value="">{lang === "es" ? "Sin especificar" : "Unspecified"}</option>
                                         <option value="male">{lang === "es" ? "Hombre" : "Male"}</option>
@@ -607,30 +784,100 @@ export function AdminUsersSection() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-xs font-medium">
-                                        {lang === "es" ? "Estado" : "Status"}
-                                    </label>
+                                    <label className="text-xs font-medium">{lang === "es" ? "Estado" : "Status"}</label>
                                     <select
                                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                         value={form.isActive ? "1" : "0"}
-                                        onChange={(e) =>
-                                            setForm((f) => ({
-                                                ...f,
-                                                isActive: e.target.value === "1",
-                                            }))
-                                        }
+                                        onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.value === "1" }))}
                                     >
                                         <option value="1">{lang === "es" ? "Activo" : "Active"}</option>
                                         <option value="0">{lang === "es" ? "Inactivo" : "Inactive"}</option>
                                     </select>
                                 </div>
+
+                                {/* Coaching (NEW) */}
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium">{lang === "es" ? "Coaching" : "Coaching"}</label>
+                                    <select
+                                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                        value={form.coachMode}
+                                        onChange={(e) => setCoachMode(e.target.value as CoachMode)}
+                                    >
+                                        <option value="NONE">{lang === "es" ? "Ninguno" : "None"}</option>
+                                        <option value="TRAINER">{lang === "es" ? "Trainer" : "Trainer"}</option>
+                                        <option value="TRAINEE">{lang === "es" ? "Trainee" : "Trainee"}</option>
+                                    </select>
+                                    <p className="text-[11px] text-muted-foreground">
+                                        {lang === "es"
+                                            ? "Regla: si es Trainee, requiere trainer asignado."
+                                            : "Rule: if Trainee, requires an assigned trainer."}
+                                    </p>
+                                </div>
+
+                                {/* Assigned trainer (only for TRAINEE) */}
+                                {form.coachMode === "TRAINEE" ? (
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium">
+                                            {lang === "es" ? "Trainer asignado" : "Assigned trainer"}
+                                        </label>
+
+                                        <select
+                                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                            value={form.assignedTrainer ?? ""}
+                                            onChange={(e) => setAssignedTrainer(e.target.value)}
+                                            disabled={trainersLoading}
+                                        >
+                                            <option value="">
+                                                {trainersLoading
+                                                    ? lang === "es"
+                                                        ? "Cargando trainers..."
+                                                        : "Loading trainers..."
+                                                    : lang === "es"
+                                                        ? "Selecciona un trainer..."
+                                                        : "Select a trainer..."}
+                                            </option>
+
+                                            {trainers.map((t) => (
+                                                <option key={t.id} value={t.id}>
+                                                    {t.name} — {t.email}
+                                                </option>
+                                            ))}
+                                        </select>
+
+                                        {trainersError ? (
+                                            <div className="text-[11px] text-red-500">{trainersError}</div>
+                                        ) : null}
+
+                                        <p className="text-[11px] text-muted-foreground">
+                                            {lang === "es"
+                                                ? "Esto define quién puede ver/planear rutinas para este usuario."
+                                                : "This defines who can view/plan routines for this user."}
+                                        </p>
+                                    </div>
+                                ) : null}
                             </div>
 
+                            {!submitGate.ok && submitGate.reason ? (
+                                <div className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-600 dark:text-red-400">
+                                    {submitGate.reason}
+                                </div>
+                            ) : null}
+
                             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-2">
-                                <Button type="button" variant="outline" onClick={closeForm} disabled={saving} className="w-full sm:w-auto">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={closeForm}
+                                    disabled={saving}
+                                    className="w-full sm:w-auto"
+                                >
                                     {lang === "es" ? "Cancelar" : "Cancel"}
                                 </Button>
-                                <Button type="submit" disabled={saving} className="w-full sm:w-auto">
+                                <Button
+                                    type="submit"
+                                    disabled={saving || !submitGate.ok}
+                                    className="w-full sm:w-auto"
+                                >
                                     {saving
                                         ? lang === "es"
                                             ? "Guardando..."
@@ -645,24 +892,16 @@ export function AdminUsersSection() {
                 </Card>
             ) : null}
 
-            {selectedMedia ? (
-                <MediaViewerModal item={selectedMedia} onClose={() => setSelectedMedia(null)} />
-            ) : null}
+            {selectedMedia ? <MediaViewerModal item={selectedMedia} onClose={() => setSelectedMedia(null)} /> : null}
 
             {/* ✅ Purge Modal */}
             {purgeOpen ? (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-                    role="dialog"
-                    aria-modal="true"
-                >
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
                     <div className="w-full max-w-lg rounded-xl border bg-background shadow-xl">
                         <div className="p-4 sm:p-5 border-b">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="space-y-1">
-                                    <h3 className="text-base font-semibold">
-                                        {lang === "es" ? "Purgar usuario" : "Purge user"}
-                                    </h3>
+                                    <h3 className="text-base font-semibold">{lang === "es" ? "Purgar usuario" : "Purge user"}</h3>
                                     <p className="text-xs text-muted-foreground">
                                         {lang === "es"
                                             ? "Esto eliminará permanentemente al usuario y sus datos relacionados. Esta acción no se puede deshacer."
@@ -700,28 +939,20 @@ export function AdminUsersSection() {
                                                 : "Warning: this will delete data (days, routines, tokens, metrics, etc.)."}
                                         </div>
                                         <p className="text-xs text-muted-foreground">
-                                            {lang === "es"
-                                                ? 'Para confirmar, escribe "PURGE" en el campo.'
-                                                : 'To confirm, type "PURGE" in the field.'}
+                                            {lang === "es" ? 'Para confirmar, escribe "PURGE" en el campo.' : 'To confirm, type "PURGE" in the field.'}
                                         </p>
 
                                         <input
                                             className="h-9 w-full rounded-md border bg-background px-3 text-sm font-mono"
                                             value={purgeConfirmText}
                                             onChange={(e) => setPurgeConfirmText(e.target.value)}
-                                            placeholder='PURGE'
+                                            placeholder="PURGE"
                                             disabled={purging}
                                         />
                                     </div>
 
                                     <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={closePurgeModal}
-                                            disabled={purging}
-                                            className="w-full sm:w-auto"
-                                        >
+                                        <Button type="button" variant="outline" onClick={closePurgeModal} disabled={purging} className="w-full sm:w-auto">
                                             {lang === "es" ? "Cancelar" : "Cancel"}
                                         </Button>
 
@@ -732,13 +963,7 @@ export function AdminUsersSection() {
                                             disabled={!purgeIsUnlocked || purging}
                                             className="w-full sm:w-auto"
                                         >
-                                            {purging
-                                                ? lang === "es"
-                                                    ? "Purgando..."
-                                                    : "Purging..."
-                                                : lang === "es"
-                                                    ? "Confirmar purga"
-                                                    : "Confirm purge"}
+                                            {purging ? (lang === "es" ? "Purgando..." : "Purging...") : (lang === "es" ? "Confirmar purga" : "Confirm purge")}
                                         </Button>
                                     </div>
 
@@ -751,44 +976,30 @@ export function AdminUsersSection() {
                             ) : (
                                 <div className="space-y-3">
                                     <div className="rounded-lg border bg-emerald-500/10 p-3">
-                                        <div className="text-sm font-medium">
-                                            {lang === "es" ? "Purga completada" : "Purge completed"}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {purgeResult.message}
-                                        </div>
+                                        <div className="text-sm font-medium">{lang === "es" ? "Purga completada" : "Purge completed"}</div>
+                                        <div className="text-xs text-muted-foreground">{purgeResult.message}</div>
                                     </div>
 
                                     {purgeResult.cleanup?.items?.length ? (
                                         <div className="rounded-lg border p-3">
-                                            <div className="text-xs font-semibold mb-2">
-                                                {lang === "es" ? "Reporte de limpieza" : "Cleanup report"}
-                                            </div>
+                                            <div className="text-xs font-semibold mb-2">{lang === "es" ? "Reporte de limpieza" : "Cleanup report"}</div>
 
                                             <div className="space-y-1">
                                                 {purgeResult.cleanup.items.map((it) => (
                                                     <div key={it.model} className="flex items-center justify-between gap-3 text-xs">
                                                         <span className="font-mono">{it.model}</span>
-                                                        <span className="font-mono text-muted-foreground">
-                                                            {formatDeletedCount(it.deletedCount)}
-                                                        </span>
+                                                        <span className="font-mono text-muted-foreground">{formatDeletedCount(it.deletedCount)}</span>
                                                     </div>
                                                 ))}
                                                 <div className="mt-2 border-t pt-2 flex items-center justify-between text-xs">
-                                                    <span className="font-semibold">
-                                                        {lang === "es" ? "Total eliminado" : "Total deleted"}
-                                                    </span>
-                                                    <span className="font-mono font-semibold">
-                                                        {formatDeletedCount(purgeResult.cleanup.totalDeleted)}
-                                                    </span>
+                                                    <span className="font-semibold">{lang === "es" ? "Total eliminado" : "Total deleted"}</span>
+                                                    <span className="font-mono font-semibold">{formatDeletedCount(purgeResult.cleanup.totalDeleted)}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="text-xs text-muted-foreground">
-                                            {lang === "es"
-                                                ? "No se recibió reporte de limpieza."
-                                                : "No cleanup report received."}
+                                            {lang === "es" ? "No se recibió reporte de limpieza." : "No cleanup report received."}
                                         </div>
                                     )}
 

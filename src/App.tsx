@@ -17,13 +17,15 @@ import { InsightsPage } from "@/pages/InsightsPage";
 import { InsightsStreaksPage } from "@/pages/InsightsStreaksPage";
 import { InsightsPRsPage } from "@/pages/InsightsPRsPage";
 import { InsightsRecoveryPage } from "@/pages/InsightsRecoveryPage";
-import { RoutineGymCheckPage } from "@/pages/RoutineGymCheckPage";
 import { MovementsPage } from "@/pages/MovementsPage";
 import { SleepPage } from "@/pages/SleepPage";
 import { MyProfilePage } from "@/pages/MyProfilePage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
+import { TrainerDashboardPage } from "@/pages/trainer/TrainerDashboardPage";
+
 import { useAuthStore } from "@/state/auth.store";
+import { GymCheckPage } from "./pages/GymCheckPage";
 
 export default function App() {
   const user = useAuthStore((s) => s.user);
@@ -46,7 +48,10 @@ export default function App() {
           <Route path="/weeks" element={<WeeklySummaryPage />} />
           <Route path="/trends" element={<TrendsPage />} />
           <Route path="/media" element={<MediaPage />} />
-          <Route path="/routines" element={<RoutinesPage />} />
+
+          {user?.coachMode !== "TRAINEE" && (
+            <Route path="/routines" element={<RoutinesPage />} />
+          )}
           <Route path="/plan-vs-actual" element={<PlanVsActualPage />} />
 
           <Route path="/insights" element={<InsightsPage />} />
@@ -54,9 +59,14 @@ export default function App() {
           <Route path="/insights/prs" element={<InsightsPRsPage />} />
           <Route path="/insights/recovery" element={<InsightsRecoveryPage />} />
 
-          <Route path="/gym-check" element={<RoutineGymCheckPage />} />
+          <Route path="/gym-check" element={<GymCheckPage />} />
           <Route path="/movements" element={<MovementsPage />} />
           <Route path="/sleep" element={<SleepPage />} />
+
+          {/* Trainer */}
+          {user?.coachMode === "TRAINER" ? (
+            <Route path="/trainer" element={<TrainerDashboardPage />} />
+          ) : null}
 
           {user?.role === "admin" && (
             <Route path="/admin" element={<AdminPage />} />

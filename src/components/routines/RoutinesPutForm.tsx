@@ -291,10 +291,11 @@ export function RoutinesPutForm({
                     className={[
                         "fixed inset-x-0 bottom-0 z-50",
                         "border-t bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/70",
+                        "md:backdrop-blur-none md:bg-card/0"
                     ].join(" ")}
                     style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
                 >
-                    <div className="mx-auto max-w-6xl px-3 sm:px-4 py-2">
+                    <div className="mx-auto max-w-6xl px-3 sm:px-4 py-3">
                         <div className="flex items-center justify-end">
                             <Button
                                 onClick={onSave}

@@ -65,6 +65,8 @@ type NavItem = {
     end?: boolean;
     match?: (pathname: string) => boolean;
     adminOnly?: boolean;
+    trainerOnly?: boolean;
+    showRoutines?: boolean;
 };
 
 export function NavBar() {
@@ -103,8 +105,7 @@ export function NavBar() {
 
     const logoUrl = appSettings?.logoUrl ?? null;
 
-    const inInsights =
-        pathname === "/insights" || pathname.startsWith("/insights/");
+    const inInsights = pathname === "/insights" || pathname.startsWith("/insights/");
 
     const onLogout = async () => {
         await logout();
@@ -117,12 +118,17 @@ export function NavBar() {
     const initials = user?.name ? getInitials(user.name) : "U";
 
     const isAdmin = user?.role === "admin";
+    const isTrainee = user?.coachMode === "TRAINEE";
+    const isTrainer = user?.coachMode === "TRAINER";
 
     const navItems: NavItem[] = React.useMemo(
         () => [
             { label: t("nav.home"), to: "/", end: true },
             { label: "Gym Check", to: "/gym-check", end: true },
-            { label: t("nav.routines"), to: "/routines", end: true },
+
+            // this flag currently means "hide when trainee"
+            { label: t("nav.routines"), to: "/routines", end: true, showRoutines: user?.coachMode === "TRAINEE" },
+
             { label: t("nav.movements"), to: "/movements", end: true },
             { label: "Sleep", to: "/sleep", end: true },
             { label: t("nav.days"), to: "/days", end: true },
@@ -130,9 +136,13 @@ export function NavBar() {
             { label: t("nav.trends"), to: "/trends", end: true },
             { label: t("nav.media"), to: "/media", end: true },
             { label: t("nav.pva"), to: "/plan-vs-actual", end: true },
+
+            // Trainer dashboard (only TRAINER)
+            { label: lang === "es" ? "Entrenador" : "Trainer", to: "/trainer", end: true, trainerOnly: true },
+
             { label: "Admin", to: "/admin", end: true, adminOnly: true },
         ],
-        [t]
+        [t, lang, user?.coachMode]
     );
 
     function isActiveItem(item: NavItem) {
@@ -145,35 +155,140 @@ export function NavBar() {
         document.title = appName;
     }, [appName]);
 
+    const visibleNavItems = navItems
+        .filter((item) => !item.adminOnly || isAdmin)
+        .filter((item) => !item.trainerOnly || isTrainer)
+        .filter((item) => !item.showRoutines || !isTrainee);
+
     return (
         <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/70">
             <div className="mx-auto max-w-6xl px-3 sm:px-4 py-3">
                 {/* Row 1: Brand + acciones */}
                 <div className="flex items-start sm:items-center justify-between gap-3">
-                    {/* Branding */}
-                    <div className="flex items-center gap-3 min-w-0">
-                        {logoUrl ? (
-                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border bg-background shrink-0">
-                                <img
-                                    src={logoUrl}
-                                    alt={appName}
-                                    className="h-full w-full object-cover"
-                                    loading="lazy"
-                                />
-                            </div>
-                        ) : (
-                            <div className="flex h-9 w-9 items-center justify-center rounded-xl border bg-background text-xs font-semibold shrink-0">
-                                {appName.slice(0, 2).toUpperCase()}
-                            </div>
-                        )}
+                    <div className="min-w-0">
+                        {/* Desktop (sm+): branding + badge inline */}
+                        <div className="hidden sm:flex items-center gap-3 min-w-0">
+                            {/* Branding */}
+                            <div className="flex items-center gap-3 min-w-0">
+                                {logoUrl ? (
+                                    <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border bg-background shrink-0">
+                                        <img
+                                            src={logoUrl}
+                                            alt={appName}
+                                            className="h-full w-full object-cover"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border bg-background text-xs font-semibold shrink-0">
+                                        {appName.slice(0, 2).toUpperCase()}
+                                    </div>
+                                )}
 
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-semibold leading-tight truncate">
-                                {appName}
-                            </span>
-                            <span className="text-xs text-muted-foreground leading-tight truncate">
-                                {appSubtitle}
-                            </span>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-sm font-semibold leading-tight truncate">
+                                        {appName}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground leading-tight truncate">
+                                        {appSubtitle}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Badge (desktop) */}
+                            <div className="shrink-0">
+                                <span
+                                    className={[
+                                        "inline-flex items-center gap-2 rounded-full border px-3 py-1",
+                                        "text-xs font-semibold tracking-wide",
+                                        "bg-background/70 backdrop-blur shadow-sm",
+                                        user?.role === "admin"
+                                            ? "border-primary/25 text-primary"
+                                            : user?.coachMode === "TRAINEE"
+                                                ? "border-accent/25 text-accent-foreground"
+                                                : "border-muted-foreground/20 text-muted-foreground",
+                                    ].join(" ")}
+                                >
+                                    <span
+                                        className={[
+                                            "h-2 w-2 rounded-full",
+                                            user?.role === "admin"
+                                                ? "bg-primary"
+                                                : user?.coachMode === "TRAINEE"
+                                                    ? "bg-accent"
+                                                    : "bg-muted-foreground",
+                                        ].join(" ")}
+                                        aria-hidden="true"
+                                    />
+                                    {user?.role === "admin"
+                                        ? "Admin"
+                                        : user?.coachMode === "TRAINEE"
+                                            ? "Trainee"
+                                            : "Coach"}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Mobile (<sm): branding stacked + badge under subtitle */}
+                        <div className="sm:hidden flex items-start gap-3 min-w-0">
+                            {logoUrl ? (
+                                <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border bg-background shrink-0">
+                                    <img
+                                        src={logoUrl}
+                                        alt={appName}
+                                        className="h-full w-full object-cover"
+                                        loading="lazy"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="flex h-9 w-9 items-center justify-center rounded-xl border bg-background text-xs font-semibold shrink-0">
+                                    {appName.slice(0, 2).toUpperCase()}
+                                </div>
+                            )}
+
+                            <div className="min-w-0 flex-1">
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-sm font-semibold leading-tight truncate">
+                                        {appName}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground leading-tight truncate">
+                                        {appSubtitle}
+                                    </span>
+                                </div>
+
+                                {/* Badge (mobile) */}
+                                <div className="mt-2">
+                                    <span
+                                        className={[
+                                            "inline-flex items-center gap-2 rounded-full border px-3 py-1",
+                                            "text-[11px] font-semibold tracking-wide",
+                                            "bg-background/70 backdrop-blur shadow-sm",
+                                            user?.role === "admin"
+                                                ? "border-primary/25 text-primary"
+                                                : user?.coachMode === "TRAINEE"
+                                                    ? "border-accent/25 text-accent-foreground"
+                                                    : "border-muted-foreground/20 text-muted-foreground",
+                                        ].join(" ")}
+                                    >
+                                        <span
+                                            className={[
+                                                "h-2 w-2 rounded-full",
+                                                user?.role === "admin"
+                                                    ? "bg-primary"
+                                                    : user?.coachMode === "TRAINEE"
+                                                        ? "bg-accent"
+                                                        : "bg-muted-foreground",
+                                            ].join(" ")}
+                                            aria-hidden="true"
+                                        />
+                                        {user?.role === "admin"
+                                            ? "Admin"
+                                            : user?.coachMode === "TRAINEE"
+                                                ? "Trainee"
+                                                : "Coach"}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -197,20 +312,18 @@ export function NavBar() {
                                         {lang === "es" ? "Navegación" : "Navigation"}
                                     </DropdownMenuLabel>
 
-                                    {navItems
-                                        .filter((item) => !item.adminOnly || isAdmin)
-                                        .map((item) => {
-                                            const active = isActiveItem(item);
-                                            return (
-                                                <DropdownMenuItem
-                                                    key={item.to}
-                                                    onClick={() => navigate(item.to)}
-                                                    className={active ? "font-semibold" : ""}
-                                                >
-                                                    {item.label}
-                                                </DropdownMenuItem>
-                                            );
-                                        })}
+                                    {visibleNavItems.map((item) => {
+                                        const active = isActiveItem(item);
+                                        return (
+                                            <DropdownMenuItem
+                                                key={item.to}
+                                                onClick={() => navigate(item.to)}
+                                                className={active ? "font-semibold" : ""}
+                                            >
+                                                {item.label}
+                                            </DropdownMenuItem>
+                                        );
+                                    })}
 
                                     <DropdownMenuSeparator />
 
@@ -218,9 +331,7 @@ export function NavBar() {
                                     <DropdownMenuItem
                                         onClick={() => navigate("/insights")}
                                         className={
-                                            inInsights && pathname === "/insights"
-                                                ? "font-semibold"
-                                                : ""
+                                            inInsights && pathname === "/insights" ? "font-semibold" : ""
                                         }
                                     >
                                         {t("nav.insights")}
@@ -228,9 +339,7 @@ export function NavBar() {
                                     <DropdownMenuItem
                                         onClick={() => navigate("/insights/streaks")}
                                         className={
-                                            pathname.startsWith("/insights/streaks")
-                                                ? "font-semibold"
-                                                : ""
+                                            pathname.startsWith("/insights/streaks") ? "font-semibold" : ""
                                         }
                                     >
                                         {t("nav.streaks")}
@@ -238,9 +347,7 @@ export function NavBar() {
                                     <DropdownMenuItem
                                         onClick={() => navigate("/insights/prs")}
                                         className={
-                                            pathname.startsWith("/insights/prs")
-                                                ? "font-semibold"
-                                                : ""
+                                            pathname.startsWith("/insights/prs") ? "font-semibold" : ""
                                         }
                                     >
                                         {t("nav.prs")}
@@ -248,9 +355,7 @@ export function NavBar() {
                                     <DropdownMenuItem
                                         onClick={() => navigate("/insights/recovery")}
                                         className={
-                                            pathname.startsWith("/insights/recovery")
-                                                ? "font-semibold"
-                                                : ""
+                                            pathname.startsWith("/insights/recovery") ? "font-semibold" : ""
                                         }
                                     >
                                         {t("nav.recovery")}
@@ -337,16 +442,14 @@ export function NavBar() {
 
                 {/* Row 2 — Desktop nav only */}
                 <nav className="mt-3 hidden md:flex flex-wrap items-center gap-2">
-                    {navItems
-                        .filter((item) => !item.adminOnly || isAdmin)
-                        .map((item) => (
-                            <TopNavLink
-                                key={item.to}
-                                to={item.to}
-                                label={item.label}
-                                end={item.end}
-                            />
-                        ))}
+                    {visibleNavItems.map((item) => (
+                        <TopNavLink
+                            key={item.to}
+                            to={item.to}
+                            label={item.label}
+                            end={item.end}
+                        />
+                    ))}
 
                     {/* Insights dropdown (desktop) */}
                     <DropdownMenu>

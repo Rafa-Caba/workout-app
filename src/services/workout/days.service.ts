@@ -186,6 +186,8 @@ export type WorkoutDayUpsertBody = {
  * Uses backend route: PUT /workout/days/:date?mode=merge|replace
  */
 export async function upsertWorkoutDay(date: string, body: WorkoutDayUpsertBody, mode: UpsertMode = "merge"): Promise<WorkoutDay> {
+    console.log({ body });
+
     const res = await api.put(`/workout/days/${encodeURIComponent(date)}`, body, { params: { mode } });
     return res.data as WorkoutDay;
 }

@@ -1,10 +1,10 @@
-import type { AuthUser, Sex, Units } from "@/types/auth.types";
+import type { AuthUser, CoachMode, Sex, Units, UserRole } from "@/types/auth.types";
 
 /**
  * =========================================================
  * User domain types (FE)
  * - We reuse AuthUser as the canonical user shape
- * - This file only adds update payloads for /users/me
+ * - This file adds update payloads for /users/me (and admin if needed)
  * =========================================================
  */
 
@@ -30,6 +30,8 @@ export type UserProfileUpdateRequest = Partial<{
     name: string;
     sex: Sex;
 
+    profilePicUrl: string | null;
+
     heightCm: number | null;
     currentWeightKg: number | null;
 
@@ -38,7 +40,23 @@ export type UserProfileUpdateRequest = Partial<{
     birthDate: string | null; // YYYY-MM-DD
     activityGoal: ActivityGoal;
     timezone: string | null;
+
+    /**
+     * Coaching (may be controlled by dedicated endpoints later)
+     */
+    coachMode: CoachMode;
+    assignedTrainer: string | null; // User id
 }>;
+
+/**
+ * Optional: admin update payload (matches BE shape)
+ * Useful if you have an admin users editor in FE.
+ */
+export type AdminUserUpdateRequest = UserProfileUpdateRequest &
+    Partial<{
+        email: string;
+        role: UserRole;
+    }>;
 
 /**
  * Small utility: sometimes UI edits only units.

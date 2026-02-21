@@ -6,6 +6,11 @@ export type Units = {
 export type UserRole = "admin" | "user";
 export type Sex = "male" | "female" | "other" | null;
 
+/**
+ * Coaching
+ */
+export type CoachMode = "NONE" | "TRAINER" | "TRAINEE";
+
 export type PublicUser = {
     id: string;
     name: string;
@@ -21,8 +26,20 @@ export type PublicUser = {
     units: Units | null;
 
     birthDate: string | null; // YYYY-MM-DD
-    activityGoal: "fat_loss" | "hypertrophy" | "strength" | "maintenance" | "other" | null;
+    activityGoal:
+    | "fat_loss"
+    | "hypertrophy"
+    | "strength"
+    | "maintenance"
+    | "other"
+    | null;
     timezone: string | null;
+
+    /**
+     * Coaching
+     */
+    coachMode: CoachMode;
+    assignedTrainer: string | null; // User id (ObjectId as string)
 
     createdAt: string;
     updatedAt: string;

@@ -49,6 +49,7 @@ import { RoutinesJsonEditor } from "@/components/routines/RoutinesJsonEditor";
 import type { UploadQuery } from "@/types/uploadQuery";
 import type { WorkoutRoutineWeek, WorkoutRoutineDay, WorkoutRoutineStatus } from "@/types/workoutRoutine.types";
 import { useMovements } from "@/hooks/useMovements";
+import { useAuthStore } from "@/state/auth.store";
 
 function toastApiError(e: unknown, fallback: string) {
     const err = e as Partial<ApiError> | undefined;
@@ -192,6 +193,19 @@ function diffNewAttachmentPublicIds(before: Set<string>, after: Set<string>): st
 
 export function RoutinesPage() {
     const { t, lang } = useI18n();
+
+    const user = useAuthStore((s) => s.user);
+    if (user?.coachMode === "TRAINEE") return (
+        <div className="flex align-middle items-center flex-col gap-3">
+            <h1 className="font-extrabold text-3xl">{lang == 'es' ? "- Página no permitida -" : "- Restricted page -"}</h1>
+            <p>
+                {lang == 'es'
+                    ? "Tu entrenador te asignara tu rutina y pronto lo veras en Gym Check"
+                    : "Your trainer will assign you your session rutine shortly and will be visible on the Gym Check."
+                }
+            </p>
+        </div>
+    );
 
     const today = React.useMemo(() => new Date(), []);
     const [weekDate, setWeekDate] = React.useState(() => format(today, "yyyy-MM-dd"));

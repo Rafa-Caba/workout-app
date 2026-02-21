@@ -27,19 +27,27 @@ export function normalizeWeekKey(value: string): string {
 
 /**
  * Converts weekKey (YYYY-W##) to the start date (Monday) of that ISO week.
+ *
+ * IMPORTANT:
+ * This function must always return a Date to keep callers simple and avoid null
+ * checks throughout the UI. If the weekKey is invalid, we fallback to the start
+ * of the current ISO week.
+ *
  * Algorithm:
  * - ISO week 1 is the week containing Jan 4.
  * - Find Monday of ISO week 1, then add (week-1) weeks.
  */
-export function weekKeyToStartDate(weekKey: string): Date | null {
+export function weekKeyToStartDate(weekKey: string): Date {
+    const fallback = startOfISOWeek(new Date());
+
     const m = /^(\d{4})-W(\d{2})$/.exec(weekKey);
-    if (!m) return null;
+    if (!m) return fallback;
 
     const year = Number(m[1]);
     const week = Number(m[2]);
 
     if (!Number.isFinite(year) || !Number.isFinite(week) || week < 1 || week > 53) {
-        return null;
+        return fallback;
     }
 
     const jan4 = new Date(year, 0, 4);
@@ -47,8 +55,11 @@ export function weekKeyToStartDate(weekKey: string): Date | null {
     return addWeeks(week1Start, week - 1);
 }
 
-export function weekKeyToEndDate(weekKey: string): Date | null {
+/**
+ * Returns the end date (Sunday) of the ISO week for the given key.
+ * Always returns a Date; falls back to the end of the current ISO week when invalid.
+ */
+export function weekKeyToEndDate(weekKey: string): Date {
     const start = weekKeyToStartDate(weekKey);
-    if (!start) return null;
     return endOfISOWeek(start);
 }

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { toast } from "sonner";
+
 import type {
     AdminUser,
     AdminUserActiveFilter,
@@ -8,6 +9,7 @@ import type {
     AdminUserRoleFilter,
     AdminUserUpdatePayload,
 } from "@/types/adminUser.types";
+
 import {
     createAdminUser,
     deleteAdminUser,
@@ -16,12 +18,24 @@ import {
     purgeAdminUser,
 } from "@/services/admin/adminUsers.service";
 
+type CoachModeFilter = "all" | "NONE" | "TRAINER" | "TRAINEE";
+
+/**
+ * Backend expects:
+ * - page (number)
+ * - limit (number)
+ * - q (string)
+ * - role ("admin" | "user")
+ * - isActive (boolean) [parsed manually server-side]
+ * - coachMode ("NONE" | "TRAINER" | "TRAINEE")
+ */
 type AdminUsersQuery = {
     page: number;
-    pageSize: number;
-    search?: string;
+    limit: number;
+    q?: string;
     role?: "admin" | "user";
     isActive?: boolean;
+    coachMode?: "NONE" | "TRAINER" | "TRAINEE";
 };
 
 export type AdminUserPurgeResponse = {
@@ -36,12 +50,14 @@ export type AdminUserPurgeResponse = {
 type AdminUsersState = {
     items: AdminUser[];
     total: number;
+
     page: number;
     pageSize: number;
 
     search: string;
     roleFilter: AdminUserRoleFilter;
     activeFilter: AdminUserActiveFilter;
+    coachModeFilter: CoachModeFilter;
 
     loading: boolean;
     error: string | null;
@@ -50,6 +66,8 @@ type AdminUsersState = {
     setSearch: (value: string) => void;
     setRoleFilter: (value: AdminUserRoleFilter) => void;
     setActiveFilter: (value: AdminUserActiveFilter) => void;
+    setCoachModeFilter: (value: CoachModeFilter) => void;
+
     setPage: (page: number) => void;
 
     loadUsers: () => Promise<void>;
@@ -80,12 +98,14 @@ function getErrorMessage(e: unknown, fallback: string): string {
 export const useAdminUsersStore = create<AdminUsersState>((set, get) => ({
     items: [],
     total: 0,
+
     page: 1,
     pageSize: 10,
 
     search: "",
     roleFilter: "all",
     activeFilter: "all",
+    coachModeFilter: "all",
 
     loading: false,
     error: null,
@@ -102,32 +122,51 @@ export const useAdminUsersStore = create<AdminUsersState>((set, get) => ({
         set({ activeFilter: value, page: 1 });
     },
 
+    setCoachModeFilter(value) {
+        set({ coachModeFilter: value, page: 1 });
+    },
+
     setPage(page) {
         set({ page });
     },
 
     async loadUsers() {
-        const { page, pageSize, search, roleFilter, activeFilter } = get();
+        const { page, pageSize, search, roleFilter, activeFilter, coachModeFilter } = get();
 
         set({ loading: true, error: null });
 
         try {
             const query: AdminUsersQuery = {
                 page,
-                pageSize,
+                limit: pageSize,
             };
 
-            if (search.trim()) query.search = search.trim();
-            if (roleFilter !== "all") query.role = roleFilter;
-            if (activeFilter !== "all") query.isActive = activeFilter === "active";
+            const s = search.trim();
+            if (s) query.q = s;
 
-            const data: AdminUserListResponse = await fetchAdminUsers(query);
+            if (roleFilter !== "all") query.role = roleFilter;
+
+            if (activeFilter !== "all") {
+                query.isActive = activeFilter === "active";
+            }
+
+            if (coachModeFilter !== "all") {
+                query.coachMode = coachModeFilter;
+            }
+
+            const data: AdminUserListResponse = await fetchAdminUsers(query as any);
+
+            // Accept either shape:
+            // - { items, total, page, limit }
+            // - { items, total, page, pageSize }
+            const nextPageSize =
+                (data as any).pageSize ?? (data as any).limit ?? pageSize;
 
             set({
                 items: data.items,
                 total: data.total,
                 page: data.page,
-                pageSize: data.pageSize,
+                pageSize: nextPageSize,
                 loading: false,
                 error: null,
             });

@@ -365,8 +365,8 @@ export function RoutinesDayEditor({
                         backdrop-blur supports-backdrop-filter:bg-card/70
                         md:backdrop-blur-none md:bg-card
                         pointer-events-none
-                        bottom-[calc(env(safe-area-inset-bottom)+50px)]
-                        sm:bottom-[calc(env(safe-area-inset-bottom)+15px)]
+                        bottom-[calc(env(safe-area-inset-bottom)+55px)]
+                        sm:bottom-[calc(env(safe-area-inset-bottom)+0px)]
                     "
                     style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
                 >
@@ -377,7 +377,7 @@ export function RoutinesDayEditor({
                                 flex items-center gap-2
                                 justify-stretch
                                 sm:justify-start
-                                md:justify-between
+                                md:justify-between pb-2 md:pb-0
                             "
                         >
                             <Button

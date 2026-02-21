@@ -25,7 +25,7 @@ export type WorkoutRoutineExercise = {
 
     name: string;
 
-    // ✅ Movement catalog link + snapshot (Option A)
+    // Movement catalog link + snapshot (Option A)
     movementId: string | null;
     movementName: string | null;
 

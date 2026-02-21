@@ -580,14 +580,14 @@ export function MovementsPage() {
                                                         <div className="grid gap-2 md:grid-cols-2">
                                                             <MuscleGroupSelect
                                                                 t={t}
-                                                                value={createForm.muscleGroup ? createForm.muscleGroup : null}
-                                                                onChange={(v) => setCreateForm((p) => ({ ...p, muscleGroup: v ?? "" }))}
+                                                                value={editForm.muscleGroup ? editForm.muscleGroup : null}
+                                                                onChange={(v) => setEditForm((p) => ({ ...p, muscleGroup: v ?? "" }))}
                                                             />
 
                                                             <EquipmentSelect
                                                                 t={t}
-                                                                value={createForm.equipment ? createForm.equipment : null}
-                                                                onChange={(v) => setCreateForm((p) => ({ ...p, equipment: v ?? "" }))}
+                                                                value={editForm.equipment ? editForm.equipment : null}
+                                                                onChange={(v) => setEditForm((p) => ({ ...p, equipment: v ?? "" }))}
                                                             />
                                                         </div>
                                                     </div>

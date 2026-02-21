@@ -132,8 +132,10 @@ export function MyProfilePage() {
                                 </div>
 
                                 <div className="grid grid-cols-[1fr_auto] items-center gap-3">
-                                    <span className="text-muted-foreground">{t("profile.fields.timezone")}</span>
-                                    <span className="text-right wrap-break-words">{formatNullable(me.timezone)}</span>
+                                    <span className="text-muted-foreground">{t("profile.fields.coachMode")}</span>
+                                    <span className="min-w-0 text-right wrap-break-words">
+                                        {formatNullable(me.coachMode === "NONE" ? "REGULAR" : me.coachMode)}
+                                    </span>
                                 </div>
                             </div>
 

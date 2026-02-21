@@ -175,12 +175,12 @@ export function EditProfileModal({
         >
             <div className="absolute inset-0 bg-black/80" />
 
-            {/* ✅ Make the viewport wrapper scroll-safe on mobile + safe-area padding */}
+            {/* Make the viewport wrapper scroll-safe on mobile + safe-area padding */}
             <div className="absolute inset-0 overflow-y-auto p-4 sm:p-6 md:p-8 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]">
                 <div className="min-h-[dvh] flex items-start sm:items-center justify-center">
-                    {/* ✅ Modal becomes a column with max-height so header stays reachable */}
+                    {/* Modal becomes a column with max-height so header stays reachable */}
                     <div className="w-full max-w-3xl max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] rounded-2xl border bg-background shadow-xl overflow-hidden flex flex-col">
-                        {/* ✅ Sticky header so the close/save buttons never go offscreen */}
+                        {/* Sticky header so the close/save buttons never go offscreen */}
                         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-b">
                             <div className="min-w-0">
                                 <div className="text-sm font-semibold truncate">{t("profile.editModal.title")}</div>
@@ -337,17 +337,12 @@ export function EditProfileModal({
                                     </div>
                                 </div>
 
-                                {/* Timezone */}
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">{t("profile.fields.timezone")}</label>
-                                    <input
-                                        className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
-                                        value={form.timezone}
-                                        onChange={(e) => setForm((s) => ({ ...s, timezone: e.target.value }))}
-                                        placeholder="America/Mexico_City"
-                                        disabled={busy}
-                                    />
-                                    <div className="text-xs text-muted-foreground">{t("profile.fields.timezoneHint")}</div>
+                                {/* Coach Mode */}
+                                <div className="space-y-2 flex flex-col">
+                                    <label className="text-sm font-medium">{t("profile.fields.coachMode")}</label>
+                                    <span className="min-w-0 text-start wrap-break-words text-muted-foreground">
+                                        {user.coachMode === "NONE" ? "REGULAR" : user.coachMode}
+                                    </span>
                                 </div>
 
                                 <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

@@ -48,6 +48,7 @@ export const en: Record<I18nKey, string> = {
     "profile.fields.goal.strength": "Strength",
     "profile.fields.goal.maintenance": "Maintenance",
     "profile.fields.goal.other": "Other",
+    "profile.fields.coachMode": "Coach Mode",
 
     "profile.fields.timezone": "Timezone",
     "profile.fields.timezoneHint": "You can leave it empty if you don’t want to save a timezone.",
@@ -286,6 +287,44 @@ export const en: Record<I18nKey, string> = {
     "device.options.withings": "Withings",
     "device.options.strava": "Strava",
     "device.options.manual": "Manual / No device",
+
+    // Muscle
+    "muscle.chest": "Chest",
+    "muscle.back": "Back",
+    "muscle.shoulders": "Shoulders",
+    "muscle.biceps": "Biceps",
+    "muscle.triceps": "Triceps",
+    "muscle.forearms": "Forearms",
+    "muscle.quads": "Quads",
+    "muscle.hamstrings": "Hamstrings",
+    "muscle.glutes": "Glutes",
+    "muscle.calves": "Calves",
+    "muscle.abs": "Abs",
+    "muscle.obliques": "Obliques",
+    "muscle.traps": "Traps",
+    "muscle.lats": "Lats",
+    "muscle.fullBody": "Full body",
+    "muscle.cardio": "Cardio",
+
+    // Equipment
+    "equipment.dumbbells": "Dumbbells",
+    "equipment.barbell": "Barbell",
+    "equipment.kettlebell": "Kettlebell",
+    "equipment.machine": "Machine",
+    "equipment.cable": "Cable",
+    "equipment.bodyweight": "Bodyweight",
+    "equipment.bands": "Bands",
+    "equipment.pullupBar": "Pull-up bar",
+    "equipment.bench": "Bench",
+    "equipment.medicineBall": "Medicine ball",
+    "equipment.trx": "TRX",
+    "equipment.rower": "Rower",
+    "equipment.treadmill": "Treadmill",
+    "equipment.bike": "Bike",
+    "equipment.elliptical": "Elliptical",
+    "equipment.jumpRope": "Jump rope",
+    "equipment.other": "Other",
+
 
 
     // Weeks
@@ -841,6 +880,7 @@ export const en: Record<I18nKey, string> = {
     "settings.account.timezone": "Timezone",
     "settings.account.units": "Units",
     "settings.account.hintProfile": "Tip: edit these values from My Profile.",
+    "settings.account.coachMode": "Coach Mode",
 
     "settings.app.title": "App",
     "settings.app.desc": "Behavior and display preferences.",

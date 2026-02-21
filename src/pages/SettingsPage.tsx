@@ -91,8 +91,10 @@ export function SettingsPage() {
                             </div>
 
                             <div className="flex items-start justify-between gap-3">
-                                <span className="text-muted-foreground shrink-0">{t("settings.account.timezone")}</span>
-                                <span className="min-w-0 text-right wrap-break-words">{formatNullable(me.timezone)}</span>
+                                <span className="text-muted-foreground shrink-0">{t("settings.account.coachMode")}</span>
+                                <span className="min-w-0 text-right wrap-break-words">
+                                    {formatNullable(me.coachMode === "NONE" ? "REGULAR" : me.coachMode)}
+                                </span>
                             </div>
 
                             <div className="flex items-start justify-between gap-3">

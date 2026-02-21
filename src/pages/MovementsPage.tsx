@@ -18,6 +18,13 @@ import {
 import { MediaViewerModal, type MediaLikeItem } from "@/components/media/MediaViewerModal";
 import { MediaCard } from "@/components/media/MediaCard";
 
+import {
+    MuscleGroupDropdown,
+    EquipmentDropdown,
+    type MuscleGroupKey,
+    type EquipmentKey,
+} from "@/components/ui/domain-dropdowns";
+
 // -------------------- Helpers --------------------
 
 function toastApiError(e: unknown, fallback: string) {
@@ -322,9 +329,8 @@ export function MovementsPage() {
                 }
             />
 
-            {/* Crear + Buscar */}
             <div className="rounded-xl border bg-card p-3 sm:p-4 space-y-3">
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2">
                     <div className="md:col-span-1">
                         <label className="text-xs font-medium">
                             {lang === "es" ? "Buscar" : "Search"}
@@ -343,47 +349,41 @@ export function MovementsPage() {
                             <label className="text-xs font-medium">
                                 {lang === "es" ? "Nuevo movimiento" : "New movement"}
                             </label>
-                            <div className="mt-1 grid gap-2 sm:grid-cols-2 md:grid-cols-4">
-                                <input
-                                    className="rounded-md border bg-background px-3 py-2 text-sm sm:col-span-2 md:col-span-2"
-                                    value={createForm.name}
-                                    onChange={(e) =>
-                                        setCreateForm((p) => ({ ...p, name: e.target.value }))
+
+                            <div className="mt-2 grid gap-2 sm:grid-cols-2 md:grid-cols-4">
+                                <div className="flex flex-col sm:col-span-2 md:col-span-2 justify-between">
+                                    <span className="text-xs font-medium">
+                                        {lang == "es" ? "Nombre" : "Name"}
+                                    </span>
+                                    <input
+                                        className="rounded-md border bg-background px-3 py-2 text-sm"
+                                        value={createForm.name}
+                                        onChange={(e) =>
+                                            setCreateForm((p) => ({ ...p, name: e.target.value }))
+                                        }
+                                        disabled={busy}
+                                        placeholder={
+                                            lang === "es"
+                                                ? "Nombre (requerido)"
+                                                : "Name (required)"
+                                        }
+                                    />
+                                </div>
+
+                                <MuscleGroupDropdown
+                                    value={(createForm.muscleGroup || null) as MuscleGroupKey | null}
+                                    onChange={(next) =>
+                                        setCreateForm((p) => ({ ...p, muscleGroup: next ?? "" }))
                                     }
                                     disabled={busy}
-                                    placeholder={
-                                        lang === "es"
-                                            ? "Nombre (requerido)"
-                                            : "Name (required)"
-                                    }
                                 />
-                                <input
-                                    className="rounded-md border bg-background px-3 py-2 text-sm"
-                                    value={createForm.muscleGroup}
-                                    onChange={(e) =>
-                                        setCreateForm((p) => ({
-                                            ...p,
-                                            muscleGroup: e.target.value,
-                                        }))
+
+                                <EquipmentDropdown
+                                    value={(createForm.equipment || null) as EquipmentKey | null}
+                                    onChange={(next) =>
+                                        setCreateForm((p) => ({ ...p, equipment: next ?? "" }))
                                     }
                                     disabled={busy}
-                                    placeholder={
-                                        lang === "es"
-                                            ? "Grupo muscular"
-                                            : "Muscle group"
-                                    }
-                                />
-                                <input
-                                    className="rounded-md border bg-background px-3 py-2 text-sm"
-                                    value={createForm.equipment}
-                                    onChange={(e) =>
-                                        setCreateForm((p) => ({
-                                            ...p,
-                                            equipment: e.target.value,
-                                        }))
-                                    }
-                                    disabled={busy}
-                                    placeholder={lang === "es" ? "Equipo" : "Equipment"}
                                 />
                             </div>
                         </div>
@@ -580,29 +580,20 @@ export function MovementsPage() {
                                                         </div>
 
                                                         <div className="grid gap-2 md:grid-cols-2">
-                                                            <input
-                                                                className="rounded-md border bg-background px-3 py-2 text-sm"
-                                                                value={editForm.muscleGroup}
-                                                                onChange={(e) =>
-                                                                    setEditForm((p) => ({
-                                                                        ...p,
-                                                                        muscleGroup: e.target.value,
-                                                                    }))
+                                                            <MuscleGroupDropdown
+                                                                value={(editForm.muscleGroup || null) as MuscleGroupKey | null}
+                                                                onChange={(next) =>
+                                                                    setEditForm((p) => ({ ...p, muscleGroup: next ?? "" }))
                                                                 }
                                                                 disabled={busy}
-                                                                placeholder={lang === "es" ? "Grupo muscular" : "Muscle group"}
                                                             />
-                                                            <input
-                                                                className="rounded-md border bg-background px-3 py-2 text-sm"
-                                                                value={editForm.equipment}
-                                                                onChange={(e) =>
-                                                                    setEditForm((p) => ({
-                                                                        ...p,
-                                                                        equipment: e.target.value,
-                                                                    }))
+
+                                                            <EquipmentDropdown
+                                                                value={(editForm.equipment || null) as EquipmentKey | null}
+                                                                onChange={(next) =>
+                                                                    setEditForm((p) => ({ ...p, equipment: next ?? "" }))
                                                                 }
                                                                 disabled={busy}
-                                                                placeholder={lang === "es" ? "Equipo" : "Equipment"}
                                                             />
                                                         </div>
                                                     </div>

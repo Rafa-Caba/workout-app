@@ -112,7 +112,7 @@ export function DeviceSelect({
         return known.find((k) => normalize(k).toLowerCase() === norm) ?? null;
     }, [value, known]);
 
-    // ✅ Fix: track "Other" mode explicitly (don’t rely on value)
+    // track "Other" mode explicitly (don’t rely on value)
     const [otherSelected, setOtherSelected] = React.useState<boolean>(() => {
         if (!allowOther) return false;
         if (!value) return false;

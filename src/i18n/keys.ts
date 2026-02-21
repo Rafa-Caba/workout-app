@@ -345,6 +345,12 @@ export const i18nKeys = [
     "device.options.manual",
 
     // Muscle
+    "muscle.label",
+    "muscle.placeholder",
+    "muscle.other",
+    "muscle.otherPlaceholder",
+    "muscle.otherHint",
+
     "muscle.chest",
     "muscle.back",
     "muscle.shoulders",
@@ -363,12 +369,18 @@ export const i18nKeys = [
     "muscle.cardio",
 
     // Equipment
+    "equipment.label",
+    "equipment.placeholder",
+    "equipment.other",
+    "equipment.otherPlaceholder",
+    "equipment.otherHint",
+
+    "equipment.bodyweight",
     "equipment.dumbbells",
     "equipment.barbell",
     "equipment.kettlebell",
     "equipment.machine",
     "equipment.cable",
-    "equipment.bodyweight",
     "equipment.bands",
     "equipment.pullupBar",
     "equipment.bench",
@@ -379,7 +391,6 @@ export const i18nKeys = [
     "equipment.bike",
     "equipment.elliptical",
     "equipment.jumpRope",
-    "equipment.other",
 
     // Weeks
     "weeks.toast.weekLoaded",

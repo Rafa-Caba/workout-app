@@ -289,6 +289,12 @@ export const en: Record<I18nKey, string> = {
     "device.options.manual": "Manual / No device",
 
     // Muscle
+    "muscle.label": "Muscle group",
+    "muscle.placeholder": "Select a muscle group…",
+    "muscle.other": "Other",
+    "muscle.otherPlaceholder": "Type the muscle group…",
+    "muscle.otherHint": "Use this if you can't find an option in the list.",
+
     "muscle.chest": "Chest",
     "muscle.back": "Back",
     "muscle.shoulders": "Shoulders",
@@ -307,6 +313,11 @@ export const en: Record<I18nKey, string> = {
     "muscle.cardio": "Cardio",
 
     // Equipment
+    "equipment.label": "Equipment",
+    "equipment.placeholder": "Select equipment…",
+    "equipment.otherPlaceholder": "Type the equipment…",
+    "equipment.otherHint": "Use this if you can't find an option in the list.",
+
     "equipment.dumbbells": "Dumbbells",
     "equipment.barbell": "Barbell",
     "equipment.kettlebell": "Kettlebell",
@@ -324,8 +335,6 @@ export const en: Record<I18nKey, string> = {
     "equipment.elliptical": "Elliptical",
     "equipment.jumpRope": "Jump rope",
     "equipment.other": "Other",
-
-
 
     // Weeks
     "weeks.toast.weekLoaded": "Weekly summary loaded",

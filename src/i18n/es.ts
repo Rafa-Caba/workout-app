@@ -290,6 +290,12 @@ export const es: Record<I18nKey, string> = {
     "device.options.manual": "Manual / Sin dispositivo",
 
     // Muscle
+    "muscle.label": "Grupo muscular",
+    "muscle.placeholder": "Selecciona un grupo muscular…",
+    "muscle.other": "Otro",
+    "muscle.otherPlaceholder": "Escribe el grupo muscular…",
+    "muscle.otherHint": "Usa esto si no encuentras una opción en la lista.",
+
     "muscle.chest": "Pecho",
     "muscle.back": "Espalda",
     "muscle.shoulders": "Hombros",
@@ -307,7 +313,12 @@ export const es: Record<I18nKey, string> = {
     "muscle.fullBody": "Cuerpo completo",
     "muscle.cardio": "Cardio",
 
-    // Mancuernas
+    // Equipment
+    "equipment.label": "Equipo",
+    "equipment.placeholder": "Selecciona un equipo…",
+    "equipment.otherPlaceholder": "Escribe el equipo…",
+    "equipment.otherHint": "Usa esto si no encuentras una opción en la lista.",
+
     "equipment.dumbbells": "Mancuernas",
     "equipment.barbell": "Barra",
     "equipment.kettlebell": "Kettlebell",

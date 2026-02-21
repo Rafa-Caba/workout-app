@@ -24,6 +24,8 @@ import {
     type MuscleGroupKey,
     type EquipmentKey,
 } from "@/components/ui/domain-dropdowns";
+import { MuscleGroupSelect } from "@/components/MuscleGroupSelect";
+import { EquipmentSelect } from "@/components/EquipmentSelect";
 
 // -------------------- Helpers --------------------
 
@@ -117,7 +119,7 @@ function isImageFile(file: File | null) {
 // -------------------- Page --------------------
 
 export function MovementsPage() {
-    const { lang } = useI18n();
+    const { t, lang } = useI18n();
 
     // filtros (query)
     const [activeOnly, setActiveOnly] = React.useState<boolean>(true);
@@ -370,20 +372,16 @@ export function MovementsPage() {
                                     />
                                 </div>
 
-                                <MuscleGroupDropdown
-                                    value={(createForm.muscleGroup || null) as MuscleGroupKey | null}
-                                    onChange={(next) =>
-                                        setCreateForm((p) => ({ ...p, muscleGroup: next ?? "" }))
-                                    }
-                                    disabled={busy}
+                                <MuscleGroupSelect
+                                    t={t}
+                                    value={createForm.muscleGroup ? createForm.muscleGroup : null}
+                                    onChange={(v) => setCreateForm((p) => ({ ...p, muscleGroup: v ?? "" }))}
                                 />
 
-                                <EquipmentDropdown
-                                    value={(createForm.equipment || null) as EquipmentKey | null}
-                                    onChange={(next) =>
-                                        setCreateForm((p) => ({ ...p, equipment: next ?? "" }))
-                                    }
-                                    disabled={busy}
+                                <EquipmentSelect
+                                    t={t}
+                                    value={createForm.equipment ? createForm.equipment : null}
+                                    onChange={(v) => setCreateForm((p) => ({ ...p, equipment: v ?? "" }))}
                                 />
                             </div>
                         </div>
@@ -580,20 +578,16 @@ export function MovementsPage() {
                                                         </div>
 
                                                         <div className="grid gap-2 md:grid-cols-2">
-                                                            <MuscleGroupDropdown
-                                                                value={(editForm.muscleGroup || null) as MuscleGroupKey | null}
-                                                                onChange={(next) =>
-                                                                    setEditForm((p) => ({ ...p, muscleGroup: next ?? "" }))
-                                                                }
-                                                                disabled={busy}
+                                                            <MuscleGroupSelect
+                                                                t={t}
+                                                                value={createForm.muscleGroup ? createForm.muscleGroup : null}
+                                                                onChange={(v) => setCreateForm((p) => ({ ...p, muscleGroup: v ?? "" }))}
                                                             />
 
-                                                            <EquipmentDropdown
-                                                                value={(editForm.equipment || null) as EquipmentKey | null}
-                                                                onChange={(next) =>
-                                                                    setEditForm((p) => ({ ...p, equipment: next ?? "" }))
-                                                                }
-                                                                disabled={busy}
+                                                            <EquipmentSelect
+                                                                t={t}
+                                                                value={createForm.equipment ? createForm.equipment : null}
+                                                                onChange={(v) => setCreateForm((p) => ({ ...p, equipment: v ?? "" }))}
                                                             />
                                                         </div>
                                                     </div>

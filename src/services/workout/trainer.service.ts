@@ -1,14 +1,7 @@
-
 import { api } from "@/api/axios";
 
 import type { PublicUser } from "@/types/auth.types";
-import type {
-    ISODate,
-    WeekKey,
-    BuildOpts,
-    WorkoutDay,
-    WeekViewResponse,
-} from "@/types/workoutDay.types";
+import type { ISODate, WeekKey, WorkoutDay, WeekViewResponse } from "@/types/workoutDay.types";
 
 import type {
     GetTraineeDayResponse,
@@ -18,6 +11,12 @@ import type {
     WeeklyAssignBody,
     WeeklyAssignResponse,
 } from "@/types/trainer.types";
+
+import type {
+    GetTraineeCoachProfileResponse,
+    UpsertTraineeCoachProfileBody,
+    UpsertTraineeCoachProfileResponse,
+} from "@/types/trainerCoachProfile.types";
 
 /**
  * =========================================================
@@ -97,10 +96,6 @@ export async function getTraineeDay(traineeId: string, date: ISODate): Promise<G
 
 /**
  * GET /trainer/trainees/:id/summary/week
- *
- * Note:
- * - Query shape mirrors BE build opts + fields + weekKey.
- * - We keep it explicit to avoid accidentally sending unknown params.
  */
 export type GetTraineeWeekSummaryArgs = {
     traineeId: string;
@@ -151,9 +146,6 @@ export async function getTraineeWeekSummary(args: GetTraineeWeekSummaryArgs): Pr
         params: buildWeekSummaryParams(args),
     });
 
-    console.log({ res: res.data });
-
-
     const obj = assertRecord(res.data as unknown, "Invalid trainee week summary response");
     return obj as unknown as WeekViewResponse;
 }
@@ -161,7 +153,11 @@ export async function getTraineeWeekSummary(args: GetTraineeWeekSummaryArgs): Pr
 /**
  * GET /trainer/trainees/:id/recovery?from=YYYY-MM-DD&to=YYYY-MM-DD
  */
-export async function getTraineeRecovery(traineeId: string, from: ISODate, to: ISODate): Promise<GetTraineeRecoveryResponse> {
+export async function getTraineeRecovery(
+    traineeId: string,
+    from: ISODate,
+    to: ISODate
+): Promise<GetTraineeRecoveryResponse> {
     const res = await api.get(`/trainer/trainees/${encodeURIComponent(traineeId)}/recovery`, {
         params: { from, to },
     });
@@ -172,10 +168,6 @@ export async function getTraineeRecovery(traineeId: string, from: ISODate, to: I
 
 /**
  * PATCH /trainer/trainees/:id/days/:date/plannedRoutine
- *
- * BE behavior:
- * - If training exists for that day => 409 PLANNED_LOCKED_BY_TRAINING
- * - If day doc doesn't exist => it will create it (sleep/training null, planned set)
  */
 export async function patchTraineePlannedRoutine(
     traineeId: string,
@@ -193,10 +185,6 @@ export async function patchTraineePlannedRoutine(
 
 /**
  * POST /trainer/trainees/:id/weeks/:weekKey/assign
- *
- * Weekly Assign (MVP)
- * - Applies trainer's template week to trainee's plannedRoutine across 7 days.
- * - Response: { report }
  */
 export async function assignWeekToTrainee(
     traineeId: string,
@@ -218,9 +206,6 @@ export async function assignWeekToTrainee(
  * =========================================================
  */
 
-/**
- * Convenience: try patch; if locked by training, throw a structured error.
- */
 export async function safePatchTraineePlannedRoutine(
     traineeId: string,
     date: ISODate,
@@ -231,7 +216,6 @@ export async function safePatchTraineePlannedRoutine(
     } catch (e: any) {
         const status = toStatus(e);
 
-        // Keep this mapping minimal and predictable for UI.
         if (status === 409) {
             const err: any = new Error("Planned routine is locked by training");
             err.status = 409;
@@ -244,10 +228,9 @@ export async function safePatchTraineePlannedRoutine(
     }
 }
 
-/**
- * Convenience: default BuildOpts-like query for summary/week.
- */
-export function defaultTrainerWeekSummaryParams(weekKey: WeekKey): Omit<GetTraineeWeekSummaryArgs, "traineeId"> {
+export function defaultTrainerWeekSummaryParams(
+    weekKey: WeekKey
+): Omit<GetTraineeWeekSummaryArgs, "traineeId"> {
     return {
         weekKey,
         fields: null,
@@ -264,4 +247,33 @@ export function defaultTrainerWeekSummaryParams(weekKey: WeekKey): Omit<GetTrain
 
         includeRaw: false,
     };
+}
+
+/**
+ * =========================================================
+ * Coach ↔ Trainee Profile (coach-owned)
+ * =========================================================
+ */
+
+/**
+ * GET /trainer/trainees/:id/profile
+ * BE returns: { profile: CoachTraineeProfile | null }
+ */
+export async function getTraineeCoachProfile(traineeId: string): Promise<GetTraineeCoachProfileResponse> {
+    const res = await api.get(`/trainer/trainees/${encodeURIComponent(traineeId)}/profile`);
+    const obj = assertRecord(res.data as unknown, "Invalid coach profile response");
+    return obj as unknown as GetTraineeCoachProfileResponse;
+}
+
+/**
+ * PUT /trainer/trainees/:id/profile
+ * BE returns: { profile: CoachTraineeProfile }
+ */
+export async function upsertTraineeCoachProfile(
+    traineeId: string,
+    body: UpsertTraineeCoachProfileBody
+): Promise<UpsertTraineeCoachProfileResponse> {
+    const res = await api.put(`/trainer/trainees/${encodeURIComponent(traineeId)}/profile`, body);
+    const obj = assertRecord(res.data as unknown, "Invalid upsert coach profile response");
+    return obj as unknown as UpsertTraineeCoachProfileResponse;
 }

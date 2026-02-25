@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { DayKey, ExerciseItem } from "@/utils/routines/plan";
 import type { AttachmentOption } from "@/utils/routines/attachments";
 import { GymCheckExerciseMediaStrip } from "@/components/gymCheck/GymCheckExerciseMediaStrip";
+import { useAuthStore } from "@/state/auth.store";
 
 function formatNullable(value: unknown): string {
     if (value === null || value === undefined || value === "") return "—";
@@ -51,6 +52,9 @@ export function GymCheckExerciseCard(props: Props) {
         onOpenViewer,
         onRemoveMediaAt,
     } = props;
+
+    const { user } = useAuthStore();
+    const unitLoad = user?.units?.weight;
 
     const inputId = `gymcheck-file-${dayKey}-${exerciseId}`;
 
@@ -131,7 +135,7 @@ export function GymCheckExerciseCard(props: Props) {
                             <span className="text-muted-foreground font-extrabold shrink-0">
                                 {lang === "es" ? "Carga" : "Load"}
                             </span>
-                            <span className="min-w-0 wrap-break-words text-right">{formatNullable((exercise as any).load)}</span>
+                            <span className="min-w-0 wrap-break-words text-right">{`${formatNullable((exercise as any).load)} ${unitLoad}`}</span>
                         </div>
                     </div>
 

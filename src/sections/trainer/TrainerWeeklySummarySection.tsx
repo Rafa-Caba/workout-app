@@ -46,8 +46,6 @@ function DayRow({ day, lang }: { day: CalendarDayFull; lang: string }) {
     const hasSleep = Boolean(day.hasSleep ?? day.sleep != null);
     const hasTraining = Boolean(day.hasTraining ?? day.training != null);
 
-    // console.log({ day });
-
     const sleepScore = day.sleepSummary?.score ?? day.sleep?.score ?? null;
     const asleepMin = day.sleepSummary?.timeAsleepMinutes ?? day.sleep?.timeAsleepMinutes ?? null;
 
@@ -61,8 +59,6 @@ function DayRow({ day, lang }: { day: CalendarDayFull; lang: string }) {
     const plannedKind: "ok" | "muted" = plannedType || plannedFocus || plannedExercises ? "ok" : "muted";
     const sleepKind: "ok" | "muted" = hasSleep ? "ok" : "muted";
     const trainingKind: "ok" | "muted" = hasTraining ? "ok" : "muted";
-
-    // console.log({ plannedExercises, plannedFocus, plannedKind, plannedType });
 
     return (
         <div className="rounded-lg border bg-background p-3 sm:p-4">

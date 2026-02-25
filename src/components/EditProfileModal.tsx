@@ -3,12 +3,14 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/state/user.store";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { AuthUser } from "@/types/auth.types";
+import type { AuthUser, TrainingLevel } from "@/types/auth.types";
 import type { UserProfileUpdateRequest, ActivityGoal } from "@/types/user.types";
 
 type SexOption = "male" | "female" | "other" | "null";
 type WeightUnit = "kg" | "lb";
 type DistanceUnit = "km" | "mi";
+
+type TrainingLevelOption = Exclude<TrainingLevel, null> | "null";
 
 function toNullableNumber(v: string): number | null {
     const trimmed = v.trim();
@@ -37,9 +39,66 @@ function goalToPayload(v: string): ActivityGoal {
     return v as ActivityGoal;
 }
 
+function trainingLevelToPayload(v: TrainingLevelOption): TrainingLevel {
+    if (v === "null") return null;
+    return v as TrainingLevel;
+}
+
+function normalizeNotes(v: string): string | null {
+    const trimmed = v.trim();
+    return trimmed ? trimmed : null;
+}
+
+// =======================
+// Weight conversions
+// =======================
+
+function kgToLb(kg: number): number {
+    return kg * 2.2046226218;
+}
+
+function lbToKg(lb: number): number {
+    return lb / 2.2046226218;
+}
+
+function roundTo(value: number, decimals: number): number {
+    const factor = Math.pow(10, decimals);
+    return Math.round(value * factor) / factor;
+}
+
+function formatNumberLoose(value: number, decimals: number): string {
+    // show up to "decimals" but avoid trailing zeros when possible
+    const rounded = roundTo(value, decimals);
+    return String(rounded);
+}
+
+function resolveDisplayWeightUnit(formUnitsWeight: WeightUnit | "", user: AuthUser): WeightUnit {
+    if (formUnitsWeight === "kg" || formUnitsWeight === "lb") return formUnitsWeight;
+    if (user.units?.weight === "kg" || user.units?.weight === "lb") return user.units.weight;
+    return "kg";
+}
+
+/**
+ * We keep form.currentWeightKg as a string representing KG (canonical).
+ * We also keep a UI-only displayWeight string that represents the current display unit.
+ */
+function kgStringToDisplay(kgStr: string, unit: WeightUnit): string {
+    const kg = toNullableNumber(kgStr);
+    if (kg == null) return "";
+    if (unit === "kg") return formatNumberLoose(kg, 2);
+    return formatNumberLoose(kgToLb(kg), 2);
+}
+
+function displayToKgString(displayStr: string, unit: WeightUnit): string {
+    const n = toNullableNumber(displayStr);
+    if (n == null) return ""; // empty means null
+    const kg = unit === "kg" ? n : lbToKg(n);
+    // store KG with 2 decimals for stability
+    return String(roundTo(kg, 2));
+}
+
 /**
  * Builds a safe PATCH payload (only changed fields).
- * Keeps BE happy if it rejects unknown/unmodified fields.
  */
 function buildPatchPayload(original: AuthUser, next: FormState): UserProfileUpdateRequest {
     const payload: UserProfileUpdateRequest = {};
@@ -53,6 +112,7 @@ function buildPatchPayload(original: AuthUser, next: FormState): UserProfileUpda
     const nextHeight = toNullableNumber(next.heightCm);
     if (nextHeight !== (original.heightCm ?? null)) payload.heightCm = nextHeight;
 
+    // currentWeightKg is stored as KG string in form
     const nextWeight = toNullableNumber(next.currentWeightKg);
     if (nextWeight !== (original.currentWeightKg ?? null)) payload.currentWeightKg = nextWeight;
 
@@ -81,6 +141,12 @@ function buildPatchPayload(original: AuthUser, next: FormState): UserProfileUpda
 
     if (unitsChanged) payload.units = nextUnits;
 
+    const nextLevel = trainingLevelToPayload(next.trainingLevel);
+    if (nextLevel !== (original.trainingLevel ?? null)) payload.trainingLevel = nextLevel;
+
+    const nextHealthNotes = normalizeNotes(next.healthNotes);
+    if ((nextHealthNotes ?? null) !== (original.healthNotes ?? null)) payload.healthNotes = nextHealthNotes;
+
     return payload;
 }
 
@@ -89,7 +155,7 @@ type FormState = {
     sex: SexOption;
 
     heightCm: string;
-    currentWeightKg: string;
+    currentWeightKg: string; // canonical KG as string
 
     unitsWeight: WeightUnit | "";
     unitsDistance: DistanceUnit | "";
@@ -97,6 +163,9 @@ type FormState = {
     birthDate: string; // YYYY-MM-DD or ""
     activityGoal: string; // ActivityGoal | "null"
     timezone: string;
+
+    trainingLevel: TrainingLevelOption;
+    healthNotes: string;
 };
 
 function initForm(user: AuthUser): FormState {
@@ -105,6 +174,8 @@ function initForm(user: AuthUser): FormState {
         sex: (user.sex ?? "null") as SexOption,
 
         heightCm: user.heightCm === null || user.heightCm === undefined ? "" : String(user.heightCm),
+
+        // store canonical KG string
         currentWeightKg:
             user.currentWeightKg === null || user.currentWeightKg === undefined ? "" : String(user.currentWeightKg),
 
@@ -114,6 +185,9 @@ function initForm(user: AuthUser): FormState {
         birthDate: user.birthDate ?? "",
         activityGoal: (user.activityGoal ?? "null") as string,
         timezone: user.timezone ?? "",
+
+        trainingLevel: ((user.trainingLevel ?? "null") as any) as TrainingLevelOption,
+        healthNotes: user.healthNotes ?? "",
     };
 }
 
@@ -135,10 +209,30 @@ export function EditProfileModal({
 
     const [form, setForm] = React.useState<FormState>(() => initForm(user));
 
+    // UI-only input value for weight in selected display unit
+    const [displayWeight, setDisplayWeight] = React.useState<string>("");
+
+    const displayWeightUnit: WeightUnit = React.useMemo(
+        () => resolveDisplayWeightUnit(form.unitsWeight, user),
+        [form.unitsWeight, user]
+    );
+
+    // When modal opens / user changes, reset form + display
     React.useEffect(() => {
         if (!open) return;
-        setForm(initForm(user));
+        const nextForm = initForm(user);
+        setForm(nextForm);
+
+        const unit = resolveDisplayWeightUnit(nextForm.unitsWeight, user);
+        setDisplayWeight(kgStringToDisplay(nextForm.currentWeightKg, unit));
     }, [open, user]);
+
+    // When unitsWeight changes, re-derive displayWeight from canonical KG
+    React.useEffect(() => {
+        if (!open) return;
+        setDisplayWeight(kgStringToDisplay(form.currentWeightKg, displayWeightUnit));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [displayWeightUnit, open]);
 
     const payloadPreview = React.useMemo(() => buildPatchPayload(user, form), [user, form]);
     const isNoChanges = React.useMemo(() => Object.keys(payloadPreview).length === 0, [payloadPreview]);
@@ -175,12 +269,9 @@ export function EditProfileModal({
         >
             <div className="absolute inset-0 bg-black/80" />
 
-            {/* Make the viewport wrapper scroll-safe on mobile + safe-area padding */}
             <div className="absolute inset-0 overflow-y-auto p-4 sm:p-6 md:p-8 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]">
                 <div className="min-h-[dvh] flex items-start sm:items-center justify-center">
-                    {/* Modal becomes a column with max-height so header stays reachable */}
                     <div className="w-full max-w-3xl max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] rounded-2xl border bg-background shadow-xl overflow-hidden flex flex-col">
-                        {/* Sticky header so the close/save buttons never go offscreen */}
                         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-b">
                             <div className="min-w-0">
                                 <div className="text-sm font-semibold truncate">{t("profile.editModal.title")}</div>
@@ -208,7 +299,6 @@ export function EditProfileModal({
                             </div>
                         </div>
 
-                        {/* ✅ Scrollable body area */}
                         <div className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6">
                             <form id="edit-profile-form" onSubmit={onSubmit} className="space-y-5">
                                 {/* Name + Sex */}
@@ -255,15 +345,32 @@ export function EditProfileModal({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">{t("profile.fields.weightKg")}</label>
+                                        <div className="flex items-end justify-between gap-3">
+                                            <label className="text-sm font-medium">{t("profile.fields.weightKg")}</label>
+                                            <span className="text-[11px] leading-none px-2 py-1 rounded-full border bg-background text-muted-foreground">
+                                                {t("profile.fields.weightUnitBadge")} {displayWeightUnit}
+                                            </span>
+                                        </div>
+
+                                        {/* Display weight in selected unit, but store canonical KG */}
                                         <input
                                             className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
-                                            value={form.currentWeightKg}
-                                            onChange={(e) => setForm((s) => ({ ...s, currentWeightKg: e.target.value }))}
+                                            value={displayWeight}
+                                            onChange={(e) => {
+                                                const nextDisplay = e.target.value;
+                                                setDisplayWeight(nextDisplay);
+
+                                                const kgStr = displayToKgString(nextDisplay, displayWeightUnit);
+                                                setForm((s) => ({ ...s, currentWeightKg: kgStr }));
+                                            }}
                                             placeholder={t("profile.fields.weightKg")}
                                             inputMode="decimal"
                                             disabled={busy}
                                         />
+
+                                        <div className="text-xs text-muted-foreground">
+                                            {t("profile.fields.weightStoredHint")}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -337,6 +444,39 @@ export function EditProfileModal({
                                     </div>
                                 </div>
 
+                                {/* Training Level + Health Notes */}
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">{t("profile.fields.trainingLevel")}</label>
+                                        <select
+                                            className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+                                            value={form.trainingLevel}
+                                            onChange={(e) =>
+                                                setForm((s) => ({ ...s, trainingLevel: e.target.value as TrainingLevelOption }))
+                                            }
+                                            disabled={busy}
+                                        >
+                                            <option value="null">{t("profile.level.none")}</option>
+                                            <option value="BEGINNER">{t("profile.level.BEGINNER")}</option>
+                                            <option value="INTERMEDIATE">{t("profile.level.INTERMEDIATE")}</option>
+                                            <option value="ADVANCED">{t("profile.level.ADVANCED")}</option>
+                                        </select>
+                                        <div className="text-xs text-muted-foreground">{t("profile.fields.trainingLevelHint")}</div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">{t("profile.fields.healthNotes")}</label>
+                                        <textarea
+                                            className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+                                            value={form.healthNotes}
+                                            onChange={(e) => setForm((s) => ({ ...s, healthNotes: e.target.value }))}
+                                            placeholder={t("profile.fields.healthNotesHint")}
+                                            rows={4}
+                                            disabled={busy}
+                                        />
+                                    </div>
+                                </div>
+
                                 {/* Coach Mode */}
                                 <div className="space-y-2 flex flex-col">
                                     <label className="text-sm font-medium">{t("profile.fields.coachMode")}</label>
@@ -354,7 +494,12 @@ export function EditProfileModal({
                                         <Button
                                             variant="outline"
                                             type="button"
-                                            onClick={() => setForm(initForm(user))}
+                                            onClick={() => {
+                                                const nextForm = initForm(user);
+                                                setForm(nextForm);
+                                                const unit = resolveDisplayWeightUnit(nextForm.unitsWeight, user);
+                                                setDisplayWeight(kgStringToDisplay(nextForm.currentWeightKg, unit));
+                                            }}
                                             disabled={busy}
                                             className="h-9"
                                         >

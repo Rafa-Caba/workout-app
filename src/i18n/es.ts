@@ -30,9 +30,10 @@ export const es: Record<I18nKey, string> = {
     "profile.fields.sex.other": "Otro",
 
     "profile.fields.heightCm": "Altura (cm)",
-    "profile.fields.weightKg": "Peso actual (kg)",
+    "profile.fields.weightKg": "Peso actual",
+    "profile.fields.weightStoredHint": "Nota: el peso se guarda internamente en kg; este campo se muestra en tu unidad preferida.",
 
-    "profile.fields.unitsWeight": "Unidades: Peso",
+    "profile.fields.unitsWeight": "Unidad preferida",
     "profile.fields.unitsDistance": "Unidades: Distancia",
     "profile.fields.unitsHint": "Si dejas ambos en “—”, se guardará como null.",
 
@@ -780,7 +781,7 @@ export const es: Record<I18nKey, string> = {
     "routines.reps": "Reps",
     "routines.repsPh": "8-10",
     "routines.load": "Carga",
-    "routines.loadPh": "100kg / RPE 8",
+    "routines.loadPh": "kg / RPE",
     "routines.exerciseAttachments": "Adjuntos (enlazar)",
     "routines.noAttachmentsToLink": "No hay adjuntos de semana para enlazar.",
     "routines.attachLinkHint": "Esto solo enlaza por publicId dentro de meta.plan.",
@@ -921,4 +922,17 @@ export const es: Record<I18nKey, string> = {
     "settings.debug.title": "Depuración",
     "settings.debug.desc": "Info técnica para desarrollo.",
     "settings.debug.note": "Estos valores reflejan la configuración activa.",
+
+    // Trainer/Trainee
+    "profile.fields.trainingLevel": "Nivel de entrenamiento",
+    "profile.fields.trainingLevelHint": "Selecciona el nivel que mejor describa tu experiencia actual.",
+    "profile.fields.healthNotes": "Notas de salud",
+    "profile.fields.healthNotesHint": "Agrega lesiones, limitaciones o consideraciones médicas (opcional).",
+    "profile.fields.lastLoginAt": "Último inicio de sesión",
+    "profile.fields.weightUnitBadge": "Unidad mostrada:",
+
+    "profile.level.none": "Sin definir",
+    "profile.level.BEGINNER": "Principiante",
+    "profile.level.INTERMEDIATE": "Intermedio",
+    "profile.level.ADVANCED": "Avanzado",
 };

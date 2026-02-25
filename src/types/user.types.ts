@@ -1,4 +1,4 @@
-import type { AuthUser, CoachMode, Sex, Units, UserRole } from "@/types/auth.types";
+import type { AuthUser, CoachMode, Sex, Units, UserRole, TrainingLevel } from "@/types/auth.types";
 
 /**
  * =========================================================
@@ -21,10 +21,6 @@ export type ActivityGoal =
 /**
  * PATCH /users/me payload
  * Keep it optional fields only (partial updates).
- *
- * IMPORTANT:
- * - Only include fields that the backend actually allows updating.
- * - If BE rejects unknown fields, this stays safe.
  */
 export type UserProfileUpdateRequest = Partial<{
     name: string;
@@ -42,6 +38,12 @@ export type UserProfileUpdateRequest = Partial<{
     timezone: string | null;
 
     /**
+     * Baseline training profile (user-owned)
+     */
+    trainingLevel: TrainingLevel;
+    healthNotes: string | null;
+
+    /**
      * Coaching (may be controlled by dedicated endpoints later)
      */
     coachMode: CoachMode;
@@ -50,7 +52,6 @@ export type UserProfileUpdateRequest = Partial<{
 
 /**
  * Optional: admin update payload (matches BE shape)
- * Useful if you have an admin users editor in FE.
  */
 export type AdminUserUpdateRequest = UserProfileUpdateRequest &
     Partial<{
@@ -58,9 +59,6 @@ export type AdminUserUpdateRequest = UserProfileUpdateRequest &
         role: UserRole;
     }>;
 
-/**
- * Small utility: sometimes UI edits only units.
- */
 export type UserUnitsUpdate = {
     units: Units | null;
 };

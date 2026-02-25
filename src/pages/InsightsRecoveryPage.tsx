@@ -24,8 +24,10 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 function extractSummary(data: unknown): Record<string, unknown> | null {
     if (!isRecord(data)) return null;
-    if (isRecord((data as Record<string, unknown>).summary)) return (data as Record<string, unknown>).summary as Record<string, unknown>;
-    if (isRecord((data as Record<string, unknown>).overview)) return (data as Record<string, unknown>).overview as Record<string, unknown>;
+    if (isRecord((data as Record<string, unknown>).summary))
+        return (data as Record<string, unknown>).summary as Record<string, unknown>;
+    if (isRecord((data as Record<string, unknown>).overview))
+        return (data as Record<string, unknown>).overview as Record<string, unknown>;
     return null;
 }
 
@@ -37,7 +39,9 @@ function pickNumber(obj: Record<string, unknown>, keys: string[]): number | null
     return null;
 }
 
-function computeKpisFromPoints(data: unknown): { score: number | null; sleep: number | null; strain: number | null } | null {
+function computeKpisFromPoints(
+    data: unknown
+): { score: number | null; sleep: number | null; strain: number | null } | null {
     if (!isRecord(data)) return null;
     const pts = (data as Record<string, unknown>).points;
     if (!Array.isArray(pts) || pts.length === 0) return null;
@@ -54,6 +58,30 @@ function computeKpisFromPoints(data: unknown): { score: number | null; sleep: nu
     const strain = avg(numbers("trainingLoad"));
 
     return { score, sleep, strain };
+}
+
+/**
+ * =========================================================
+ * Formatting helpers (presentation only)
+ * =========================================================
+ */
+
+function roundTo(value: number, decimals: number): number {
+    const factor = Math.pow(10, decimals);
+    return Math.round(value * factor) / factor;
+}
+
+function formatKpi(
+    value: number | null | undefined,
+    opts?: { decimals?: number; integer?: boolean }
+): string {
+    if (value == null) return "—";
+    if (!Number.isFinite(value)) return "—";
+
+    if (opts?.integer) return String(Math.round(value));
+
+    const decimals = opts?.decimals ?? 2;
+    return String(roundTo(value, decimals));
 }
 
 export function InsightsRecoveryPage() {
@@ -149,9 +177,9 @@ export function InsightsRecoveryPage() {
 
             {enabled && query.isSuccess && kpis ? (
                 <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
-                    <StatCard label={t("recovery.kpi.score")} value={kpis.score ?? "—"} />
-                    <StatCard label={t("recovery.kpi.sleep")} value={kpis.sleep ?? "—"} />
-                    <StatCard label={t("recovery.kpi.strain")} value={kpis.strain ?? "—"} />
+                    <StatCard label={t("recovery.kpi.score")} value={formatKpi(kpis.score, { decimals: 2 })} />
+                    <StatCard label={t("recovery.kpi.sleep")} value={formatKpi(kpis.sleep, { integer: true })} />
+                    <StatCard label={t("recovery.kpi.strain")} value={formatKpi(kpis.strain, { decimals: 2 })} />
                 </div>
             ) : null}
 

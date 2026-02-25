@@ -11,6 +11,11 @@ export type Sex = "male" | "female" | "other" | null;
  */
 export type CoachMode = "NONE" | "TRAINER" | "TRAINEE";
 
+/**
+ * Training level (baseline / user-owned)
+ */
+export type TrainingLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | null;
+
 export type PublicUser = {
     id: string;
     name: string;
@@ -34,6 +39,17 @@ export type PublicUser = {
     | "other"
     | null;
     timezone: string | null;
+
+    /**
+     * Baseline training profile (user-owned)
+     */
+    trainingLevel: TrainingLevel;
+    healthNotes: string | null;
+
+    /**
+     * Last login
+     */
+    lastLoginAt: string | null;
 
     /**
      * Coaching

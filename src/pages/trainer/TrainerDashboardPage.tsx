@@ -24,6 +24,7 @@ import { TrainerWeeklySummarySection } from "@/sections/trainer/TrainerWeeklySum
 import { TrainerDaySummarySection } from "@/sections/trainer/TrainerDaySummarySection";
 import { TrainerRecoverySection } from "@/sections/trainer/TrainerRecoverySection";
 import { TrainerAssignRoutineSection } from "@/sections/trainer/TrainerAssignRoutineSection";
+import { TrainerCoachProfileCard } from "@/sections/trainer/TrainerCoachProfileCard";
 
 type TrainerTab = "weekly" | "day" | "recovery" | "assign";
 
@@ -125,7 +126,6 @@ export function TrainerDashboardPage() {
     const weekStart = weekStartMaybe;
 
     const weekRangeLabel = React.useMemo(() => {
-        // NOTE: End is exclusive in some systems; we use a friendly display.
         return `${format(weekStart, "yyyy-MM-dd")} → ${format(addWeeks(weekStart, 1), "yyyy-MM-dd")}`;
     }, [weekStart]);
 
@@ -151,7 +151,10 @@ export function TrainerDashboardPage() {
                                         type="button"
                                         variant="outline"
                                         disabled={traineeDropdownDisabled}
-                                        className={cn("w-full sm:w-[320px] justify-between", traineeDropdownDisabled ? "opacity-80" : "")}
+                                        className={cn(
+                                            "w-full sm:w-[320px] justify-between",
+                                            traineeDropdownDisabled ? "opacity-80" : ""
+                                        )}
                                     >
                                         <span className="truncate">
                                             {traineesQ.isLoading
@@ -173,7 +176,9 @@ export function TrainerDashboardPage() {
 
                                     {traineesQ.isError ? (
                                         <DropdownMenuItem onClick={() => traineesQ.refetch()} className="text-destructive">
-                                            {lang === "es" ? "Error al cargar. Toca para reintentar." : "Failed to load. Tap to retry."}
+                                            {lang === "es"
+                                                ? "Error al cargar. Toca para reintentar."
+                                                : "Failed to load. Tap to retry."}
                                         </DropdownMenuItem>
                                     ) : trainees.length === 0 ? (
                                         <DropdownMenuItem disabled>
@@ -216,19 +221,39 @@ export function TrainerDashboardPage() {
                         <div className="text-sm font-medium">{lang === "es" ? "Secciones" : "Sections"}</div>
 
                         <div className="mt-2 grid gap-2 sm:flex sm:flex-wrap sm:gap-2">
-                            <Button type="button" variant="ghost" className={tabButtonClass(tab === "weekly")} onClick={() => setTab("weekly")}>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className={tabButtonClass(tab === "weekly")}
+                                onClick={() => setTab("weekly")}
+                            >
                                 {lang === "es" ? "Resumen semanal" : "Weekly summary"}
                             </Button>
 
-                            <Button type="button" variant="ghost" className={tabButtonClass(tab === "day")} onClick={() => setTab("day")}>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className={tabButtonClass(tab === "day")}
+                                onClick={() => setTab("day")}
+                            >
                                 {lang === "es" ? "Resumen del día" : "Day summary"}
                             </Button>
 
-                            <Button type="button" variant="ghost" className={tabButtonClass(tab === "recovery")} onClick={() => setTab("recovery")}>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className={tabButtonClass(tab === "recovery")}
+                                onClick={() => setTab("recovery")}
+                            >
                                 {lang === "es" ? "Recuperación" : "Recovery"}
                             </Button>
 
-                            <Button type="button" variant="ghost" className={tabButtonClass(tab === "assign")} onClick={() => setTab("assign")}>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className={tabButtonClass(tab === "assign")}
+                                onClick={() => setTab("assign")}
+                            >
                                 {lang === "es" ? "Asignar rutina" : "Assign routine"}
                             </Button>
                         </div>
@@ -283,7 +308,10 @@ export function TrainerDashboardPage() {
                     }
                 />
             ) : (
-                <>
+                <div className="space-y-4">
+                    {/* ✅ New Coach Profile Card */}
+                    <TrainerCoachProfileCard traineeId={selectedTraineeId} />
+
                     {tab === "weekly" ? (
                         <TrainerWeeklySummarySection traineeId={selectedTraineeId} weekKey={weekKey} />
                     ) : null}
@@ -299,7 +327,7 @@ export function TrainerDashboardPage() {
                     {tab === "assign" ? (
                         <TrainerAssignRoutineSection traineeId={selectedTraineeId} weekKey={weekKey} date={date} />
                     ) : null}
-                </>
+                </div>
             )}
         </div>
     );

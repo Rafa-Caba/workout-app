@@ -22,8 +22,48 @@ function getInitials(name: string): string {
     return (first + (second ?? "")).toUpperCase();
 }
 
+function kgToLb(kg: number): number {
+    return kg * 2.2046226218;
+}
+
+function roundTo(value: number, decimals: number): number {
+    const factor = Math.pow(10, decimals);
+    return Math.round(value * factor) / factor;
+}
+
+function formatWeightForDisplay(weightKg: number | null | undefined, unit: "kg" | "lb" | null | undefined): string {
+    if (weightKg == null || !Number.isFinite(weightKg)) return "—";
+
+    if (unit === "lb") {
+        const lb = roundTo(kgToLb(weightKg), 1);
+        return `${lb} lb`;
+    }
+
+    const kg = roundTo(weightKg, 1);
+    return `${kg} kg`;
+}
+
+function formatLastLogin(value: string | null | undefined, lang: string): string {
+    if (!value) return "—";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "—";
+
+    try {
+        const locale = lang === "es" ? "es-MX" : "en-US";
+        return d.toLocaleString(locale, {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    } catch {
+        return d.toISOString();
+    }
+}
+
 export function MyProfilePage() {
-    const { t } = useI18n();
+    const { t, lang } = useI18n();
     const { me, loading, error, refetch } = useMe(true);
 
     const [picOpen, setPicOpen] = React.useState(false);
@@ -109,9 +149,12 @@ export function MyProfilePage() {
                                     <span className="text-right wrap-break-words">{formatNullable(me.heightCm)}</span>
                                 </div>
 
+                                {/* ✅ Weight displayed in preferred unit (kg/lb) */}
                                 <div className="grid grid-cols-[1fr_auto] items-center gap-3">
                                     <span className="text-muted-foreground">{t("profile.fields.weightKg")}</span>
-                                    <span className="text-right wrap-break-words">{formatNullable(me.currentWeightKg)}</span>
+                                    <span className="text-right wrap-break-words">
+                                        {formatWeightForDisplay(me.currentWeightKg, me.units?.weight ?? "kg")}
+                                    </span>
                                 </div>
 
                                 <div className="grid grid-cols-[1fr_auto] items-center gap-3">
@@ -131,7 +174,24 @@ export function MyProfilePage() {
                                     <span className="text-right wrap-break-words">{formatNullable(me.activityGoal)}</span>
                                 </div>
 
+                                {/* Training Level */}
                                 <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+                                    <span className="text-muted-foreground">{t("profile.fields.trainingLevel")}</span>
+                                    <span className="text-right wrap-break-words">
+                                        {me.trainingLevel ? t(`profile.level.${me.trainingLevel}`) : "—"}
+                                    </span>
+                                </div>
+
+                                {/* Health Notes */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-2">
+                                    <span className="text-muted-foreground">{t("profile.fields.healthNotes")}</span>
+                                    <div className="hidden md:block" />
+                                    <div className="rounded-lg border bg-background px-3 py-2 text-sm whitespace-pre-wrap wrap-break-words">
+                                        {me.healthNotes ? me.healthNotes : "—"}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-3 pt-2">
                                     <span className="text-muted-foreground">{t("profile.fields.coachMode")}</span>
                                     <span className="min-w-0 text-right wrap-break-words">
                                         {formatNullable(me.coachMode === "NONE" ? "REGULAR" : me.coachMode)}
@@ -139,30 +199,27 @@ export function MyProfilePage() {
                                 </div>
                             </div>
 
-                            <div className="mt-5 sm:mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-                                <Button className="w-full sm:w-auto" variant="outline" onClick={() => setEditOpen(true)}>
-                                    {t("profile.edit")}
-                                </Button>
+                            {/* ✅ Footer row: lastLoginAt left (desktop), below (mobile) */}
+                            <div className="mt-5 sm:mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="text-xs text-muted-foreground order-2 sm:order-1">
+                                    {t("profile.fields.lastLoginAt")}:{" "}
+                                    <span className="text-foreground">{formatLastLogin(me.lastLoginAt, lang)}</span>
+                                </div>
+
+                                <div className="order-1 sm:order-2 flex justify-end">
+                                    <Button className="w-full sm:w-auto" variant="outline" onClick={() => setEditOpen(true)}>
+                                        {t("profile.edit")}
+                                    </Button>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Debug JSON collapsed at bottom */}
                     <JsonDetails title={t("json.title")} data={me} defaultOpen={false} />
 
-                    <ProfilePicModal
-                        open={picOpen}
-                        user={me}
-                        onClose={() => setPicOpen(false)}
-                        onUpdated={refetch}
-                    />
+                    <ProfilePicModal open={picOpen} user={me} onClose={() => setPicOpen(false)} onUpdated={refetch} />
 
-                    <EditProfileModal
-                        open={editOpen}
-                        user={me}
-                        onClose={() => setEditOpen(false)}
-                        onSaved={refetch}
-                    />
+                    <EditProfileModal open={editOpen} user={me} onClose={() => setEditOpen(false)} onSaved={refetch} />
                 </>
             )}
         </div>

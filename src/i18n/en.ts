@@ -34,7 +34,8 @@ export const en: Record<I18nKey, string> = {
     "profile.fields.sex.other": "Other",
 
     "profile.fields.heightCm": "Height (cm)",
-    "profile.fields.weightKg": "Current weight (kg)",
+    "profile.fields.weightKg": "Preferred unit",
+    "profile.fields.weightStoredHint": "Note: weight is stored internally in kg; this input is shown in your preferred unit.",
 
     "profile.fields.unitsWeight": "Units: Weight",
     "profile.fields.unitsDistance": "Units: Distance",
@@ -777,7 +778,7 @@ export const en: Record<I18nKey, string> = {
     "routines.reps": "Reps",
     "routines.repsPh": "8-10",
     "routines.load": "Load",
-    "routines.loadPh": "100kg / RPE 8",
+    "routines.loadPh": "kg / RPE",
     "routines.exerciseAttachments": "Attachments (link)",
     "routines.noAttachmentsToLink": "No week attachments to link.",
     "routines.attachLinkHint": "This only links publicIds inside meta.plan.",
@@ -918,4 +919,17 @@ export const en: Record<I18nKey, string> = {
     "settings.debug.title": "Debug",
     "settings.debug.desc": "Developer-facing info.",
     "settings.debug.note": "These values reflect the active configuration.",
+
+    // Trainer/Trainee
+    "profile.fields.trainingLevel": "Training level",
+    "profile.fields.trainingLevelHint": "Select the level that best matches your current training experience.",
+    "profile.fields.healthNotes": "Health notes",
+    "profile.fields.healthNotesHint": "Add injuries, limitations, or medical considerations (optional).",
+    "profile.fields.lastLoginAt": "Last login",
+    "profile.fields.weightUnitBadge": "Display unit:",
+
+    "profile.level.none": "Not set",
+    "profile.level.BEGINNER": "Beginner",
+    "profile.level.INTERMEDIATE": "Intermediate",
+    "profile.level.ADVANCED": "Advanced",
 };

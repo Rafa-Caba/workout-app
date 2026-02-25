@@ -31,7 +31,6 @@ export function buildDayExplorerKpis(summary: unknown): DayExplorerKpis | null {
     const sleep = "sleep" in s ? (s as AnyRecord).sleep : null;
 
     if (isRecord(sleep)) {
-        // ✅ Backend canonical field: timeAsleepMinutes
         sleepMinutes =
             pickNumber(sleep, [
                 "timeAsleepMinutes",

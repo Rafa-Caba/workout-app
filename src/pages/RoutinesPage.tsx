@@ -734,7 +734,7 @@ export function RoutinesPage() {
                 exNotes: "Opcional…",
                 sets: "3",
                 reps: "8-10",
-                load: "100kg / barra",
+                load: user?.units?.weight === "kg" ? "kg / barra" : "lb / barra",
             };
         }
         return {
@@ -745,7 +745,7 @@ export function RoutinesPage() {
             exNotes: "Optional…",
             sets: "3",
             reps: "8-10",
-            load: "100kg / bar",
+            load: user?.units?.weight === "kg" ? "kg / bar" : "lb / bar",
         };
     }, [lang]);
 

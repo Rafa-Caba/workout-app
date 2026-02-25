@@ -38,6 +38,7 @@ export const i18nKeys = [
 
     "profile.fields.heightCm",
     "profile.fields.weightKg",
+    "profile.fields.weightStoredHint",
 
     "profile.fields.unitsWeight",
     "profile.fields.unitsDistance",
@@ -55,6 +56,8 @@ export const i18nKeys = [
 
     "profile.fields.timezone",
     "profile.fields.timezoneHint",
+    "profile.fields.lastLoginAt",
+    "profile.fields.weightUnitBadge",
 
     "profile.toast.updated",
     "profile.toast.noChanges",
@@ -894,6 +897,16 @@ export const i18nKeys = [
     "settings.debug.title",
     "settings.debug.desc",
     "settings.debug.note",
+
+    // Trainer/Trainee
+    "profile.fields.trainingLevel",
+    "profile.fields.trainingLevelHint",
+    "profile.fields.healthNotes",
+    "profile.fields.healthNotesHint",
+    "profile.level.none",
+    "profile.level.BEGINNER",
+    "profile.level.INTERMEDIATE",
+    "profile.level.ADVANCED",
 ] as const;
 
 export type I18nKey = (typeof i18nKeys)[number];

@@ -32,7 +32,7 @@ export function getRoutinePlaceholders(lang: "es" | "en") {
             exNotes: "Opcional…",
             sets: "3",
             reps: "8-10",
-            load: "100kg / RPE 8",
+            load: "kg / RPE",
         };
     }
     return {
@@ -43,6 +43,6 @@ export function getRoutinePlaceholders(lang: "es" | "en") {
         exNotes: "Optional…",
         sets: "3",
         reps: "8-10",
-        load: "100kg / RPE 8",
+        load: "kg / RPE",
     };
 }

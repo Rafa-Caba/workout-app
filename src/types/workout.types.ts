@@ -30,6 +30,7 @@ export type WorkoutExercise = {
     id: string;
     name: string;
     movementId?: string | null;
+    movementName?: string | null;
     notes?: string | null;
     sets?: WorkoutExerciseSet[] | null;
     meta?: Record<string, unknown> | null;

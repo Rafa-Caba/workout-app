@@ -31,20 +31,23 @@ export function DayExplorerPage() {
 
     const [date, setDate] = React.useState(() => todayIso());
     const [tab, setTab] = React.useState<Tab>("summary");
+    const [openMedia, setOpenMedia] = React.useState<MediaLikeItem | null>(null);
 
     const summary = useDaySummary(date);
-
-    // IMPORTANT: hook now expects (date, enabled)
     const day = useWorkoutDay(date, Boolean(date));
 
     const isFetching = summary.isFetching || day.isFetching;
 
     React.useEffect(() => {
-        if (summary.isError) toast.error(summary.error.message);
+        if (summary.isError) {
+            toast.error(summary.error.message);
+        }
     }, [summary.isError, summary.error]);
 
     React.useEffect(() => {
-        if (day.isError) toast.error(day.error.message);
+        if (day.isError) {
+            toast.error(day.error.message);
+        }
     }, [day.isError, day.error]);
 
     const summaryData = summary.data ?? null;
@@ -60,16 +63,14 @@ export function DayExplorerPage() {
                 ? day.error
                 : null;
 
-    const kpis = React.useMemo(() => buildDayExplorerKpis(summaryData as unknown), [summaryData]);
-
-    const [openMedia, setOpenMedia] = React.useState<MediaLikeItem | null>(null);
+    const kpis = React.useMemo(() => buildDayExplorerKpis(summaryData), [summaryData]);
 
     return (
         <div className="space-y-6">
             <PageHeader title={t("pages.days.title")} subtitle={t("pages.days.subtitle")} />
 
             <DayExplorerToolbar
-                t={t as any}
+                t={t}
                 date={date}
                 onDateChange={setDate}
                 isFetching={isFetching}
@@ -77,19 +78,18 @@ export function DayExplorerPage() {
                 onTabChange={setTab}
             />
 
-            {tab === "summary" && summary.isSuccess ? <DayExplorerKpisPanel t={t as any} kpis={kpis} /> : null}
+            {tab === "summary" && summary.isSuccess ? <DayExplorerKpisPanel t={t} kpis={kpis} /> : null}
 
             {!date ? <EmptyState title={t("days.empty.title")} description={t("days.empty.desc")} /> : null}
 
             {tab === "raw" && day.isSuccess && rawDayData ? (
                 <div className="space-y-4">
-                    <DayTrainingMetaPanel t={t as any} training={rawDayData.training} />
-                    <DaySleepPanel t={t as any} day={rawDayData} />
-                    <DaySessionsPanel t={t as any} day={rawDayData} onOpenMedia={(item) => setOpenMedia(item)} />
+                    <DayTrainingMetaPanel t={t} training={rawDayData.training} />
+                    <DaySleepPanel t={t} day={rawDayData} />
+                    <DaySessionsPanel t={t} day={rawDayData} onOpenMedia={setOpenMedia} />
                 </div>
             ) : null}
 
-            {/* JSON block governed by Settings toggle (showJson) via JsonDetails component */}
             {isFetching ? (
                 <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
                     {t("common.fetching")}

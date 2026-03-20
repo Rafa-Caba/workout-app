@@ -212,6 +212,8 @@ export const es: Record<I18nKey, string> = {
     "days.sessions.sessionId": "ID",
     "days.sessions.exercises": "Ejercicios",
     "days.sessions.sets": "Sets",
+    "days.sessions.reps": "Reps",
+    "days.sessions.load": "Carga",
     "days.sessions.exercisesList": "Lista de ejercicios",
     "days.sessions.exercisesMore": "…y {n} más",
     "days.sessions.mediaGrid": "Media",

@@ -1,138 +1,173 @@
 import type { DayKey, DayPlan, ExerciseItem } from "@/utils/routines/plan";
-import { getPlanFromMeta, DAY_KEYS } from "@/utils/routines/plan";
+import { DAY_KEYS, getPlanFromMeta } from "@/utils/routines/plan";
+import type {
+    CreateSessionBody,
+    CreateSessionExerciseInput,
+} from "@/services/workout/sessions.service";
 
-type AnyRecord = Record<string, unknown>;
+type JsonRecord = Record<string, unknown>;
 
-function isRecord(v: unknown): v is AnyRecord {
-    return typeof v === "object" && v !== null && !Array.isArray(v);
+type RoutineWithMeta = {
+    meta?: JsonRecord | null;
+};
+
+type GymCheckExerciseRemote = {
+    done?: boolean | null;
+    notes?: string | null;
+    durationMin?: number | null;
+    mediaPublicIds?: string[] | null;
+};
+
+type GymCheckDayRemote = {
+    durationMin?: number | null;
+    notes?: string | null;
+    exercises?: Record<string, GymCheckExerciseRemote> | null;
+};
+
+function isRecord(value: unknown): value is JsonRecord {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function cleanStrOrNull(v: unknown): string | null {
-    if (typeof v !== "string") return null;
-    const s = v.trim();
-    return s.length ? s : null;
+function cleanString(value: unknown): string | null {
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
 }
 
-function toIntOrNull(v: unknown): number | null {
-    if (v === null || v === undefined || v === "") return null;
-    const n = Number(v);
-    return Number.isFinite(n) ? Math.trunc(n) : null;
+function toIntOrNull(value: unknown): number | null {
+    if (typeof value !== "number" || !Number.isFinite(value)) return null;
+    return Math.trunc(value);
 }
 
-function getRoutineMeta(routine: unknown): AnyRecord | null {
+function getRoutineMeta(routine: unknown): JsonRecord | null {
     if (!isRecord(routine)) return null;
-    const meta = (routine as any).meta;
-    return isRecord(meta) ? meta : null;
+
+    const routineWithMeta = routine as RoutineWithMeta;
+    return isRecord(routineWithMeta.meta) ? routineWithMeta.meta : null;
 }
 
-function getGymCheckDay(meta: AnyRecord | null, dayKey: DayKey): AnyRecord | null {
+function getGymCheckDay(meta: JsonRecord | null, dayKey: DayKey): GymCheckDayRemote | null {
     if (!meta) return null;
-    const gc = (meta as any).gymCheck;
-    if (!isRecord(gc)) return null;
-    const day = (gc as any)[dayKey];
-    return isRecord(day) ? day : null;
+
+    const gymCheck = meta.gymCheck;
+    if (!isRecord(gymCheck)) return null;
+
+    const day = gymCheck[dayKey];
+    return isRecord(day) ? (day as GymCheckDayRemote) : null;
 }
 
-function getGymCheckExercisesMap(gymDay: AnyRecord | null): Record<string, AnyRecord> {
-    if (!gymDay) return {};
-    const ex = (gymDay as any).exercises;
-    if (!isRecord(ex)) return {};
-    const out: Record<string, AnyRecord> = {};
-    for (const [k, v] of Object.entries(ex)) {
-        if (isRecord(v)) out[k] = v;
+function getExerciseStateMap(
+    gymDay: GymCheckDayRemote | null
+): Record<string, GymCheckExerciseRemote> {
+    if (!gymDay?.exercises || !isRecord(gymDay.exercises)) {
+        return {};
     }
-    return out;
+
+    return gymDay.exercises;
 }
 
-export type CreateWorkoutSessionExercise = {
-    name: string;
-    sets: number | null;
-    reps: string | null;
-    load: string | null;
-    notes: string | null;
-    mediaPublicIds: string[] | null;
-};
+function buildExerciseMeta(args: {
+    exercise: ExerciseItem;
+    remoteState: GymCheckExerciseRemote;
+}): Record<string, unknown> {
+    const { exercise, remoteState } = args;
 
-export type CreateWorkoutSessionBody = {
-    type: string; // session type shown in Days + PVA actual
-    durationSeconds: number | null;
-    notes: string | null;
-    exercises: CreateWorkoutSessionExercise[]; // ONLY done exercises
-    meta: {
-        source: "gymCheck";
-        weekKey: string;
-        dayKey: DayKey;
-        routineWeekKey: string;
+    return {
+        gymCheck: {
+            done: true,
+            durationMin: toIntOrNull(remoteState.durationMin),
+            mediaPublicIds: Array.isArray(remoteState.mediaPublicIds)
+                ? remoteState.mediaPublicIds.map((item) => String(item).trim()).filter(Boolean)
+                : null,
+        },
+        plan: {
+            sets: cleanString(exercise.sets) ?? null,
+            reps: cleanString(exercise.reps) ?? null,
+            load: cleanString(exercise.load) ?? null,
+            rpe: cleanString(exercise.rpe) ?? null,
+            attachmentPublicIds: Array.isArray(exercise.attachmentPublicIds)
+                ? exercise.attachmentPublicIds.map((item) => String(item).trim()).filter(Boolean)
+                : null,
+        },
     };
-};
+}
+
+function buildDoneExercise(args: {
+    exercise: ExerciseItem;
+    remoteState: GymCheckExerciseRemote | undefined;
+}): CreateSessionExerciseInput | null {
+    const { exercise, remoteState } = args;
+
+    const exerciseId = typeof exercise.id === "string" ? exercise.id.trim() : "";
+    if (!exerciseId) return null;
+
+    if (!remoteState?.done) return null;
+
+    return {
+        name: cleanString(exercise.name) ?? "Exercise",
+        movementId: cleanString(exercise.movementId) ?? null,
+        movementName: cleanString(exercise.movementName) ?? null,
+        notes: cleanString(remoteState.notes) ?? cleanString(exercise.notes) ?? null,
+        sets: null,
+        meta: buildExerciseMeta({
+            exercise,
+            remoteState,
+        }),
+    };
+}
 
 export function buildGymCheckSessionFromRoutine(args: {
     routine: unknown;
     weekKey: string;
     dayKey: DayKey;
-    includeOnlyDone: true; // locked for now
-}): { ok: true; body: CreateWorkoutSessionBody } | { ok: false; reason: string } {
+    includeOnlyDone: true;
+}): { ok: true; body: CreateSessionBody } | { ok: false; reason: string } {
     const { routine, weekKey, dayKey } = args;
 
-    if (!DAY_KEYS.includes(dayKey)) return { ok: false, reason: "Invalid dayKey." };
+    if (!DAY_KEYS.includes(dayKey)) {
+        return { ok: false, reason: "Invalid dayKey." };
+    }
 
     const meta = getRoutineMeta(routine);
     const plans: DayPlan[] = getPlanFromMeta(meta);
+    const plan = plans.find((item) => item.dayKey === dayKey) ?? ({ dayKey } as DayPlan);
 
-    const plan = plans.find((p) => p.dayKey === dayKey) ?? ({ dayKey } as DayPlan);
     const plannedExercises: ExerciseItem[] = Array.isArray(plan.exercises) ? plan.exercises : [];
-
     const gymDay = getGymCheckDay(meta, dayKey);
-    const gymExercises = getGymCheckExercisesMap(gymDay);
+    const exerciseStateMap = getExerciseStateMap(gymDay);
 
-    const durationMin = toIntOrNull((gymDay as any)?.durationMin);
-    const dayNotes = cleanStrOrNull((gymDay as any)?.notes);
+    const exercises = plannedExercises.reduce<CreateSessionExerciseInput[]>((acc, exercise) => {
+        const exerciseId = typeof exercise.id === "string" ? exercise.id.trim() : "";
+        const remoteState = exerciseId ? exerciseStateMap[exerciseId] : undefined;
 
-    const doneExercises: CreateWorkoutSessionExercise[] = plannedExercises
-        .map((ex) => {
-            const id = typeof ex?.id === "string" ? ex.id : "";
-            if (!id) return null;
+        const built = buildDoneExercise({
+            exercise,
+            remoteState,
+        });
 
-            const st = gymExercises[id];
-            const done = st?.done === true;
-            if (!done) return null;
+        if (built) {
+            acc.push(built);
+        }
 
-            const mediaPublicIdsRaw = st?.mediaPublicIds;
-            const mediaPublicIds =
-                Array.isArray(mediaPublicIdsRaw) && mediaPublicIdsRaw.length
-                    ? mediaPublicIdsRaw.map((x) => String(x).trim()).filter(Boolean)
-                    : null;
+        return acc;
+    }, []);
 
-            const exNotes = cleanStrOrNull(st?.notes) ?? cleanStrOrNull(ex?.notes) ?? null;
-
-            return {
-                name: String(ex?.name ?? "").trim() || "Exercise",
-                sets: ex?.sets ? Number(ex.sets) : null,
-                reps: cleanStrOrNull(ex?.reps) ?? null,
-                load: cleanStrOrNull(ex?.load) ?? null,
-                notes: exNotes,
-                mediaPublicIds,
-            };
-        })
-        .filter((x): x is CreateWorkoutSessionExercise => Boolean(x));
-
-    if (doneExercises.length === 0) {
+    if (exercises.length === 0) {
         return { ok: false, reason: "No done exercises found in Gym Check for this day." };
     }
 
-    const sessionType = cleanStrOrNull(plan.sessionType) ?? "Gym Check";
-    const durationSeconds = durationMin !== null ? durationMin * 60 : null;
-
-    const body: CreateWorkoutSessionBody = {
-        type: sessionType,
-        durationSeconds,
-        notes: dayNotes,
-        exercises: doneExercises,
+    const durationSeconds = toIntOrNull(gymDay?.durationMin);
+    const body: CreateSessionBody = {
+        type: cleanString(plan.sessionType) ?? "Gym Check",
+        durationSeconds: durationSeconds !== null ? durationSeconds * 60 : null,
+        notes: cleanString(gymDay?.notes) ?? null,
+        exercises,
         meta: {
             source: "gymCheck",
             weekKey,
             dayKey,
             routineWeekKey: weekKey,
+            sessionKey: "gym_check",
         },
     };
 

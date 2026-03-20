@@ -1,7 +1,9 @@
 import { api } from "@/api/axios";
-import type { WorkoutDay, WorkoutSession, WorkoutMediaItem } from "@/types/workout.types";
+import { WorkoutDay, WorkoutExercise, WorkoutSession } from "@/types/workoutDay.types";
 
 export type SessionReturnMode = "day" | "session";
+
+export type CreateSessionExerciseInput = Omit<WorkoutExercise, "id">;
 
 export type CreateSessionBody = {
     type: string;
@@ -27,6 +29,7 @@ export type CreateSessionBody = {
     effortRpe?: number | null;
 
     notes?: string | null;
+    exercises?: CreateSessionExerciseInput[] | null;
 
     meta?: Record<string, unknown> | null;
 };
@@ -129,16 +132,16 @@ export async function attachSessionMedia(
 }
 
 function findGymCheckSessionIdFromDay(day: WorkoutDay): string | null {
-    const sessions = Array.isArray(day?.training?.sessions) ? day.training!.sessions : [];
-    const hit = sessions?.find((s) => String(s?.meta?.sessionKey ?? "") === "gym_check") ?? null;
+    const sessions = Array.isArray(day.training?.sessions) ? day.training.sessions : [];
+    const hit = sessions.find((session) => String(session.meta?.sessionKey ?? "") === "gym_check") ?? null;
     return hit?.id ?? null;
 }
 
 function extractSessionIdFromReturn(payload: ReturnDay | ReturnSession): string | null {
-    if (payload && typeof payload === "object" && "session" in payload) {
-        const s = (payload as ReturnSession).session;
-        return typeof s?.id === "string" ? s.id : null;
+    if ("session" in payload) {
+        return typeof payload.session?.id === "string" ? payload.session.id : null;
     }
+
     return null;
 }
 
@@ -159,7 +162,6 @@ export async function upsertGymCheckSession(
         return { mode: "patched", data, sessionId: existingId };
     }
 
-    // to guarantee we get session.id, force returnMode="session" when creating
     const created = await createSession(date, payload, { returnMode: "session" });
     const sessionId = extractSessionIdFromReturn(created);
 
@@ -167,7 +169,5 @@ export async function upsertGymCheckSession(
         throw new Error("Session created but response did not include session.id");
     }
 
-    // if caller asked "day", you can still return the created session shape; caller doesn’t need day here
-    // (GymCheckPage later syncs week anyway)
     return { mode: "created", data: created, sessionId };
 }

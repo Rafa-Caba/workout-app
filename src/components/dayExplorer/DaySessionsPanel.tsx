@@ -1,76 +1,116 @@
 import React from "react";
 import { format } from "date-fns";
+
 import type {
     WorkoutDay,
-    WorkoutMediaItem,
-    WorkoutSession,
     WorkoutExercise,
     WorkoutExerciseSet,
+    WorkoutMediaItem,
+    WorkoutSession,
 } from "@/types/workoutDay.types";
 import type { MediaLikeItem } from "@/components/media/MediaViewerModal";
 import { BadgePill } from "@/components/dayExplorer/BadgePill";
 
+type JsonRecord = Record<string, unknown>;
 type TFn = (key: any, vars?: any) => string;
 
-function isFiniteNumber(n: unknown): n is number {
-    return typeof n === "number" && Number.isFinite(n);
+type ExercisePlanMeta = {
+    sets: string | null;
+    reps: string | null;
+    load: string | null;
+    rpe: string | null;
+    attachmentPublicIds: string[] | null;
+};
+
+function isRecord(value: unknown): value is JsonRecord {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isFiniteNumber(value: unknown): value is number {
+    return typeof value === "number" && Number.isFinite(value);
+}
+
+function cleanString(value: unknown): string | null {
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+
+function stringArrayOrNull(value: unknown): string[] | null {
+    if (!Array.isArray(value)) return null;
+
+    const items = value
+        .map((item) => cleanString(item))
+        .filter((item): item is string => Boolean(item));
+
+    return items.length ? items : null;
 }
 
 function formatDuration(seconds: number | null): string | null {
     if (!isFiniteNumber(seconds) || seconds <= 0) return null;
+
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
+
     if (h > 0) return `${h}h ${m}m`;
     return `${m}m`;
 }
 
 function formatTime(iso: string | null): string | null {
     if (!iso) return null;
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return null;
-    return format(d, "HH:mm");
+
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return null;
+
+    return format(date, "HH:mm");
 }
 
 function formatPace(secPerKm: number | null): string | null {
     if (!isFiniteNumber(secPerKm) || secPerKm <= 0) return null;
+
     const total = Math.round(secPerKm);
     const mm = Math.floor(total / 60);
     const ss = total % 60;
+
     return `${mm}:${String(ss).padStart(2, "0")}`;
 }
 
-function shortId(id: string | null | undefined): string | null {
-    const v = (id ?? "").trim();
-    if (!v) return null;
-    if (v.length <= 8) return v;
-    return `${v.slice(0, 4)}…${v.slice(-4)}`;
-}
-
 function countSets(exercises: WorkoutExercise[] | null): number {
-    if (!Array.isArray(exercises) || !exercises.length) return 0;
+    if (!Array.isArray(exercises) || exercises.length === 0) return 0;
+
     let total = 0;
-    for (const ex of exercises) {
-        const sets = ex.sets ?? null;
-        if (Array.isArray(sets)) total += sets.length;
+
+    for (const exercise of exercises) {
+        const sets = exercise.sets;
+        if (Array.isArray(sets)) {
+            total += sets.length;
+        }
     }
+
     return total;
 }
 
 function countLoggedSets(exercises: WorkoutExercise[] | null): number {
-    if (!Array.isArray(exercises) || !exercises.length) return 0;
+    if (!Array.isArray(exercises) || exercises.length === 0) return 0;
+
     let total = 0;
-    for (const ex of exercises) {
-        const sets = ex.sets ?? null;
+
+    for (const exercise of exercises) {
+        const sets = exercise.sets;
         if (!Array.isArray(sets)) continue;
-        for (const s of sets) {
-            // count as "logged" if it has reps or weight or rpe filled
-            const reps = (s as WorkoutExerciseSet).reps;
-            const weight = (s as WorkoutExerciseSet).weight;
-            const rpe = (s as WorkoutExerciseSet).rpe;
-            if (isFiniteNumber(reps) || isFiniteNumber(weight) || isFiniteNumber(rpe)) total += 1;
+
+        for (const set of sets) {
+            if (isLoggedSet(set)) {
+                total += 1;
+            }
         }
     }
+
     return total;
+}
+
+function isLoggedSet(set: WorkoutExerciseSet): boolean {
+    return isFiniteNumber(set.reps) || isFiniteNumber(set.weight) || isFiniteNumber(set.rpe);
 }
 
 function toMediaLikeItem(
@@ -91,38 +131,114 @@ function toMediaLikeItem(
     };
 }
 
-/**
- * Defensive: dedupe sessions by id (API should not return duplicates, but we guard the UI).
- * Keeps the first occurrence and preserves order.
- */
 function dedupeSessionsById(sessions: WorkoutSession[]): WorkoutSession[] {
     const seen = new Set<string>();
     const out: WorkoutSession[] = [];
 
-    for (const s of sessions) {
-        const id = typeof s?.id === "string" ? s.id.trim() : "";
+    for (const session of sessions) {
+        const id = cleanString(session.id);
+
         if (!id) {
-            // If id is missing, keep it (rare) but it must have a stable key later.
-            out.push(s);
+            out.push(session);
             continue;
         }
-        if (seen.has(id)) continue;
+
+        if (seen.has(id)) {
+            continue;
+        }
+
         seen.add(id);
-        out.push(s);
+        out.push(session);
     }
 
     return out;
 }
 
-function buildSessionKey(s: WorkoutSession, index: number): string {
-    const id = typeof s?.id === "string" ? s.id.trim() : "";
+function buildSessionKey(session: WorkoutSession, index: number): string {
+    const id = cleanString(session.id);
     if (id) return id;
 
-    // fallback for rare cases when id is missing
-    const createdAt =
-        typeof (s as any)?.createdAt === "string" ? String((s as any).createdAt) : "";
-    const type = typeof s?.type === "string" ? s.type : "session";
-    return `${type}:${createdAt || "no_createdAt"}:${index}`;
+    const type = cleanString(session.type) ?? "session";
+    const startAt = cleanString(session.startAt) ?? "no_start";
+    return `${type}:${startAt}:${index}`;
+}
+
+function getExercisePlanMeta(exercise: WorkoutExercise): ExercisePlanMeta | null {
+    if (!isRecord(exercise.meta)) return null;
+
+    const plan = exercise.meta.plan;
+    if (!isRecord(plan)) return null;
+
+    return {
+        sets: cleanString(plan.sets),
+        reps: cleanString(plan.reps),
+        load: cleanString(plan.load),
+        rpe: cleanString(plan.rpe),
+        attachmentPublicIds: stringArrayOrNull(plan.attachmentPublicIds),
+    };
+}
+
+function getExerciseDisplayName(exercise: WorkoutExercise): string {
+    return cleanString(exercise.movementName) ?? cleanString(exercise.name) ?? "Exercise";
+}
+
+function getExerciseNotes(exercise: WorkoutExercise): string | null {
+    return cleanString(exercise.notes);
+}
+
+function getExerciseSetValue(exercise: WorkoutExercise): string | null {
+    if (Array.isArray(exercise.sets) && exercise.sets.length > 0) {
+        return String(exercise.sets.length);
+    }
+
+    const plan = getExercisePlanMeta(exercise);
+    return plan?.sets ?? null;
+}
+
+function getExerciseRepsValue(exercise: WorkoutExercise): string | null {
+    const plan = getExercisePlanMeta(exercise);
+    return plan?.reps ?? null;
+}
+
+function getExerciseLoadValue(exercise: WorkoutExercise): string | null {
+    const plan = getExercisePlanMeta(exercise);
+    return plan?.load ?? null;
+}
+
+function getExerciseRpeValue(exercise: WorkoutExercise): string | null {
+    const plan = getExercisePlanMeta(exercise);
+    return plan?.rpe ?? null;
+}
+
+function getExerciseAttachmentsCount(exercise: WorkoutExercise): number {
+    const plan = getExercisePlanMeta(exercise);
+    return plan?.attachmentPublicIds?.length ?? 0;
+}
+
+function getExerciseLoggedSetsText(exercise: WorkoutExercise): string | null {
+    if (!Array.isArray(exercise.sets) || exercise.sets.length === 0) {
+        return null;
+    }
+
+    const totalSets = exercise.sets.length;
+    const loggedSets = exercise.sets.filter(isLoggedSet).length;
+
+    return `${loggedSets}/${totalSets}`;
+}
+
+function Metric({
+    label,
+    value,
+}: {
+    label: string;
+    value: string | null;
+}) {
+    return (
+        <div className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2">
+            <span className="text-xs text-muted-foreground">{label}</span>
+            <span className="text-sm font-medium text-foreground">{value ?? "—"}</span>
+        </div>
+    );
 }
 
 export function DaySessionsPanel({
@@ -134,16 +250,13 @@ export function DaySessionsPanel({
     day: WorkoutDay;
     onOpenMedia: (item: MediaLikeItem) => void;
 }) {
-    const sessionsRaw: WorkoutSession[] = Array.isArray(day.training?.sessions)
-        ? (day.training!.sessions as WorkoutSession[])
-        : [];
-
+    const sessionsRaw = Array.isArray(day.training?.sessions) ? day.training.sessions : [];
     const sessions = React.useMemo(() => dedupeSessionsById(sessionsRaw), [sessionsRaw]);
 
     const trainingSource = day.training?.source ?? null;
     const dayRpe = day.training?.dayEffortRpe ?? null;
 
-    if (!sessions.length) {
+    if (sessions.length === 0) {
         return (
             <div className="w-full min-w-0 rounded-2xl border bg-card p-4">
                 <div className="text-sm text-muted-foreground">{t("days.sessions.empty")}</div>
@@ -156,12 +269,12 @@ export function DaySessionsPanel({
             <div className="min-w-0 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div className="text-sm font-semibold">{t("days.sessions.title")}</div>
 
-                {(trainingSource || isFiniteNumber(dayRpe)) ? (
+                {trainingSource || isFiniteNumber(dayRpe) ? (
                     <div className="min-w-0 flex flex-wrap gap-2">
                         {trainingSource ? (
-                            <span className="text-xs text-muted-foreground wrap-break-words">
+                            <span className="text-xs text-muted-foreground break-all">
                                 {t("days.training.source")}:{" "}
-                                <span className="font-mono text-foreground break-all">{trainingSource}</span>
+                                <span className="font-mono text-foreground">{trainingSource}</span>
                             </span>
                         ) : null}
 
@@ -176,97 +289,91 @@ export function DaySessionsPanel({
             </div>
 
             <div className="space-y-3">
-                {sessions.map((s, idx) => {
-                    const sessionTitle = s.type?.trim() || t("days.sessions.unknownType");
+                {sessions.map((session, index) => {
+                    const sessionTitle = cleanString(session.type) ?? t("days.sessions.unknownType");
 
-                    const dur = formatDuration(s.durationSeconds ?? null);
-                    const mediaCount = Array.isArray(s.media) ? s.media.length : 0;
+                    const duration = formatDuration(session.durationSeconds ?? null);
+                    const mediaCount = Array.isArray(session.media) ? session.media.length : 0;
 
-                    const kcalActive = isFiniteNumber(s.activeKcal) ? `${Math.round(s.activeKcal)}` : null;
-                    const kcalTotal = isFiniteNumber(s.totalKcal) ? `${Math.round(s.totalKcal)}` : null;
+                    const activeKcal = isFiniteNumber(session.activeKcal)
+                        ? `${Math.round(session.activeKcal)} ${t("days.sessions.kcal")}`
+                        : null;
 
-                    const hrAvg = isFiniteNumber(s.avgHr) ? `${Math.round(s.avgHr)}` : null;
-                    const hrMax = isFiniteNumber(s.maxHr) ? `${Math.round(s.maxHr)}` : null;
+                    const totalKcal = isFiniteNumber(session.totalKcal)
+                        ? `${Math.round(session.totalKcal)} ${t("days.sessions.kcal")}`
+                        : null;
 
-                    const steps = isFiniteNumber(s.steps) ? `${Math.round(s.steps).toLocaleString()}` : null;
-                    const dist = isFiniteNumber(s.distanceKm) ? `${Number(s.distanceKm).toFixed(2)}` : null;
+                    const avgHr = isFiniteNumber(session.avgHr) ? `${Math.round(session.avgHr)}` : null;
+                    const maxHr = isFiniteNumber(session.maxHr) ? `${Math.round(session.maxHr)}` : null;
 
-                    const elev = isFiniteNumber(s.elevationGainM) ? `${Math.round(s.elevationGainM)}` : null;
-                    const pace = formatPace(s.paceSecPerKm ?? null);
-                    const cadence = isFiniteNumber(s.cadenceRpm) ? `${Math.round(s.cadenceRpm)}` : null;
+                    const steps = isFiniteNumber(session.steps)
+                        ? `${Math.round(session.steps).toLocaleString()}`
+                        : null;
 
-                    const rpe = isFiniteNumber(s.effortRpe) ? `${Math.round(s.effortRpe)}` : null;
+                    const distance = isFiniteNumber(session.distanceKm)
+                        ? `${session.distanceKm.toFixed(2)} ${t("days.sessions.distanceKm")}`
+                        : null;
 
-                    const startAt = formatTime(s.startAt ?? null);
-                    const endAt = formatTime(s.endAt ?? null);
+                    const elevation = isFiniteNumber(session.elevationGainM)
+                        ? `${Math.round(session.elevationGainM)} ${t("days.sessions.elevationM")}`
+                        : null;
 
-                    const sid = shortId(s.id);
+                    const pace = formatPace(session.paceSecPerKm ?? null);
+                    const cadence = isFiniteNumber(session.cadenceRpm)
+                        ? `${Math.round(session.cadenceRpm)} ${t("days.sessions.cadenceRpm")}`
+                        : null;
 
-                    const exercises = Array.isArray(s.exercises) ? s.exercises : null;
-                    const exercisesCount = exercises ? exercises.length : 0;
+                    const rpe = isFiniteNumber(session.effortRpe) ? `${Math.round(session.effortRpe)}` : null;
+
+                    const startAt = formatTime(session.startAt ?? null);
+                    const endAt = formatTime(session.endAt ?? null);
+
+                    const exercises = Array.isArray(session.exercises) ? session.exercises : null;
+                    const exercisesCount = exercises?.length ?? 0;
                     const setsCount = countSets(exercises);
                     const loggedSets = countLoggedSets(exercises);
 
                     return (
-                        <div key={buildSessionKey(s, idx)} className="w-full min-w-0 rounded-2xl border bg-card overflow-hidden">
-                            <div className="p-4 border-b">
-                                {/* stack on mobile to avoid squeezing badges */}
-                                <div className="min-w-0 flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                        <div
+                            key={buildSessionKey(session, index)}
+                            className="w-full min-w-0 overflow-hidden rounded-2xl border bg-card"
+                        >
+                            <div className="border-b p-4">
+                                <div className="min-w-0 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                                     <div className="min-w-0 w-full">
                                         <div className="min-w-0 flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                                            <div className="min-w-0 text-base font-semibold wrap-break-words sm:truncate">
+                                            <div className="min-w-0 text-base font-semibold wrap-break-words md:truncate">
                                                 {t("days.sessions.dayPrefix")} {sessionTitle}
                                             </div>
 
-                                            {sid ? (
-                                                <div className="text-xs text-muted-foreground wrap-break-words">
-                                                    {t("days.sessions.sessionId")}:{" "}
-                                                    <span className="font-mono text-foreground break-all">{sid}</span>
+                                            {session.notes ? (
+                                                <div className="w-full text-sm text-muted-foreground wrap-break-words md:w-auto md:max-w-full md:text-right">
+                                                    {session.notes}
                                                 </div>
                                             ) : null}
                                         </div>
 
-                                        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full min-w-0">
-                                            <BadgePill emoji="⏱️" label={t("days.sessions.duration")} value={dur} />
+                                        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                            <BadgePill emoji="⏱️" label={t("days.sessions.duration")} value={duration} />
                                             <BadgePill emoji="📎" label={t("days.sessions.media")} value={`${mediaCount}`} />
 
-                                            <BadgePill
-                                                emoji="🔥"
-                                                label={t("days.sessions.activeKcal")}
-                                                value={kcalActive ? `${kcalActive} ${t("days.sessions.kcal")}` : null}
-                                            />
-                                            <BadgePill
-                                                emoji="🧮"
-                                                label={t("days.sessions.totalKcal")}
-                                                value={kcalTotal ? `${kcalTotal} ${t("days.sessions.kcal")}` : null}
-                                            />
+                                            <BadgePill emoji="🔥" label={t("days.sessions.activeKcal")} value={activeKcal} />
+                                            <BadgePill emoji="🧮" label={t("days.sessions.totalKcal")} value={totalKcal} />
 
-                                            <BadgePill emoji="❤️" label={t("days.sessions.avgHr")} value={hrAvg} />
-                                            <BadgePill emoji="⬆️" label={t("days.sessions.maxHr")} value={hrMax} />
+                                            <BadgePill emoji="❤️" label={t("days.sessions.avgHr")} value={avgHr} />
+                                            <BadgePill emoji="⬆️" label={t("days.sessions.maxHr")} value={maxHr} />
 
                                             <BadgePill emoji="🚶" label={t("days.sessions.stepsLabel")} value={steps} />
-                                            <BadgePill
-                                                emoji="📏"
-                                                label={t("days.sessions.distanceLabel")}
-                                                value={dist ? `${dist} ${t("days.sessions.distanceKm")}` : null}
-                                            />
+                                            <BadgePill emoji="📏" label={t("days.sessions.distanceLabel")} value={distance} />
 
-                                            <BadgePill
-                                                emoji="⛰️"
-                                                label={t("days.sessions.elevationLabel")}
-                                                value={elev ? `${elev} ${t("days.sessions.elevationM")}` : null}
-                                            />
+                                            <BadgePill emoji="⛰️" label={t("days.sessions.elevationLabel")} value={elevation} />
                                             <BadgePill
                                                 emoji="⏱️"
                                                 label={t("days.sessions.paceLabel")}
                                                 value={pace ? `${pace} ${t("days.sessions.paceUnit")}` : null}
                                             />
 
-                                            <BadgePill
-                                                emoji="🔁"
-                                                label={t("days.sessions.cadenceLabel")}
-                                                value={cadence ? `${cadence} ${t("days.sessions.cadenceRpm")}` : null}
-                                            />
+                                            <BadgePill emoji="🔁" label={t("days.sessions.cadenceLabel")} value={cadence} />
                                             <BadgePill emoji="🎯" label={t("days.sessions.rpe")} value={rpe} />
 
                                             <BadgePill emoji="🟢" label={t("days.sessions.startAt")} value={startAt} />
@@ -277,6 +384,7 @@ export function DaySessionsPanel({
                                                 label={t("days.sessions.exercises")}
                                                 value={exercisesCount > 0 ? `${exercisesCount}` : null}
                                             />
+
                                             <BadgePill
                                                 emoji="📚"
                                                 label={t("days.sessions.sets")}
@@ -284,57 +392,84 @@ export function DaySessionsPanel({
                                             />
                                         </div>
                                     </div>
-
-                                    {s.notes ? (
-                                        <div className="w-full md:w-auto md:max-w-[45%] text-xs text-muted-foreground wrap-break-words line-clamp-3 md:text-right">
-                                            {s.notes}
-                                        </div>
-                                    ) : null}
                                 </div>
                             </div>
 
-                            <div className="p-4 space-y-4 min-w-0">
-                                {/* Exercises mini list */}
-                                {exercises && exercises.length ? (
-                                    <div className="space-y-2 min-w-0">
+                            <div className="space-y-4 p-4">
+                                {exercises && exercises.length > 0 ? (
+                                    <div className="space-y-3">
                                         <div className="text-xs font-semibold text-muted-foreground">
                                             {t("days.sessions.exercisesList")} ({exercises.length})
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 min-w-0">
-                                            {exercises.slice(0, 8).map((ex) => {
-                                                const setCount = Array.isArray(ex.sets) ? ex.sets.length : 0;
+
+                                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                            {exercises.map((exercise) => {
+                                                const setValue = getExerciseSetValue(exercise);
+                                                const repsValue = getExerciseRepsValue(exercise);
+                                                const loadValue = getExerciseLoadValue(exercise);
+                                                const rpeValue = getExerciseRpeValue(exercise);
+                                                const loggedSetsText = getExerciseLoggedSetsText(exercise);
+                                                const attachmentsCount = getExerciseAttachmentsCount(exercise);
+
                                                 return (
-                                                    <div key={ex.id} className="min-w-0 rounded-xl border bg-background px-3 py-2">
-                                                        <div className="min-w-0 text-sm font-medium wrap-break-words sm:truncate">{ex.name}</div>
-                                                        <div className="min-w-0 text-xs text-muted-foreground wrap-break-words">
-                                                            {t("days.sessions.sets")}:{" "}
-                                                            <span className="font-mono text-foreground">{setCount || "—"}</span>
-                                                            {ex.notes ? (
-                                                                <span className="ml-2 text-muted-foreground line-clamp-1">
-                                                                    • {ex.notes}
-                                                                </span>
+                                                    <div
+                                                        key={exercise.id}
+                                                        className="min-w-0 rounded-xl border bg-background p-3"
+                                                    >
+                                                        <div className="space-y-3">
+                                                            <div className="space-y-1">
+                                                                <div className="text-sm font-semibold wrap-break-words">
+                                                                    {getExerciseDisplayName(exercise)}
+                                                                </div>
+
+                                                                {getExerciseNotes(exercise) ? (
+                                                                    <div className="text-xs text-muted-foreground wrap-break-words">
+                                                                        {getExerciseNotes(exercise)}
+                                                                    </div>
+                                                                ) : null}
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                                <Metric
+                                                                    label={t("days.sessions.sets")}
+                                                                    value={loggedSetsText ?? setValue}
+                                                                />
+                                                                <Metric
+                                                                    label={t("days.sessions.reps")}
+                                                                    value={repsValue}
+                                                                />
+                                                                <Metric
+                                                                    label={t("days.sessions.load")}
+                                                                    value={loadValue}
+                                                                />
+                                                                <Metric
+                                                                    label={t("days.sessions.rpe")}
+                                                                    value={rpeValue}
+                                                                />
+                                                            </div>
+
+                                                            {attachmentsCount > 0 ? (
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    {t("days.sessions.media")}: {attachmentsCount}
+                                                                </div>
                                                             ) : null}
                                                         </div>
                                                     </div>
                                                 );
                                             })}
                                         </div>
-
-                                        {exercises.length > 8 ? (
-                                            <div className="text-xs text-muted-foreground">
-                                                {t("days.sessions.exercisesMore", { n: exercises.length - 8 })}
-                                            </div>
-                                        ) : null}
                                     </div>
                                 ) : null}
 
-                                {/* Media thumbnails */}
-                                {Array.isArray(s.media) && s.media.length ? (
-                                    <div className="space-y-2 min-w-0">
-                                        <div className="text-xs font-semibold text-muted-foreground">{t("days.sessions.mediaGrid")}</div>
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 min-w-0">
-                                            {s.media.map((m) => {
-                                                const item = toMediaLikeItem(m, {
+                                {Array.isArray(session.media) && session.media.length > 0 ? (
+                                    <div className="space-y-2">
+                                        <div className="text-xs font-semibold text-muted-foreground">
+                                            {t("days.sessions.mediaGrid")}
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6">
+                                            {session.media.map((media) => {
+                                                const item = toMediaLikeItem(media, {
                                                     date: day.date,
                                                     sessionType: sessionTitle,
                                                     source: "day",
@@ -345,19 +480,30 @@ export function DaySessionsPanel({
 
                                                 return (
                                                     <button
-                                                        key={m.publicId}
+                                                        key={media.publicId}
                                                         type="button"
-                                                        className="w-full min-w-0 rounded-lg border bg-background overflow-hidden hover:shadow-sm transition-shadow"
+                                                        className="w-full overflow-hidden rounded-lg border bg-background transition-shadow hover:shadow-sm"
                                                         onClick={() => onOpenMedia(item)}
-                                                        title={m.publicId}
+                                                        title={media.publicId}
                                                     >
-                                                        <div className="aspect-square w-full flex items-center justify-center bg-black/5 overflow-hidden">
+                                                        <div className="aspect-square w-full overflow-hidden bg-black/5">
                                                             {isImage ? (
-                                                                <img src={item.url} alt={m.publicId} className="h-full w-full object-cover" />
+                                                                <img
+                                                                    src={item.url}
+                                                                    alt={media.publicId}
+                                                                    className="h-full w-full object-cover"
+                                                                />
                                                             ) : isVideo ? (
-                                                                <video src={item.url} className="h-full w-full object-cover" muted playsInline />
+                                                                <video
+                                                                    src={item.url}
+                                                                    className="h-full w-full object-cover"
+                                                                    muted
+                                                                    playsInline
+                                                                />
                                                             ) : (
-                                                                <span className="px-2 text-xs text-muted-foreground">{t("media.open")}</span>
+                                                                <div className="flex h-full w-full items-center justify-center px-2 text-xs text-muted-foreground">
+                                                                    {t("media.open")}
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </button>

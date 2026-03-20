@@ -265,6 +265,8 @@ export const i18nKeys = [
     "days.sessions.sessionId",
     "days.sessions.exercises",
     "days.sessions.sets",
+    "days.sessions.reps",
+    "days.sessions.load",
     "days.sessions.exercisesList",
     "days.sessions.exercisesMore",
     "days.sessions.mediaGrid",

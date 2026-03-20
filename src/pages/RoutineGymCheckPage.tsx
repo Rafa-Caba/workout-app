@@ -26,7 +26,7 @@ import type { UploadQuery } from "@/types/uploadQuery";
 import { getWorkoutDay } from "@/services/workout/sessions.service";
 
 import { MediaViewerModal, type MediaLikeItem } from "@/components/media/MediaViewerModal";
-import { useGymCheck } from "@/hooks/useGymCheck";
+import { useGymCheck, type GymDayMetricsState } from "@/hooks/useGymCheck";
 import { useSyncGymCheckDay } from "@/hooks/useSyncGymCheckDay";
 
 import { GymCheckWeekPickerCard } from "@/components/gymCheck/GymCheckWeekPickerCard";
@@ -45,8 +45,8 @@ import {
 
 import {
     dayKeyToDateIso,
-    parseDurationMinutesToSeconds,
     buildAttachMediaItemsFromGymDay,
+    buildGymCheckSessionPayload,
 } from "@/utils/gymCheck/sessionPayload";
 
 const DAY_LABELS: Record<(typeof DAY_KEYS)[number], { es: string; en: string }> = {
@@ -420,7 +420,7 @@ export function RoutineGymCheckPage() {
     }
 
     function commitMetricsToStore() {
-        const payload: any = {
+        const payload: Partial<GymDayMetricsState> = {
             startAt: timeHHmmToIsoOrEmpty(metricsUi.startAtTime, activeDayDateIso) || "",
             endAt: timeHHmmToIsoOrEmpty(metricsUi.endAtTime, activeDayDateIso) || "",
             activeKcal: metricsUi.activeKcal,
@@ -547,48 +547,20 @@ export function RoutineGymCheckPage() {
                 attachmentByPublicId,
             });
 
-            const durationSeconds = parseDurationMinutesToSeconds(dayAfterCommit?.durationMin);
-            const notes = typeof dayAfterCommit?.notes === "string" ? dayAfterCommit.notes : undefined;
+            const payload = buildGymCheckSessionPayload({
+                gymDay: dayAfterCommit,
+                plan: activePlan,
+                fallbackType: lang === "es" ? "Entrenamiento" : "Workout",
+            });
 
-            const type =
-                typeof (activePlan as any)?.sessionType === "string" && (activePlan as any).sessionType.trim()
-                    ? String((activePlan as any).sessionType).trim()
-                    : lang === "es"
-                        ? "Entrenamiento"
-                        : "Workout";
-
-            const m = dayAfterCommit?.metrics ?? {};
-
-            const payload: any = {
-                type,
-                durationSeconds: typeof durationSeconds === "number" ? durationSeconds : null,
-                notes: notes ?? null,
-
-                startAt: toStringOrUndefined(m.startAt) ? String(m.startAt).trim() : null,
-                endAt: toStringOrUndefined(m.endAt) ? String(m.endAt).trim() : null,
-
-                activeKcal: toNumberOrNull(m.activeKcal),
-                totalKcal: toNumberOrNull(m.totalKcal),
-
-                avgHr: toIntOrNull(m.avgHr),
-                maxHr: toIntOrNull(m.maxHr),
-
-                distanceKm: toNumberOrNull(m.distanceKm),
-                steps: toIntOrNull(m.steps),
-                elevationGainM: toNumberOrNull(m.elevationGainM),
-
-                paceSecPerKm: toIntOrNull(m.paceSecPerKm),
-                cadenceRpm: toIntOrNull(m.cadenceRpm),
-
-                effortRpe: toNumberOrNull(m.effortRpe),
-
-                meta: {
-                    sessionKey: "gym_check",
-                    // keep as-is (this is the device/source of metrics, not the session key)
-                    trainingSource: toStringOrUndefined(m.trainingSource) ?? null,
-                    dayEffortRpe: toNumberOrNull(m.dayEffortRpe),
-                },
-            };
+            if (!payload) {
+                toast.error(
+                    lang === "es"
+                        ? "Marca al menos un ejercicio como hecho para crear la sesión."
+                        : "Mark at least one exercise as done before creating the session."
+                );
+                return;
+            }
 
             const upserted = await (async () => {
                 const mod = await import("@/services/workout/sessions.service");
@@ -628,8 +600,9 @@ export function RoutineGymCheckPage() {
                     // ignore
                 }
             }
-        } catch (e: any) {
-            toast.error(e?.message ?? (lang === "es" ? "No se pudo crear la sesión" : "Could not create session"));
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : null;
+            toast.error(message ?? (lang === "es" ? "No se pudo crear la sesión" : "Could not create session"));
         }
     }
 

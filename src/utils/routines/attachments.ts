@@ -14,6 +14,7 @@ export type AttachmentOption = {
     url?: string;
     resourceType?: string;
     originalName?: string;
+    meta?: Record<string, unknown> | null;
 };
 
 function isRecord(v: unknown): v is Record<string, unknown> {

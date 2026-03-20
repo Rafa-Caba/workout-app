@@ -159,7 +159,7 @@ export function parseDurationMinutesToSeconds(input: unknown): number | undefine
 
 export function buildAttachMediaItemsFromGymDay(args: {
     gymDay: GymDayState;
-    attachmentByPublicId: Map<string, AttachMediaItem>;
+    attachmentByPublicId: Map<string, AttachmentOption>;
 }): AttachMediaItem[] {
     const out: AttachMediaItem[] = [];
     const seen = new Set<string>();

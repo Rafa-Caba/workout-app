@@ -1,3 +1,5 @@
+// src/services/workout/gymCheck.service.ts
+
 import { api } from "@/api/axios";
 import type {
     GymCheckDayPatchBody,
@@ -5,6 +7,7 @@ import type {
     GymCheckMetricsPatch,
     GymDayState,
 } from "@/types/gymCheck.types";
+import type { WorkoutExerciseSet } from "@/types/workoutDay.types";
 import type { DayKey, WorkoutRoutineWeek } from "@/types/workoutRoutine.types";
 
 /**
@@ -45,6 +48,43 @@ function toStringArrayOrNull(v: unknown): string[] | null {
     return out.length ? out : null;
 }
 
+function normalizePerformedSets(value: unknown): WorkoutExerciseSet[] | null {
+    if (!Array.isArray(value)) return null;
+
+    const items = value
+        .map((item, index) => {
+            if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+
+            const raw = item as Partial<WorkoutExerciseSet>;
+
+            return {
+                setIndex:
+                    typeof raw.setIndex === "number" && Number.isFinite(raw.setIndex) && raw.setIndex > 0
+                        ? Math.trunc(raw.setIndex)
+                        : index + 1,
+                reps: typeof raw.reps === "number" && Number.isFinite(raw.reps) ? Math.trunc(raw.reps) : null,
+                weight: typeof raw.weight === "number" && Number.isFinite(raw.weight) ? raw.weight : null,
+                unit: raw.unit === "kg" ? "kg" : "lb",
+                rpe: typeof raw.rpe === "number" && Number.isFinite(raw.rpe) ? raw.rpe : null,
+                isWarmup: raw.isWarmup === true,
+                isDropSet: raw.isDropSet === true,
+                tempo: typeof raw.tempo === "string" ? raw.tempo : null,
+                restSec: typeof raw.restSec === "number" && Number.isFinite(raw.restSec) ? Math.trunc(raw.restSec) : null,
+                tags: Array.isArray(raw.tags) ? raw.tags.map((tag) => String(tag).trim()).filter(Boolean) : null,
+                meta: raw.meta && typeof raw.meta === "object" && !Array.isArray(raw.meta)
+                    ? (raw.meta as Record<string, unknown>)
+                    : null,
+            } satisfies WorkoutExerciseSet;
+        })
+        .filter((item): item is WorkoutExerciseSet => item !== null)
+        .map((item, index) => ({
+            ...item,
+            setIndex: index + 1,
+        }));
+
+    return items.length > 0 ? items : null;
+}
+
 /**
  * If caller already sends the "clean" payload (numbers/null + metrics),
  * we should pass it through without stripping fields.
@@ -75,6 +115,7 @@ function buildPatchFromGymDayState(gymDay: GymDayState): GymCheckDayPatchBody {
             notes: toStringOrNull((st as any)?.notes),
             durationMin: toNumberOrNull((st as any)?.durationMin),
             mediaPublicIds: toStringArrayOrNull((st as any)?.mediaPublicIds) ?? null,
+            performedSets: normalizePerformedSets((st as any)?.performedSets),
         };
     }
 

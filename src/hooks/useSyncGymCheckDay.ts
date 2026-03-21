@@ -1,13 +1,17 @@
+// src/hooks/useSyncGymCheckDay.ts
+
 import { useMutation } from "@tanstack/react-query";
 import type { ApiError } from "@/api/httpErrors";
 import type { DayKey } from "@/utils/routines/plan";
 import { syncGymCheckDay } from "@/services/workout/gymCheck.service";
+import type { WorkoutExerciseSet } from "@/types/workoutDay.types";
 
 type GymExerciseState = {
     done: boolean;
     notes?: string;
     durationMin?: string;
     mediaPublicIds: string[];
+    performedSets?: WorkoutExerciseSet[];
 };
 
 type GymDayMetricsState = {
@@ -49,6 +53,9 @@ function isoOrNull(v: unknown): string | null {
 
 function numOrNull(v: unknown): number | null {
     if (v === null || v === undefined) return null;
+    if (typeof v === "number") {
+        return Number.isFinite(v) ? v : null;
+    }
     if (typeof v !== "string") return null;
     const s = v.trim();
     if (!s) return null;
@@ -68,6 +75,43 @@ function arrayOrNull(v: unknown): string[] | null {
     if (!Array.isArray(v)) return null;
     const out = v.map((x) => String(x).trim()).filter(Boolean);
     return out.length ? out : null;
+}
+
+function normalizePerformedSets(value: unknown): WorkoutExerciseSet[] | null {
+    if (!Array.isArray(value)) return null;
+
+    const items = value
+        .map((item, index) => {
+            if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+
+            const raw = item as Partial<WorkoutExerciseSet>;
+
+            return {
+                setIndex:
+                    typeof raw.setIndex === "number" && Number.isFinite(raw.setIndex) && raw.setIndex > 0
+                        ? Math.trunc(raw.setIndex)
+                        : index + 1,
+                reps: typeof raw.reps === "number" && Number.isFinite(raw.reps) ? Math.trunc(raw.reps) : null,
+                weight: typeof raw.weight === "number" && Number.isFinite(raw.weight) ? raw.weight : null,
+                unit: raw.unit === "kg" ? "kg" : "lb",
+                rpe: typeof raw.rpe === "number" && Number.isFinite(raw.rpe) ? raw.rpe : null,
+                isWarmup: raw.isWarmup === true,
+                isDropSet: raw.isDropSet === true,
+                tempo: typeof raw.tempo === "string" ? raw.tempo : null,
+                restSec: typeof raw.restSec === "number" && Number.isFinite(raw.restSec) ? Math.trunc(raw.restSec) : null,
+                tags: Array.isArray(raw.tags) ? raw.tags.map((tag) => String(tag).trim()).filter(Boolean) : null,
+                meta: raw.meta && typeof raw.meta === "object" && !Array.isArray(raw.meta)
+                    ? (raw.meta as Record<string, unknown>)
+                    : null,
+            } satisfies WorkoutExerciseSet;
+        })
+        .filter((item): item is WorkoutExerciseSet => item !== null)
+        .map((item, index) => ({
+            ...item,
+            setIndex: index + 1,
+        }));
+
+    return items.length > 0 ? items : null;
 }
 
 /**
@@ -109,6 +153,7 @@ function toPatchPayload(gymDay: GymDayState) {
             notes?: string | null;
             durationMin?: number | null;
             mediaPublicIds?: string[] | null;
+            performedSets?: WorkoutExerciseSet[] | null;
         }
     > = {};
 
@@ -120,6 +165,7 @@ function toPatchPayload(gymDay: GymDayState) {
             notes: strOrNull(ex.notes),
             durationMin: numOrNull(ex.durationMin),
             mediaPublicIds: arrayOrNull(ex.mediaPublicIds) ?? null,
+            performedSets: normalizePerformedSets(ex.performedSets),
         };
     }
 

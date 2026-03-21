@@ -10,7 +10,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { toWeekKey, weekKeyToStartDate } from "@/utils/weekKey";
 
 import { MediaViewerModal, type MediaLikeItem } from "@/components/media/MediaViewerModal";
-import { useGymCheck } from "@/hooks/useGymCheck";
+import { useGymCheck, type GymDayMetricsState } from "@/hooks/useGymCheck";
 
 import { GymCheckWeekPickerCard } from "@/components/gymCheck/GymCheckWeekPickerCard";
 import { GymCheckDayTabs } from "@/components/gymCheck/GymCheckDayTabs";
@@ -21,12 +21,16 @@ import { GymCheckDeviceMetricsCard } from "@/components/gymCheck/GymCheckDeviceM
 import { GymCheckSessionMetrics } from "@/components/gymCheck/GymCheckSessionMetrics";
 
 import { attachmentToMediaItem } from "@/utils/gymCheck/formatters";
-import { dayKeyToDateIso, parseDurationMinutesToSeconds } from "@/utils/gymCheck/sessionPayload";
+import {
+    buildGymCheckSessionPayload,
+    dayKeyToDateIso,
+} from "@/utils/gymCheck/sessionPayload";
 
 import type { DayKey, DayPlan, ExerciseItem } from "@/utils/routines/plan";
 import { DAY_KEYS } from "@/utils/routines/plan";
 
 import { getWorkoutDayServ } from "@/services/workout";
+import { useAuthStore } from "@/state/auth.store";
 
 const DAY_LABELS: Record<(typeof DAY_KEYS)[number], { es: string; en: string }> = {
     Mon: { es: "Lun", en: "Mon" },
@@ -51,13 +55,32 @@ function hasAnyMetricValue(metrics: Record<string, unknown> | null | undefined):
  * Notes:
  * - This is intentionally minimal and tolerant to missing fields.
  */
-function plannedRoutineToDayPlan(dayKey: DayKey, pr: any): DayPlan {
-    const exercisesRaw: any[] = Array.isArray(pr?.exercises) ? pr.exercises : [];
+function plannedRoutineToDayPlan(dayKey: DayKey, pr: unknown): DayPlan {
+    const plannedRoutine = (pr ?? {}) as {
+        sessionType?: string | null;
+        focus?: string | null;
+        notes?: string | null;
+        tags?: unknown[] | null;
+        exercises?: Array<{
+            id?: string | null;
+            name?: string | null;
+            sets?: number | string | null;
+            reps?: string | number | null;
+            rpe?: number | string | null;
+            load?: string | number | null;
+            notes?: string | null;
+            attachmentPublicIds?: string[] | null;
+            movementId?: string | null;
+            movementName?: string | null;
+        }> | null;
+    };
+
+    const exercisesRaw = Array.isArray(plannedRoutine.exercises) ? plannedRoutine.exercises : [];
 
     const exercises: ExerciseItem[] | undefined =
         exercisesRaw.length > 0
-            ? exercisesRaw.map((ex: any) => ({
-                id: String(ex?.id ?? `ex_${Math.random().toString(16).slice(2)}`),
+            ? exercisesRaw.map((ex, index) => ({
+                id: String(ex?.id ?? `ex_${index + 1}`),
                 name: String(ex?.name ?? ""),
                 sets: ex?.sets != null ? String(ex.sets) : undefined,
                 reps: typeof ex?.reps === "string" ? ex.reps : ex?.reps != null ? String(ex.reps) : undefined,
@@ -70,53 +93,53 @@ function plannedRoutineToDayPlan(dayKey: DayKey, pr: any): DayPlan {
             }))
             : undefined;
 
-    const tags: string[] | undefined = Array.isArray(pr?.tags)
-        ? pr.tags.map((x: any) => String(x).trim()).filter(Boolean)
+    const tags: string[] | undefined = Array.isArray(plannedRoutine.tags)
+        ? plannedRoutine.tags.map((x) => String(x).trim()).filter(Boolean)
         : undefined;
 
     return {
         dayKey,
-        sessionType: typeof pr?.sessionType === "string" ? pr.sessionType : undefined,
-        focus: typeof pr?.focus === "string" ? pr.focus : undefined,
-        notes: typeof pr?.notes === "string" ? pr.notes : undefined,
+        sessionType: typeof plannedRoutine.sessionType === "string" ? plannedRoutine.sessionType : undefined,
+        focus: typeof plannedRoutine.focus === "string" ? plannedRoutine.focus : undefined,
+        notes: typeof plannedRoutine.notes === "string" ? plannedRoutine.notes : undefined,
         tags,
         exercises,
     };
 }
 
-function hasTrainingBlock(day: any): boolean {
-    const training = day?.training ?? null;
+function hasTrainingBlock(day: unknown): boolean {
+    const safeDay = (day ?? {}) as {
+        training?: { sessions?: unknown[] | null } | null;
+    };
+
+    const training = safeDay.training ?? null;
     if (!training) return false;
+
     const sessions = Array.isArray(training.sessions) ? training.sessions : [];
     return sessions.length > 0;
 }
 
-function hasPlannedExercises(day: any): boolean {
-    const pr = day?.plannedRoutine ?? null;
+function hasPlannedExercises(day: unknown): boolean {
+    const safeDay = (day ?? {}) as {
+        plannedRoutine?: { exercises?: unknown[] | null } | null;
+    };
+
+    const pr = safeDay.plannedRoutine ?? null;
     const ex = Array.isArray(pr?.exercises) ? pr.exercises : null;
     return Array.isArray(ex) && ex.length > 0;
 }
 
-function hasGymCheckSession(day: any): boolean {
-    const sessions: any[] = Array.isArray(day?.training?.sessions) ? day.training.sessions : [];
+function hasGymCheckSession(day: unknown): boolean {
+    const safeDay = (day ?? {}) as {
+        training?: {
+            sessions?: Array<{
+                meta?: Record<string, unknown> | null;
+            }> | null;
+        } | null;
+    };
+
+    const sessions = Array.isArray(safeDay.training?.sessions) ? safeDay.training.sessions : [];
     return sessions.some((s) => String(s?.meta?.sessionKey ?? "") === "gym_check");
-}
-
-function toNumberOrNull(v: unknown): number | null {
-    const s = String(v ?? "").trim();
-    if (!s) return null;
-    const n = Number(s);
-    return Number.isFinite(n) ? n : null;
-}
-
-function toIntOrNull(v: unknown): number | null {
-    const n = toNumberOrNull(v);
-    return n === null ? null : Math.trunc(n);
-}
-
-function toStringOrUndefined(v: unknown): string | undefined {
-    const s = String(v ?? "").trim();
-    return s.length ? s : undefined;
 }
 
 /**
@@ -167,10 +190,10 @@ type MetricsUiState = {
     dayEffortRpe: string;
 };
 
-function buildMetricsUiFromGymDayMetrics(metrics: any): MetricsUiState {
+function buildMetricsUiFromGymDayMetrics(metrics: Record<string, unknown> | null | undefined): MetricsUiState {
     return {
-        startAtTime: isoToTimeHHmmOrEmpty(metrics?.startAt),
-        endAtTime: isoToTimeHHmmOrEmpty(metrics?.endAt),
+        startAtTime: isoToTimeHHmmOrEmpty(typeof metrics?.startAt === "string" ? metrics.startAt : undefined),
+        endAtTime: isoToTimeHHmmOrEmpty(typeof metrics?.endAt === "string" ? metrics.endAt : undefined),
         activeKcal: String(metrics?.activeKcal ?? ""),
         totalKcal: String(metrics?.totalKcal ?? ""),
         avgHr: String(metrics?.avgHr ?? ""),
@@ -188,6 +211,8 @@ function buildMetricsUiFromGymDayMetrics(metrics: any): MetricsUiState {
 
 export function GymTraineeCheckPage() {
     const { t, lang } = useI18n();
+    const { user } = useAuthStore();
+    const unitLoad = user?.units?.weight === "kg" ? "kg" : "lb";
 
     const today = React.useMemo(() => new Date(), []);
     const [weekDate, setWeekDate] = React.useState(() => format(today, "yyyy-MM-dd"));
@@ -236,7 +261,7 @@ export function GymTraineeCheckPage() {
     }, [runWeekKey, activeDay]);
 
     // Load week days (Mon..Sun) from WorkoutDay (self) and build available tabs.
-    const [weekDays, setWeekDays] = React.useState<Record<DayKey, any | null>>({
+    const [weekDays, setWeekDays] = React.useState<Record<DayKey, unknown | null>>({
         Mon: null,
         Tue: null,
         Wed: null,
@@ -271,7 +296,7 @@ export function GymTraineeCheckPage() {
 
                 if (!alive) return;
 
-                const next: Record<DayKey, any | null> = {
+                const next: Record<DayKey, unknown | null> = {
                     Mon: null,
                     Tue: null,
                     Wed: null,
@@ -319,7 +344,8 @@ export function GymTraineeCheckPage() {
         const withPlan = DAY_KEYS.filter((dk) => {
             const day = weekDays[dk];
             if (!day) return false;
-            return Boolean(day.plannedRoutine);
+            const safeDay = day as { plannedRoutine?: unknown | null };
+            return Boolean(safeDay.plannedRoutine);
         });
 
         if (withPlan.length > 0) return withPlan;
@@ -351,7 +377,8 @@ export function GymTraineeCheckPage() {
     const remoteDay = weekDays[activeDay] ?? null;
 
     const activePlan: DayPlan = React.useMemo(() => {
-        const pr = remoteDay?.plannedRoutine ?? null;
+        const safeRemoteDay = remoteDay as { plannedRoutine?: unknown | null } | null;
+        const pr = safeRemoteDay?.plannedRoutine ?? null;
         if (pr) return plannedRoutineToDayPlan(activeDay, pr);
         return { dayKey: activeDay } as DayPlan;
     }, [remoteDay, activeDay]);
@@ -362,20 +389,34 @@ export function GymTraineeCheckPage() {
     // Local GymCheck state (done flags, notes, device metrics)
     const {
         getDay,
+        hydrateDayFromWorkoutDay,
         toggleExerciseDone,
+        ensureExercisePrefilledFromPlan,
+        updateExercisePerformedSet,
+        addExercisePerformedSet,
+        removeExercisePerformedSet,
         setDayDuration,
         setDayNotes,
         setDayMetrics,
-        addExerciseMediaPublicId,
         removeExerciseMediaAt,
         resetWeek,
     } = useGymCheck(runWeekKey);
+
+    React.useEffect(() => {
+        if (!remoteDay || !hasExercises) return;
+
+        hydrateDayFromWorkoutDay({
+            dayKey: activeDay,
+            workoutDay: remoteDay as never,
+            plannedExercises: exercisesList,
+        });
+    }, [remoteDay, activeDay, hasExercises, exercisesList, hydrateDayFromWorkoutDay]);
 
     const gymDay = getDay(activeDay);
 
     const doneCount = React.useMemo(() => {
         const ex = gymDay?.exercises ?? {};
-        return Object.values(ex).filter((v: any) => v?.done === true).length;
+        return Object.values(ex).filter((v) => v?.done === true).length;
     }, [gymDay]);
 
     const [metricsUi, setMetricsUi] = React.useState<MetricsUiState>(() =>
@@ -399,7 +440,7 @@ export function GymTraineeCheckPage() {
     }
 
     function commitMetricsToStore() {
-        const payload: any = {
+        const payload: Partial<GymDayMetricsState> = {
             startAt: timeHHmmToIsoOrEmpty(metricsUi.startAtTime, activeDayDateIso) || "",
             endAt: timeHHmmToIsoOrEmpty(metricsUi.endAtTime, activeDayDateIso) || "",
             activeKcal: metricsUi.activeKcal,
@@ -424,7 +465,7 @@ export function GymTraineeCheckPage() {
 
     // Attachments are not available from RoutineWeek for TRAINEE (restricted),
     // so we keep an empty map. This still allows marking done + creating session.
-    const attachmentByPublicId = React.useMemo(() => new Map<string, any>(), []);
+    const attachmentByPublicId = React.useMemo(() => new Map<string, never>(), []);
 
     async function onCreateRealSession() {
         if (!hasExercises) {
@@ -445,47 +486,20 @@ export function GymTraineeCheckPage() {
         try {
             const dayAfterCommit = getDay(activeDay);
 
-            const durationSeconds = parseDurationMinutesToSeconds(dayAfterCommit?.durationMin);
-            const notes = typeof dayAfterCommit?.notes === "string" ? dayAfterCommit.notes : undefined;
+            const payload = buildGymCheckSessionPayload({
+                gymDay: dayAfterCommit,
+                plan: activePlan,
+                fallbackType: lang === "es" ? "Entrenamiento" : "Workout",
+            });
 
-            const type =
-                typeof (activePlan as any)?.sessionType === "string" && (activePlan as any).sessionType.trim()
-                    ? String((activePlan as any).sessionType).trim()
-                    : lang === "es"
-                        ? "Entrenamiento"
-                        : "Workout";
-
-            const m = dayAfterCommit?.metrics ?? {};
-
-            const payload: any = {
-                type,
-                durationSeconds: typeof durationSeconds === "number" ? durationSeconds : null,
-                notes: notes ?? null,
-
-                startAt: toStringOrUndefined(m.startAt) ? String(m.startAt).trim() : null,
-                endAt: toStringOrUndefined(m.endAt) ? String(m.endAt).trim() : null,
-
-                activeKcal: toNumberOrNull(m.activeKcal),
-                totalKcal: toNumberOrNull(m.totalKcal),
-
-                avgHr: toIntOrNull(m.avgHr),
-                maxHr: toIntOrNull(m.maxHr),
-
-                distanceKm: toNumberOrNull(m.distanceKm),
-                steps: toIntOrNull(m.steps),
-                elevationGainM: toNumberOrNull(m.elevationGainM),
-
-                paceSecPerKm: toIntOrNull(m.paceSecPerKm),
-                cadenceRpm: toIntOrNull(m.cadenceRpm),
-
-                effortRpe: toNumberOrNull(m.effortRpe),
-
-                meta: {
-                    sessionKey: "gym_check",
-                    trainingSource: toStringOrUndefined(m.trainingSource) ?? null,
-                    dayEffortRpe: toNumberOrNull(m.dayEffortRpe),
-                },
-            };
+            if (!payload) {
+                toast.error(
+                    lang === "es"
+                        ? "Marca al menos un ejercicio como hecho para crear la sesión."
+                        : "Mark at least one exercise as done before creating the session."
+                );
+                return;
+            }
 
             const mod = await import("@/services/workout/sessions.service");
             const upserted = await mod.upsertGymCheckSession(date, payload, { returnMode: "day" });
@@ -495,8 +509,16 @@ export function GymTraineeCheckPage() {
                     ? (lang === "es" ? "Sesión real actualizada" : "Real session updated")
                     : (lang === "es" ? "Sesión real creada" : "Real session created")
             );
-        } catch (e: any) {
-            toast.error(e?.message ?? (lang === "es" ? "No se pudo crear la sesión" : "Could not create session"));
+
+            const freshDay = await getWorkoutDayServ(date);
+            hydrateDayFromWorkoutDay({
+                dayKey: activeDay,
+                workoutDay: freshDay,
+                plannedExercises: exercisesList,
+            });
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : null;
+            toast.error(message ?? (lang === "es" ? "No se pudo crear la sesión" : "Could not create session"));
         } finally {
             setCreating(false);
         }
@@ -516,7 +538,8 @@ export function GymTraineeCheckPage() {
 
     const busy = weekLoading || creating;
 
-    const routineExists = Boolean(remoteDay?.plannedRoutine);
+    const safeRemoteDay = remoteDay as { plannedRoutine?: unknown | null } | null;
+    const routineExists = Boolean(safeRemoteDay?.plannedRoutine);
     const gymCheckSessionExists = hasGymCheckSession(remoteDay);
 
     // Sticky actions visibility (show when top actions are out of view)
@@ -599,7 +622,7 @@ export function GymTraineeCheckPage() {
                         </div>
                     </div>
 
-                    {!remoteDay?.plannedRoutine ? (
+                    {!safeRemoteDay?.plannedRoutine ? (
                         <EmptyState
                             title={lang === "es" ? "Sin plan asignado" : "No assigned plan"}
                             description={
@@ -650,8 +673,12 @@ export function GymTraineeCheckPage() {
 
                             <div className="space-y-3">
                                 {exercisesList.map((ex: ExerciseItem, idx: number) => {
-                                    const exerciseId = (ex as any).id || `idx_${idx}`;
-                                    const exState = gymDay.exercises?.[exerciseId] ?? { done: false, mediaPublicIds: [] };
+                                    const exerciseId = (ex as { id?: string }).id || `idx_${idx}`;
+                                    const exState = gymDay.exercises?.[exerciseId] ?? {
+                                        done: false,
+                                        mediaPublicIds: [],
+                                        performedSets: [],
+                                    };
 
                                     return (
                                         <GymCheckExerciseCard
@@ -666,7 +693,19 @@ export function GymTraineeCheckPage() {
                                             uploading={false}
                                             mediaPublicIds={Array.isArray(exState.mediaPublicIds) ? exState.mediaPublicIds : []}
                                             attachmentByPublicId={attachmentByPublicId}
-                                            onToggleDone={() => toggleExerciseDone(activeDay, exerciseId)}
+                                            performedSets={Array.isArray(exState.performedSets) ? exState.performedSets : []}
+                                            onToggleDone={() => {
+                                                if (!exState.done) {
+                                                    ensureExercisePrefilledFromPlan({
+                                                        dayKey: activeDay,
+                                                        exerciseId,
+                                                        exercise: ex,
+                                                        unit: unitLoad,
+                                                    });
+                                                }
+
+                                                toggleExerciseDone(activeDay, exerciseId);
+                                            }}
                                             onUploadFiles={() => {
                                                 toast.message(
                                                     lang === "es"
@@ -674,6 +713,13 @@ export function GymTraineeCheckPage() {
                                                         : "Routine-based uploads are not available in Trainee mode."
                                                 );
                                             }}
+                                            onChangePerformedSet={(setIndex, patch) =>
+                                                updateExercisePerformedSet(activeDay, exerciseId, setIndex, patch)
+                                            }
+                                            onAddPerformedSet={() => addExercisePerformedSet(activeDay, exerciseId, unitLoad)}
+                                            onRemovePerformedSet={(setIndex) =>
+                                                removeExercisePerformedSet(activeDay, exerciseId, setIndex)
+                                            }
                                             onOpenViewer={(opt) => {
                                                 const item = attachmentToMediaItem(opt);
                                                 if (!item) return;

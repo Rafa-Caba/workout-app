@@ -1,5 +1,8 @@
+// src/hooks/useGymCheck.ts
+
 import * as React from "react";
-import type { DayKey } from "@/utils/routines/plan";
+import type { DayKey, ExerciseItem } from "@/utils/routines/plan";
+import type { WeightUnit, WorkoutDay, WorkoutExercise, WorkoutExerciseSet, WorkoutSession } from "@/types/workoutDay.types";
 
 export type GymExerciseState = {
     done: boolean;
@@ -10,6 +13,10 @@ export type GymExerciseState = {
 
     // attachments uploaded during gym check (publicIds)
     mediaPublicIds: string[];
+
+    // Real executed sets captured during Gym Check.
+    // These are later sent as exercise.sets when creating the real session.
+    performedSets: WorkoutExerciseSet[];
 };
 
 export type GymDayMetricsState = {
@@ -41,7 +48,7 @@ export type GymDayState = {
 };
 
 export type GymWeekState = {
-    version: 3; // bumped because we added day metrics
+    version: 4; // bumped because we added performedSets
     weekKey: string;
     days: Record<DayKey, GymDayState>;
     updatedAt: string;
@@ -49,7 +56,7 @@ export type GymWeekState = {
 
 const STORAGE_PREFIX = "workout-gymcheck";
 
-const EMPTY_EXERCISE: GymExerciseState = { done: false, mediaPublicIds: [] };
+const EMPTY_EXERCISE: GymExerciseState = { done: false, mediaPublicIds: [], performedSets: [] };
 
 function isBrowser() {
     return typeof window !== "undefined" && typeof localStorage !== "undefined";
@@ -85,7 +92,7 @@ function makeEmptyDay(): GymDayState {
 
 function makeEmptyWeek(weekKey: string): GymWeekState {
     return {
-        version: 3,
+        version: 4,
         weekKey,
         days: {
             Mon: makeEmptyDay(),
@@ -104,6 +111,74 @@ function storageKey(weekKey: string) {
     return `${STORAGE_PREFIX}:${weekKey}`;
 }
 
+function toFiniteNumberOrNull(value: unknown): number | null {
+    if (typeof value === "number") {
+        return Number.isFinite(value) ? value : null;
+    }
+
+    if (typeof value !== "string") return null;
+
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toIntOrNull(value: unknown): number | null {
+    const parsed = toFiniteNumberOrNull(value);
+    return parsed === null ? null : Math.trunc(parsed);
+}
+
+function safeWeightUnit(value: unknown): WeightUnit {
+    return value === "kg" ? "kg" : "lb";
+}
+
+function cleanString(value: unknown): string | null {
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeTextKey(value: unknown): string {
+    const base = cleanString(value) ?? "";
+    return base.toLowerCase();
+}
+
+function normalizeWorkoutExerciseSet(value: unknown, fallbackIndex: number): WorkoutExerciseSet | null {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+
+    const raw = value as Partial<WorkoutExerciseSet>;
+
+    return {
+        setIndex: typeof raw.setIndex === "number" && Number.isFinite(raw.setIndex) && raw.setIndex > 0
+            ? Math.trunc(raw.setIndex)
+            : fallbackIndex,
+        reps: toIntOrNull(raw.reps),
+        weight: toFiniteNumberOrNull(raw.weight),
+        unit: safeWeightUnit(raw.unit),
+        rpe: toFiniteNumberOrNull(raw.rpe),
+        isWarmup: raw.isWarmup === true,
+        isDropSet: raw.isDropSet === true,
+        tempo: typeof raw.tempo === "string" ? raw.tempo : null,
+        restSec: toIntOrNull(raw.restSec),
+        tags: Array.isArray(raw.tags) ? raw.tags.map((item) => String(item).trim()).filter(Boolean) : null,
+        meta: raw.meta && typeof raw.meta === "object" && !Array.isArray(raw.meta)
+            ? (raw.meta as Record<string, unknown>)
+            : null,
+    };
+}
+
+function safeWorkoutExerciseSetArray(value: unknown): WorkoutExerciseSet[] {
+    if (!Array.isArray(value)) return [];
+
+    return value
+        .map((item, index) => normalizeWorkoutExerciseSet(item, index + 1))
+        .filter((item): item is WorkoutExerciseSet => item !== null)
+        .sort((a, b) => a.setIndex - b.setIndex)
+        .map((item, index) => ({ ...item, setIndex: index + 1 }));
+}
+
 function safeParse(json: string | null): GymWeekState | null {
     if (!json) return null;
 
@@ -111,9 +186,9 @@ function safeParse(json: string | null): GymWeekState | null {
         const obj = JSON.parse(json);
         if (!obj || typeof obj !== "object") return null;
 
-        // Accept v1/v2/v3 and upgrade to v3
+        // Accept v1/v2/v3/v4 and upgrade to v4
         const version = (obj as any).version;
-        if (version !== 1 && version !== 2 && version !== 3) return null;
+        if (version !== 1 && version !== 2 && version !== 3 && version !== 4) return null;
 
         const wk = (obj as any).weekKey;
         if (typeof wk !== "string") return null;
@@ -121,51 +196,59 @@ function safeParse(json: string | null): GymWeekState | null {
         const days = (obj as any).days;
         if (!days || typeof days !== "object") return null;
 
-        // Upgrade v1/v2 -> v3
-        if (version === 1 || version === 2) {
-            const upgraded: GymWeekState = {
-                version: 3,
-                weekKey: wk,
-                days: days as any,
-                updatedAt: typeof (obj as any).updatedAt === "string" ? (obj as any).updatedAt : new Date().toISOString(),
-            };
+        const upgraded: GymWeekState = {
+            version: 4,
+            weekKey: wk,
+            days: days as any,
+            updatedAt: typeof (obj as any).updatedAt === "string" ? (obj as any).updatedAt : new Date().toISOString(),
+        };
 
-            // Ensure metrics exists per day (backfill)
-            const dayKeys: DayKey[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-            for (const dk of dayKeys) {
-                const d = (upgraded.days as any)[dk];
-                if (!d || typeof d !== "object") {
-                    (upgraded.days as any)[dk] = makeEmptyDay();
-                    continue;
-                }
-                if (!(d as any).metrics || typeof (d as any).metrics !== "object") {
-                    (upgraded.days as any)[dk] = { ...d, metrics: makeEmptyMetrics() };
-                } else {
-                    (upgraded.days as any)[dk] = { ...d, metrics: { ...makeEmptyMetrics(), ...(d as any).metrics } };
-                }
-            }
-
-            return upgraded;
-        }
-
-        // version === 3
-        // Backfill metrics if missing (defensive)
-        const out = obj as GymWeekState;
         const dayKeys: DayKey[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
         for (const dk of dayKeys) {
-            const d = (out.days as any)[dk];
+            const d = (upgraded.days as any)[dk];
+
             if (!d || typeof d !== "object") {
-                (out.days as any)[dk] = makeEmptyDay();
+                (upgraded.days as any)[dk] = makeEmptyDay();
                 continue;
             }
-            if (!(d as any).metrics || typeof (d as any).metrics !== "object") {
-                (out.days as any)[dk] = { ...d, metrics: makeEmptyMetrics() };
-            } else {
-                (out.days as any)[dk] = { ...d, metrics: { ...makeEmptyMetrics(), ...(d as any).metrics } };
+
+            const metrics =
+                (d as any).metrics && typeof (d as any).metrics === "object"
+                    ? { ...makeEmptyMetrics(), ...(d as any).metrics }
+                    : makeEmptyMetrics();
+
+            const rawExercises =
+                (d as any).exercises && typeof (d as any).exercises === "object" && !Array.isArray((d as any).exercises)
+                    ? (d as any).exercises
+                    : {};
+
+            const normalizedExercises: Record<string, GymExerciseState> = {};
+
+            for (const [exerciseId, rawEx] of Object.entries(rawExercises)) {
+                if (!exerciseId || !rawEx || typeof rawEx !== "object" || Array.isArray(rawEx)) continue;
+
+                normalizedExercises[exerciseId] = {
+                    done: (rawEx as any).done === true,
+                    ...(typeof (rawEx as any).notes === "string" ? { notes: (rawEx as any).notes } : {}),
+                    ...(typeof (rawEx as any).durationMin === "string"
+                        ? { durationMin: (rawEx as any).durationMin }
+                        : typeof (rawEx as any).durationMin === "number"
+                            ? { durationMin: String((rawEx as any).durationMin) }
+                            : {}),
+                    mediaPublicIds: safeStringArray((rawEx as any).mediaPublicIds),
+                    performedSets: safeWorkoutExerciseSetArray((rawEx as any).performedSets),
+                };
             }
+
+            (upgraded.days as any)[dk] = {
+                ...d,
+                metrics,
+                exercises: normalizedExercises,
+            };
         }
 
-        return out;
+        return upgraded;
     } catch {
         return null;
     }
@@ -191,6 +274,45 @@ function strToUiString(v: unknown): string | null {
     if (typeof v !== "string") return null;
     const s = v.trim();
     return s ? s : null;
+}
+
+function parsePlannedSetsCount(input: unknown): number {
+    if (typeof input === "number" && Number.isFinite(input) && input > 0) {
+        return Math.max(1, Math.trunc(input));
+    }
+
+    if (typeof input !== "string") return 1;
+
+    const trimmed = input.trim();
+    if (!trimmed) return 1;
+
+    const matched = trimmed.match(/\d+/);
+    if (!matched) return 1;
+
+    const parsed = Number(matched[0]);
+    if (!Number.isFinite(parsed) || parsed <= 0) return 1;
+
+    return Math.max(1, Math.trunc(parsed));
+}
+
+function buildPrefilledPerformedSets(exercise: ExerciseItem, unit: WeightUnit): WorkoutExerciseSet[] {
+    const totalSets = parsePlannedSetsCount((exercise as any).sets);
+    const plannedLoad = toFiniteNumberOrNull((exercise as any).load);
+    const plannedRpe = toFiniteNumberOrNull((exercise as any).rpe);
+
+    return Array.from({ length: totalSets }, (_, index) => ({
+        setIndex: index + 1,
+        reps: null,
+        weight: plannedLoad,
+        unit,
+        rpe: plannedRpe,
+        isWarmup: false,
+        isDropSet: false,
+        tempo: null,
+        restSec: null,
+        tags: null,
+        meta: null,
+    }));
 }
 
 type RemoteGymMetrics = Partial<{
@@ -232,6 +354,7 @@ type RemoteGymMetrics = Partial<{
  *         notes: string | null,
  *         durationMin: number | null,
  *         mediaPublicIds: string[] | null,
+ *         performedSets?: WorkoutExerciseSet[] | null,
  *         updatedAt: string
  *       }
  *     }
@@ -258,6 +381,7 @@ type RemoteGymCheck = Record<
                 notes?: string | null;
                 durationMin?: number | null;
                 mediaPublicIds?: string[] | null;
+                performedSets?: WorkoutExerciseSet[] | null;
                 updatedAt?: string | null;
             }
         >
@@ -322,6 +446,7 @@ function mergeRemoteMetricsIntoLocal(local: GymDayMetricsState, remoteMetrics: R
 
         ...(distanceKm !== null ? { distanceKm } : {}),
         ...(steps !== null ? { steps } : {}),
+
         ...(elevationGainM !== null ? { elevationGainM } : {}),
 
         ...(paceSecPerKm !== null ? { paceSecPerKm } : {}),
@@ -385,12 +510,20 @@ function mergeRemoteIntoLocal(prev: GymWeekState, remote: RemoteGymCheck): GymWe
                             ? prevEx.mediaPublicIds
                             : prevEx.mediaPublicIds;
 
+                const performedSets =
+                    Array.isArray((rEx as any)?.performedSets)
+                        ? safeWorkoutExerciseSetArray((rEx as any).performedSets)
+                        : Array.isArray(prevEx.performedSets)
+                            ? prevEx.performedSets
+                            : [];
+
                 mergedDay.exercises[exerciseId] = {
                     ...prevEx,
                     done,
                     ...(notes !== undefined ? { notes } : {}),
                     ...(durationMin !== undefined ? { durationMin } : {}),
                     mediaPublicIds,
+                    performedSets,
                 };
             }
         }
@@ -399,6 +532,73 @@ function mergeRemoteIntoLocal(prev: GymWeekState, remote: RemoteGymCheck): GymWe
     }
 
     return next;
+}
+
+function getLatestGymCheckSession(day: WorkoutDay | null | undefined): WorkoutSession | null {
+    const sessions = Array.isArray(day?.training?.sessions) ? day.training.sessions : [];
+    const matches = sessions.filter((session) => String(session.meta?.sessionKey ?? "") === "gym_check");
+    if (matches.length === 0) return null;
+    return matches[matches.length - 1] ?? null;
+}
+
+function buildPlannedExerciseMaps(plannedExercises: ExerciseItem[]) {
+    const byId = new Map<string, ExerciseItem>();
+    const byMovementId = new Map<string, ExerciseItem[]>();
+    const byName = new Map<string, ExerciseItem[]>();
+
+    for (const exercise of plannedExercises) {
+        const exerciseId = cleanString((exercise as any).id);
+        const movementId = cleanString((exercise as any).movementId);
+        const name = normalizeTextKey((exercise as any).movementName ?? (exercise as any).name);
+
+        if (exerciseId) {
+            byId.set(exerciseId, exercise);
+        }
+
+        if (movementId) {
+            const list = byMovementId.get(movementId) ?? [];
+            list.push(exercise);
+            byMovementId.set(movementId, list);
+        }
+
+        if (name) {
+            const list = byName.get(name) ?? [];
+            list.push(exercise);
+            byName.set(name, list);
+        }
+    }
+
+    return { byId, byMovementId, byName };
+}
+
+function resolvePlannedExerciseIdForSessionExercise(
+    sessionExercise: WorkoutExercise,
+    plannedExercises: ExerciseItem[]
+): string | null {
+    const maps = buildPlannedExerciseMaps(plannedExercises);
+
+    const explicitExerciseId = cleanString((sessionExercise.meta as any)?.gymCheck?.exerciseId);
+    if (explicitExerciseId && maps.byId.has(explicitExerciseId)) {
+        return explicitExerciseId;
+    }
+
+    const movementId = cleanString(sessionExercise.movementId);
+    if (movementId) {
+        const movementMatches = maps.byMovementId.get(movementId) ?? [];
+        if (movementMatches.length === 1) {
+            return cleanString((movementMatches[0] as any).id);
+        }
+    }
+
+    const nameKey = normalizeTextKey(sessionExercise.movementName ?? sessionExercise.name);
+    if (nameKey) {
+        const nameMatches = maps.byName.get(nameKey) ?? [];
+        if (nameMatches.length === 1) {
+            return cleanString((nameMatches[0] as any).id);
+        }
+    }
+
+    return null;
 }
 
 export function useGymCheck(weekKey: string) {
@@ -428,7 +628,7 @@ export function useGymCheck(weekKey: string) {
         (fn: (prev: GymWeekState) => GymWeekState) => {
             setState((prev) => {
                 const next = fn(prev);
-                const stamped: GymWeekState = { ...next, version: 3, updatedAt: new Date().toISOString() };
+                const stamped: GymWeekState = { ...next, version: 4, updatedAt: new Date().toISOString() };
                 persist(stamped);
                 return stamped;
             });
@@ -459,6 +659,173 @@ export function useGymCheck(weekKey: string) {
                             exercises: {
                                 ...day.exercises,
                                 [exerciseId]: nextEx,
+                            },
+                        },
+                    },
+                };
+            });
+        },
+        [update]
+    );
+
+    const ensureExercisePrefilledFromPlan = React.useCallback(
+        (args: {
+            dayKey: DayKey;
+            exerciseId: string;
+            exercise: ExerciseItem;
+            unit: WeightUnit;
+        }) => {
+            update((prev) => {
+                const day = prev.days[args.dayKey] ?? makeEmptyDay();
+                const ex = ensureExercise(day, args.exerciseId);
+
+                if (Array.isArray(ex.performedSets) && ex.performedSets.length > 0) {
+                    return prev;
+                }
+
+                const performedSets = buildPrefilledPerformedSets(args.exercise, args.unit);
+
+                return {
+                    ...prev,
+                    days: {
+                        ...prev.days,
+                        [args.dayKey]: {
+                            ...day,
+                            exercises: {
+                                ...day.exercises,
+                                [args.exerciseId]: {
+                                    ...ex,
+                                    performedSets,
+                                },
+                            },
+                        },
+                    },
+                };
+            });
+        },
+        [update]
+    );
+
+    const updateExercisePerformedSet = React.useCallback(
+        (
+            dayKey: DayKey,
+            exerciseId: string,
+            setIndex: number,
+            patch: Partial<WorkoutExerciseSet>
+        ) => {
+            update((prev) => {
+                const day = prev.days[dayKey] ?? makeEmptyDay();
+                const ex = ensureExercise(day, exerciseId);
+                const currentSets = Array.isArray(ex.performedSets) ? ex.performedSets : [];
+
+                if (setIndex < 0 || setIndex >= currentSets.length) return prev;
+
+                const nextSets = currentSets.map((set, index) =>
+                    index === setIndex
+                        ? {
+                            ...set,
+                            ...patch,
+                            setIndex: index + 1,
+                        }
+                        : {
+                            ...set,
+                            setIndex: index + 1,
+                        }
+                );
+
+                return {
+                    ...prev,
+                    days: {
+                        ...prev.days,
+                        [dayKey]: {
+                            ...day,
+                            exercises: {
+                                ...day.exercises,
+                                [exerciseId]: {
+                                    ...ex,
+                                    performedSets: nextSets,
+                                },
+                            },
+                        },
+                    },
+                };
+            });
+        },
+        [update]
+    );
+
+    const addExercisePerformedSet = React.useCallback(
+        (dayKey: DayKey, exerciseId: string, unit: WeightUnit) => {
+            update((prev) => {
+                const day = prev.days[dayKey] ?? makeEmptyDay();
+                const ex = ensureExercise(day, exerciseId);
+                const currentSets = Array.isArray(ex.performedSets) ? ex.performedSets : [];
+                const lastSet = currentSets[currentSets.length - 1] ?? null;
+
+                const nextSet: WorkoutExerciseSet = {
+                    setIndex: currentSets.length + 1,
+                    reps: null,
+                    weight: lastSet?.weight ?? null,
+                    unit: lastSet?.unit ?? unit,
+                    rpe: lastSet?.rpe ?? null,
+                    isWarmup: false,
+                    isDropSet: false,
+                    tempo: null,
+                    restSec: null,
+                    tags: null,
+                    meta: null,
+                };
+
+                return {
+                    ...prev,
+                    days: {
+                        ...prev.days,
+                        [dayKey]: {
+                            ...day,
+                            exercises: {
+                                ...day.exercises,
+                                [exerciseId]: {
+                                    ...ex,
+                                    performedSets: [...currentSets, nextSet],
+                                },
+                            },
+                        },
+                    },
+                };
+            });
+        },
+        [update]
+    );
+
+    const removeExercisePerformedSet = React.useCallback(
+        (dayKey: DayKey, exerciseId: string, setIndex: number) => {
+            update((prev) => {
+                const day = prev.days[dayKey] ?? makeEmptyDay();
+                const ex = ensureExercise(day, exerciseId);
+                const currentSets = Array.isArray(ex.performedSets) ? ex.performedSets : [];
+
+                if (currentSets.length <= 1) return prev;
+                if (setIndex < 0 || setIndex >= currentSets.length) return prev;
+
+                const nextSets = currentSets
+                    .filter((_, index) => index !== setIndex)
+                    .map((set, index) => ({
+                        ...set,
+                        setIndex: index + 1,
+                    }));
+
+                return {
+                    ...prev,
+                    days: {
+                        ...prev.days,
+                        [dayKey]: {
+                            ...day,
+                            exercises: {
+                                ...day.exercises,
+                                [exerciseId]: {
+                                    ...ex,
+                                    performedSets: nextSets,
+                                },
                             },
                         },
                     },
@@ -621,6 +988,63 @@ export function useGymCheck(weekKey: string) {
         [update]
     );
 
+    const hydrateDayFromWorkoutDay = React.useCallback(
+        (args: {
+            dayKey: DayKey;
+            workoutDay: WorkoutDay | null | undefined;
+            plannedExercises: ExerciseItem[];
+        }) => {
+            const session = getLatestGymCheckSession(args.workoutDay);
+            if (!session || !Array.isArray(session.exercises) || session.exercises.length === 0) {
+                return;
+            }
+
+            update((prev) => {
+                const day = prev.days[args.dayKey] ?? makeEmptyDay();
+                const nextExercises = { ...(day.exercises ?? {}) };
+                let changed = false;
+
+                for (const sessionExercise of session.exercises ?? []) {
+                    const plannedExerciseId = resolvePlannedExerciseIdForSessionExercise(sessionExercise, args.plannedExercises);
+                    if (!plannedExerciseId) continue;
+
+                    const performedSets = safeWorkoutExerciseSetArray(sessionExercise.sets);
+                    if (performedSets.length === 0) continue;
+
+                    const currentExercise = nextExercises[plannedExerciseId] ?? EMPTY_EXERCISE;
+                    const currentSerialized = JSON.stringify(currentExercise.performedSets ?? []);
+                    const nextSerialized = JSON.stringify(performedSets);
+
+                    if (currentSerialized === nextSerialized && currentExercise.done === true) {
+                        continue;
+                    }
+
+                    nextExercises[plannedExerciseId] = {
+                        ...currentExercise,
+                        done: true,
+                        performedSets,
+                    };
+
+                    changed = true;
+                }
+
+                if (!changed) return prev;
+
+                return {
+                    ...prev,
+                    days: {
+                        ...prev.days,
+                        [args.dayKey]: {
+                            ...day,
+                            exercises: nextExercises,
+                        },
+                    },
+                };
+            });
+        },
+        [update]
+    );
+
     const resetWeek = React.useCallback(() => {
         update(() => makeEmptyWeek(weekKey));
     }, [update, weekKey]);
@@ -654,6 +1078,10 @@ export function useGymCheck(weekKey: string) {
 
         // exercises
         toggleExerciseDone,
+        ensureExercisePrefilledFromPlan,
+        updateExercisePerformedSet,
+        addExercisePerformedSet,
+        removeExercisePerformedSet,
         setExerciseNotes,
         setExerciseDuration,
         addExerciseMediaPublicId,
@@ -664,9 +1092,12 @@ export function useGymCheck(weekKey: string) {
         setDayNotes,
         setDayMetrics,
 
+        // hydrate
+        hydrateFromRemote,
+        hydrateDayFromWorkoutDay,
+
         // misc
         resetWeek,
-        hydrateFromRemote,
         clearLocalWeek,
     };
 }

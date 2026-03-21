@@ -1,3 +1,5 @@
+// src/components/dayExplorer/DaySessionsPanel.tsx
+
 import React from "react";
 import { format } from "date-fns";
 
@@ -166,7 +168,7 @@ function buildSessionKey(session: WorkoutSession, index: number): string {
 function getExercisePlanMeta(exercise: WorkoutExercise): ExercisePlanMeta | null {
     if (!isRecord(exercise.meta)) return null;
 
-    const plan = exercise.meta.plan;
+    const plan = (exercise.meta as any).plan;
     if (!isRecord(plan)) return null;
 
     return {
@@ -184,15 +186,6 @@ function getExerciseDisplayName(exercise: WorkoutExercise): string {
 
 function getExerciseNotes(exercise: WorkoutExercise): string | null {
     return cleanString(exercise.notes);
-}
-
-function getExerciseSetValue(exercise: WorkoutExercise): string | null {
-    if (Array.isArray(exercise.sets) && exercise.sets.length > 0) {
-        return String(exercise.sets.length);
-    }
-
-    const plan = getExercisePlanMeta(exercise);
-    return plan?.sets ?? null;
 }
 
 function getExerciseRepsValue(exercise: WorkoutExercise): string | null {
@@ -215,15 +208,45 @@ function getExerciseAttachmentsCount(exercise: WorkoutExercise): number {
     return plan?.attachmentPublicIds?.length ?? 0;
 }
 
-function getExerciseLoggedSetsText(exercise: WorkoutExercise): string | null {
-    if (!Array.isArray(exercise.sets) || exercise.sets.length === 0) {
-        return null;
+function getExerciseActualSets(exercise: WorkoutExercise): WorkoutExerciseSet[] {
+    return Array.isArray(exercise.sets) ? exercise.sets : [];
+}
+
+function getExerciseSetsDisplayValue(exercise: WorkoutExercise): string | null {
+    const actualSets = getExerciseActualSets(exercise);
+    const plan = getExercisePlanMeta(exercise);
+
+    if (actualSets.length > 0) {
+        return plan?.sets ? `${actualSets.length}/${plan.sets}` : String(actualSets.length);
     }
 
-    const totalSets = exercise.sets.length;
-    const loggedSets = exercise.sets.filter(isLoggedSet).length;
+    return plan?.sets ?? null;
+}
 
-    return `${loggedSets}/${totalSets}`;
+function formatActualSetChipText(set: WorkoutExerciseSet): string | null {
+    const parts: string[] = [];
+
+    if (isFiniteNumber(set.reps) && isFiniteNumber(set.weight)) {
+        parts.push(`${Math.trunc(set.reps)} x ${set.weight}${set.unit}`);
+    } else if (isFiniteNumber(set.reps)) {
+        parts.push(`${Math.trunc(set.reps)} reps`);
+    } else if (isFiniteNumber(set.weight)) {
+        parts.push(`${set.weight}${set.unit}`);
+    }
+
+    if (isFiniteNumber(set.rpe)) {
+        parts.push(`RPE ${set.rpe}`);
+    }
+
+    return parts.length > 0 ? parts.join(" • ") : null;
+}
+
+function getExerciseActualSetChipTexts(exercise: WorkoutExercise): string[] {
+    const actualSets = getExerciseActualSets(exercise);
+
+    return actualSets
+        .map((set) => formatActualSetChipText(set))
+        .filter((item): item is string => Boolean(item));
 }
 
 function Metric({
@@ -404,11 +427,12 @@ export function DaySessionsPanel({
 
                                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                                             {exercises.map((exercise) => {
-                                                const setValue = getExerciseSetValue(exercise);
+                                                const actualSetChipTexts = getExerciseActualSetChipTexts(exercise);
+                                                const hasActualSets = actualSetChipTexts.length > 0;
+                                                const setValue = getExerciseSetsDisplayValue(exercise);
                                                 const repsValue = getExerciseRepsValue(exercise);
                                                 const loadValue = getExerciseLoadValue(exercise);
                                                 const rpeValue = getExerciseRpeValue(exercise);
-                                                const loggedSetsText = getExerciseLoggedSetsText(exercise);
                                                 const attachmentsCount = getExerciseAttachmentsCount(exercise);
 
                                                 return (
@@ -432,21 +456,58 @@ export function DaySessionsPanel({
                                                             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                                                 <Metric
                                                                     label={t("days.sessions.sets")}
-                                                                    value={loggedSetsText ?? setValue}
+                                                                    value={setValue}
                                                                 />
-                                                                <Metric
-                                                                    label={t("days.sessions.reps")}
-                                                                    value={repsValue}
-                                                                />
-                                                                <Metric
-                                                                    label={t("days.sessions.load")}
-                                                                    value={loadValue}
-                                                                />
-                                                                <Metric
-                                                                    label={t("days.sessions.rpe")}
-                                                                    value={rpeValue}
-                                                                />
+
+                                                                {hasActualSets ? (
+                                                                    <Metric
+                                                                        label={t("days.sessions.reps")}
+                                                                        value={actualSetChipTexts.length > 0 ? "Real" : "—"}
+                                                                    />
+                                                                ) : (
+                                                                    <Metric
+                                                                        label={t("days.sessions.reps")}
+                                                                        value={repsValue}
+                                                                    />
+                                                                )}
+
+                                                                {hasActualSets ? (
+                                                                    <Metric
+                                                                        label={t("days.sessions.load")}
+                                                                        value={loadValue}
+                                                                    />
+                                                                ) : (
+                                                                    <Metric
+                                                                        label={t("days.sessions.load")}
+                                                                        value={loadValue}
+                                                                    />
+                                                                )}
+
+                                                                {hasActualSets ? (
+                                                                    <Metric
+                                                                        label={t("days.sessions.rpe")}
+                                                                        value={rpeValue}
+                                                                    />
+                                                                ) : (
+                                                                    <Metric
+                                                                        label={t("days.sessions.rpe")}
+                                                                        value={rpeValue}
+                                                                    />
+                                                                )}
                                                             </div>
+
+                                                            {hasActualSets ? (
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {actualSetChipTexts.map((text, chipIndex) => (
+                                                                        <span
+                                                                            key={`${exercise.id}-actual-set-${chipIndex}`}
+                                                                            className="inline-flex max-w-full items-center rounded-full border bg-card px-3 py-1 text-xs text-foreground"
+                                                                        >
+                                                                            <span className="truncate">{text}</span>
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            ) : null}
 
                                                             {attachmentsCount > 0 ? (
                                                                 <div className="text-xs text-muted-foreground">

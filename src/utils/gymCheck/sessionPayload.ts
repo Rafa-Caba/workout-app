@@ -1,3 +1,5 @@
+// src/utils/gymCheck/sessionPayload.ts
+
 import { addDays, format } from "date-fns";
 import type { GymDayState, GymExerciseState } from "@/hooks/useGymCheck";
 import type { AttachmentOption } from "@/utils/routines/attachments";
@@ -9,6 +11,7 @@ import type {
     CreateSessionExerciseInput,
 } from "@/services/workout/sessions.service";
 import { weekKeyToStartDate } from "@/utils/weekKey";
+import type { WorkoutExerciseSet } from "@/types/workoutDay.types";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -71,6 +74,58 @@ function getExerciseState(
     return gymDay.exercises[exerciseId] ?? null;
 }
 
+function normalizePerformedSets(value: unknown): WorkoutExerciseSet[] | null {
+    if (!Array.isArray(value)) return null;
+
+    const sets = value
+        .map((item, index) => {
+            if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+
+            const raw = item as Partial<WorkoutExerciseSet>;
+
+            return {
+                setIndex:
+                    typeof raw.setIndex === "number" && Number.isFinite(raw.setIndex) && raw.setIndex > 0
+                        ? Math.trunc(raw.setIndex)
+                        : index + 1,
+                reps:
+                    typeof raw.reps === "number" && Number.isFinite(raw.reps)
+                        ? Math.trunc(raw.reps)
+                        : null,
+                weight:
+                    typeof raw.weight === "number" && Number.isFinite(raw.weight)
+                        ? raw.weight
+                        : null,
+                unit: raw.unit === "kg" ? "kg" : "lb",
+                rpe:
+                    typeof raw.rpe === "number" && Number.isFinite(raw.rpe)
+                        ? raw.rpe
+                        : null,
+                isWarmup: raw.isWarmup === true,
+                isDropSet: raw.isDropSet === true,
+                tempo: typeof raw.tempo === "string" ? raw.tempo : null,
+                restSec:
+                    typeof raw.restSec === "number" && Number.isFinite(raw.restSec)
+                        ? Math.trunc(raw.restSec)
+                        : null,
+                tags: Array.isArray(raw.tags)
+                    ? raw.tags.map((item) => String(item).trim()).filter(Boolean)
+                    : null,
+                meta:
+                    raw.meta && typeof raw.meta === "object" && !Array.isArray(raw.meta)
+                        ? (raw.meta as Record<string, unknown>)
+                        : null,
+            } satisfies WorkoutExerciseSet;
+        })
+        .filter((item): item is WorkoutExerciseSet => item !== null)
+        .map((item, index) => ({
+            ...item,
+            setIndex: index + 1,
+        }));
+
+    return sets.length > 0 ? sets : null;
+}
+
 function buildExerciseMeta(args: {
     exercise: ExerciseItem;
     exerciseState: GymExerciseState;
@@ -84,12 +139,14 @@ function buildExerciseMeta(args: {
     const plannedAttachmentPublicIds = toStringArrayOrNull(exercise.attachmentPublicIds);
     const mediaPublicIds = toStringArrayOrNull(exerciseState.mediaPublicIds);
     const durationMin = toIntOrNull(exerciseState.durationMin);
+    const exerciseId = cleanString((exercise as any).id);
 
     return {
         gymCheck: {
             done: true,
             durationMin,
             mediaPublicIds,
+            exerciseId,
         },
         plan: {
             sets: plannedSets,
@@ -114,13 +171,14 @@ function buildDoneExercise(args: {
     if (!exerciseState?.done) return null;
 
     const notes = cleanString(exerciseState.notes) ?? cleanString(exercise.notes) ?? null;
+    const performedSets = normalizePerformedSets(exerciseState.performedSets);
 
     return {
         name: cleanString(exercise.name) ?? "Exercise",
         movementId: cleanString(exercise.movementId) ?? null,
         movementName: cleanString(exercise.movementName) ?? null,
         notes,
-        sets: null,
+        sets: performedSets,
         meta: buildExerciseMeta({ exercise, exerciseState }),
     };
 }

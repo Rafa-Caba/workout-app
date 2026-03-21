@@ -1,3 +1,5 @@
+// src/pages/RoutineGymCheckPage.tsx
+
 import * as React from "react";
 import { toast } from "sonner";
 import { addWeeks, endOfISOWeek, format, startOfISOWeek } from "date-fns";
@@ -48,6 +50,7 @@ import {
     buildAttachMediaItemsFromGymDay,
     buildGymCheckSessionPayload,
 } from "@/utils/gymCheck/sessionPayload";
+import { useAuthStore } from "@/state/auth.store";
 
 const DAY_LABELS: Record<(typeof DAY_KEYS)[number], { es: string; en: string }> = {
     Mon: { es: "Lun", en: "Mon" },
@@ -68,16 +71,6 @@ function toNumberOrNull(v: unknown): number | null {
     if (!s) return null;
     const n = Number(s);
     return Number.isFinite(n) ? n : null;
-}
-
-function toIntOrNull(v: unknown): number | null {
-    const n = toNumberOrNull(v);
-    return n === null ? null : Math.trunc(n);
-}
-
-function toStringOrUndefined(v: unknown): string | undefined {
-    const s = String(v ?? "").trim();
-    return s.length ? s : undefined;
 }
 
 function hasAnyMetricValue(metrics: Record<string, unknown> | null | undefined): boolean {
@@ -106,6 +99,7 @@ function shouldSyncGymDay(day: any): boolean {
             if (String(s.notes ?? "").trim()) return true;
             if (String(s.durationMin ?? "").trim()) return true;
             if (Array.isArray(s.mediaPublicIds) && s.mediaPublicIds.length > 0) return true;
+            if (Array.isArray(s.performedSets) && s.performedSets.length > 0) return true;
         }
     }
 
@@ -181,6 +175,8 @@ function buildMetricsUiFromGymDayMetrics(metrics: any): MetricsUiState {
 
 export function RoutineGymCheckPage() {
     const { t, lang } = useI18n();
+    const { user } = useAuthStore();
+    const unitLoad = user?.units?.weight === "kg" ? "kg" : "lb";
 
     const today = React.useMemo(() => new Date(), []);
     const [weekDate, setWeekDate] = React.useState(() => format(today, "yyyy-MM-dd"));
@@ -281,8 +277,13 @@ export function RoutineGymCheckPage() {
     const {
         getDay,
         hydrateFromRemote,
+        hydrateDayFromWorkoutDay,
         clearLocalWeek,
         toggleExerciseDone,
+        ensureExercisePrefilledFromPlan,
+        updateExercisePerformedSet,
+        addExercisePerformedSet,
+        removeExercisePerformedSet,
         setDayDuration,
         setDayNotes,
         setDayMetrics,
@@ -327,7 +328,14 @@ export function RoutineGymCheckPage() {
 
                 const day = await getWorkoutDay(date);
                 if (!alive) return;
+
                 setGymCheckSessionExists(hasGymCheckSession(day));
+
+                hydrateDayFromWorkoutDay({
+                    dayKey: activeDay,
+                    workoutDay: day,
+                    plannedExercises: Array.isArray(activePlan.exercises) ? activePlan.exercises : [],
+                });
             } catch {
                 if (!alive) return;
                 setGymCheckSessionExists(false);
@@ -339,7 +347,7 @@ export function RoutineGymCheckPage() {
         return () => {
             alive = false;
         };
-    }, [runWeekKey, activeDay]);
+    }, [runWeekKey, activeDay, activePlan, hydrateDayFromWorkoutDay]);
 
     const gymDay = getDay(activeDay);
 
@@ -404,7 +412,6 @@ export function RoutineGymCheckPage() {
         io.observe(el);
         return () => io.disconnect();
     }, []);
-
 
     function handleMetricUiChange(patch: Partial<MetricsUiState>) {
         setMetricsUi((prev) => {
@@ -596,6 +603,13 @@ export function RoutineGymCheckPage() {
                         hydrateFromRemote(freshRoutine);
                         hydratedSigRef.current = routineSignature(freshRoutine);
                     }
+
+                    const freshDay = await getWorkoutDay(date);
+                    hydrateDayFromWorkoutDay({
+                        dayKey: activeDay,
+                        workoutDay: freshDay,
+                        plannedExercises: Array.isArray(activePlan.exercises) ? activePlan.exercises : [],
+                    });
                 } catch {
                     // ignore
                 }
@@ -697,7 +711,11 @@ export function RoutineGymCheckPage() {
                             <div className="space-y-3">
                                 {exercisesList.map((ex: ExerciseItem, idx: number) => {
                                     const exerciseId = (ex as any).id || `idx_${idx}`;
-                                    const exState = gymDay.exercises?.[exerciseId] ?? { done: false, mediaPublicIds: [] };
+                                    const exState = gymDay.exercises?.[exerciseId] ?? {
+                                        done: false,
+                                        mediaPublicIds: [],
+                                        performedSets: [],
+                                    };
 
                                     return (
                                         <GymCheckExerciseCard
@@ -712,8 +730,27 @@ export function RoutineGymCheckPage() {
                                             uploading={uploading?.exerciseId === exerciseId}
                                             mediaPublicIds={Array.isArray(exState.mediaPublicIds) ? exState.mediaPublicIds : []}
                                             attachmentByPublicId={attachmentByPublicId}
-                                            onToggleDone={() => toggleExerciseDone(activeDay, exerciseId)}
+                                            performedSets={Array.isArray(exState.performedSets) ? exState.performedSets : []}
+                                            onToggleDone={() => {
+                                                if (!exState.done) {
+                                                    ensureExercisePrefilledFromPlan({
+                                                        dayKey: activeDay,
+                                                        exerciseId,
+                                                        exercise: ex,
+                                                        unit: unitLoad,
+                                                    });
+                                                }
+
+                                                toggleExerciseDone(activeDay, exerciseId);
+                                            }}
                                             onUploadFiles={(files) => void uploadExerciseFiles({ dayKey: activeDay, exerciseId, files })}
+                                            onChangePerformedSet={(setIndex, patch) =>
+                                                updateExercisePerformedSet(activeDay, exerciseId, setIndex, patch)
+                                            }
+                                            onAddPerformedSet={() => addExercisePerformedSet(activeDay, exerciseId, unitLoad)}
+                                            onRemovePerformedSet={(setIndex) =>
+                                                removeExercisePerformedSet(activeDay, exerciseId, setIndex)
+                                            }
                                             onOpenViewer={(opt) => {
                                                 const item = attachmentToMediaItem(opt);
                                                 if (!item) return;
@@ -755,7 +792,7 @@ export function RoutineGymCheckPage() {
                 </div>
             ) : null}
 
-            {Boolean(routine) ? <div className="h-24 md:hidden" /> : null}
+            {Boolean(routine) ? <div className="h-45 md:hidden" /> : null}
 
             {viewer ? <MediaViewerModal item={viewer} onClose={() => setViewer(null)} /> : null}
         </div>

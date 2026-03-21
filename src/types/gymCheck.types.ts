@@ -1,11 +1,13 @@
+// src/types/gymCheck.types.ts
 
-// -------------------- UI State Types (inputs as strings) --------------------
+import type { WorkoutExerciseSet } from "@/types/workoutDay.types";
 
 export type GymExerciseState = {
     done: boolean;
     notes?: string;
-    durationMin?: string; // UI input (string)
-    mediaPublicIds?: string[]; // UI state can start empty
+    durationMin?: string;
+    mediaPublicIds?: string[];
+    performedSets?: WorkoutExerciseSet[];
 };
 
 export type GymDayMetricsState = {
@@ -38,13 +40,12 @@ export type GymDayState = {
     exercises: Record<string, GymExerciseState>;
 };
 
-// -------------------- API Patch Types (what BE expects) --------------------
-
 export type GymCheckExercisePatch = {
     done?: boolean | null;
     notes?: string | null;
     durationMin?: number | null;
     mediaPublicIds?: string[] | null;
+    performedSets?: WorkoutExerciseSet[] | null;
 };
 
 export type GymCheckMetricsPatch = {

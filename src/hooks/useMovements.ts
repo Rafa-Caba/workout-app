@@ -1,22 +1,27 @@
+// /src/hooks/useMovements.ts
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import type { ApiError } from "@/api/httpErrors";
+import {
+    createMovement,
+    deleteMovement,
+    getMovementById,
+    listMovements,
+    updateMovement,
+} from "@/services/workout/movements.service";
 import type {
     Movement,
+    MovementDeletedResponse,
     MovementsListQuery,
 } from "@/types/movements.types";
-import {
-    listMovements,
-    getMovementById,
-    createMovement,
-    updateMovement,
-    deleteMovement,
-} from "@/services/workout/movements.service";
 
 // -------------------- Query Keys --------------------
 
 function movementsKey(query?: MovementsListQuery) {
     const q = (query?.q ?? "").trim() || null;
     const activeOnly = query?.activeOnly === true ? true : null;
+
     return ["movements", { q, activeOnly }] as const;
 }
 
@@ -45,42 +50,41 @@ export function useMovementById(id: string | null | undefined) {
 
 // -------------------- Mutations --------------------
 
-// ⬇️ ahora el payload de la mutación es FormData
 export function useCreateMovement(queryToRefresh?: MovementsListQuery) {
-    const qc = useQueryClient();
+    const queryClient = useQueryClient();
 
     return useMutation<Movement, ApiError, FormData>({
         mutationFn: (formData) => createMovement(formData),
-        onSuccess: () => {
-            qc.invalidateQueries({ queryKey: movementsKey(queryToRefresh) });
-            qc.invalidateQueries({ queryKey: ["movements"] }); // broad safety net
+        onSuccess: (created) => {
+            queryClient.setQueryData(movementKey(created.id), created);
+            queryClient.invalidateQueries({ queryKey: movementsKey(queryToRefresh) });
+            queryClient.invalidateQueries({ queryKey: ["movements"] });
         },
     });
 }
 
-// ⬇️ update recibe { id, formData }
 export function useUpdateMovement(queryToRefresh?: MovementsListQuery) {
-    const qc = useQueryClient();
+    const queryClient = useQueryClient();
 
     return useMutation<Movement, ApiError, { id: string; formData: FormData }>({
         mutationFn: ({ id, formData }) => updateMovement(id, formData),
         onSuccess: (updated) => {
-            qc.setQueryData(movementKey(updated.id), updated);
-            qc.invalidateQueries({ queryKey: movementsKey(queryToRefresh) });
-            qc.invalidateQueries({ queryKey: ["movements"] });
+            queryClient.setQueryData(movementKey(updated.id), updated);
+            queryClient.invalidateQueries({ queryKey: movementsKey(queryToRefresh) });
+            queryClient.invalidateQueries({ queryKey: ["movements"] });
         },
     });
 }
 
 export function useDeleteMovement(queryToRefresh?: MovementsListQuery) {
-    const qc = useQueryClient();
+    const queryClient = useQueryClient();
 
-    return useMutation<{ deleted: true; movement: Movement }, ApiError, { id: string }>({
+    return useMutation<MovementDeletedResponse, ApiError, { id: string }>({
         mutationFn: ({ id }) => deleteMovement(id),
-        onSuccess: (_data, vars) => {
-            qc.removeQueries({ queryKey: movementKey(vars.id) });
-            qc.invalidateQueries({ queryKey: movementsKey(queryToRefresh) });
-            qc.invalidateQueries({ queryKey: ["movements"] });
+        onSuccess: (_data, variables) => {
+            queryClient.removeQueries({ queryKey: movementKey(variables.id) });
+            queryClient.invalidateQueries({ queryKey: movementsKey(queryToRefresh) });
+            queryClient.invalidateQueries({ queryKey: ["movements"] });
         },
     });
 }

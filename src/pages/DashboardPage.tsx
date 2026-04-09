@@ -14,6 +14,8 @@ import {
 } from "@/utils/dashboard/format";
 import { MediaFeedItem } from "@/types/media.types";
 import { MediaViewerModal } from "@/components/media/MediaViewerModal";
+import { useWorkoutProgress } from "@/hooks/useWorkoutProgress";
+import { ProgressExercisePreviewCard } from "@/components/progress/ProgressExercisePreviewCard";
 
 export function DashboardPage() {
     const { t } = useI18n();
@@ -23,6 +25,13 @@ export function DashboardPage() {
     const [selected, setSelected] = React.useState<MediaFeedItem | null>(null);
 
     const d = useDashboard();
+
+    const progress = useWorkoutProgress({
+        mode: "last30",
+        compareTo: "previous_period",
+        includeExerciseProgress: true,
+    });
+
     const todayLabel = React.useMemo(() => formatIsoToPPP(d.today), [d.today]);
 
     const rangeTraining = d.rangeSummary.data?.training ?? null;
@@ -369,6 +378,11 @@ export function DashboardPage() {
                         ) : null}
                     </CardContent>
                 </Card>
+
+                <ProgressExercisePreviewCard
+                    data={progress.data ?? null}
+                    isLoading={progress.isLoading}
+                />
 
                 {/* Streak card */}
                 <Card>

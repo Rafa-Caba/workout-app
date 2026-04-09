@@ -7,6 +7,11 @@
  * - replaces the small-screen dropdown nav with a slide-in drawer
  * - keeps desktop nav unchanged
  * - includes navigation, insights links, language toggle, profile/settings/logout
+ *
+ * Fixes:
+ * - replace mobile multi-column layout with real grid to avoid Safari/prod issues
+ * - fix invalid max width class on drawer
+ * - improve iPhone safe-area behavior for the mobile drawer
  */
 
 import * as React from "react";
@@ -198,6 +203,7 @@ export function NavBar() {
             { label: "Sleep", to: "/sleep", end: true },
             { label: t("nav.days"), to: "/days", end: true },
             { label: t("nav.weeks"), to: "/weeks", end: true },
+            { label: "Progreso", to: "/progress", end: true },
             { label: t("nav.trends"), to: "/trends", end: true },
             { label: t("nav.media"), to: "/media", end: true },
             { label: t("nav.pva"), to: "/plan-vs-actual", end: true },
@@ -506,8 +512,10 @@ export function NavBar() {
 
                 <aside
                     className={[
-                        "absolute right-0 top-0 h-full w-[86%] max-w-[90] border-l bg-card shadow-2xl",
-                        "transition-transform duration-300 ease-out",
+                        "absolute right-0 top-0 h-full",
+                        "w-[88vw] max-w-[105vw]",
+                        "border-l bg-card shadow-2xl",
+                        "transition-transform duration-300 ease-out will-change-transform",
                         "flex flex-col",
                         mobileMenuOpen ? "translate-x-0" : "translate-x-full",
                     ].join(" ")}
@@ -533,8 +541,13 @@ export function NavBar() {
                         </Button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
-                        <div className="space-y-2 columns-2">
+                    <div
+                        className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-6"
+                        style={{
+                            paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+                        }}
+                    >
+                        <div className="grid grid-cols-2 gap-2">
                             {visibleNavItems.map((item) => (
                                 <DrawerNavLink
                                     key={item.to}
@@ -550,8 +563,8 @@ export function NavBar() {
                             <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
                                 {t("nav.insights")}
                             </div>
-                            <div className="space-y-2 columns-2">
 
+                            <div className="grid grid-cols-2 gap-2">
                                 <DrawerNavLink
                                     to="/insights"
                                     label={t("nav.insights")}
@@ -584,8 +597,8 @@ export function NavBar() {
                                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
                                     {t("nav.userMenu.account")}
                                 </div>
-                                <div className="space-y-2 columns-2">
 
+                                <div className="grid grid-cols-2 gap-2">
                                     <DrawerNavLink
                                         to="/me"
                                         label={t("nav.userMenu.myProfile")}

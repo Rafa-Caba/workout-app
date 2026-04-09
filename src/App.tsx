@@ -29,6 +29,7 @@ import { TrainerDashboardPage } from "@/pages/trainer/TrainerDashboardPage";
 
 import { useAuthStore } from "@/state/auth.store";
 import { GymCheckPage } from "./pages/GymCheckPage";
+import { ProgressPage } from "./pages/ProgressPage";
 
 export default function App() {
   const user = useAuthStore((s) => s.user);
@@ -66,6 +67,8 @@ export default function App() {
           <Route path="/gym-check" element={<GymCheckPage />} />
           <Route path="/movements" element={<MovementsPage />} />
           <Route path="/sleep" element={<SleepPage />} />
+
+          <Route path="/progress" element={<ProgressPage />} />
 
           {/* Trainer */}
           {user?.coachMode === "TRAINER" ? (

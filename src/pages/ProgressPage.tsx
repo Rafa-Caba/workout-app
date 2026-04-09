@@ -24,9 +24,17 @@ export function ProgressPage() {
     const [compareTo, setCompareTo] =
         React.useState<WorkoutProgressCompareTo>("previous_period");
 
+    const [customFromDraft, setCustomFromDraft] = React.useState("");
+    const [customToDraft, setCustomToDraft] = React.useState("");
+
+    const [appliedFrom, setAppliedFrom] = React.useState<string | undefined>(undefined);
+    const [appliedTo, setAppliedTo] = React.useState<string | undefined>(undefined);
+
     const query = useWorkoutProgress({
         mode,
         compareTo,
+        from: mode === "customRange" ? appliedFrom : undefined,
+        to: mode === "customRange" ? appliedTo : undefined,
         includeExerciseProgress: true,
     });
 
@@ -38,6 +46,28 @@ export function ProgressPage() {
 
     const data = query.data ?? null;
 
+    const customRangeLabel = React.useMemo(() => {
+        if (mode !== "customRange" || !appliedFrom || !appliedTo) {
+            return null;
+        }
+
+        return `Rango aplicado: ${appliedFrom} → ${appliedTo}`;
+    }, [mode, appliedFrom, appliedTo]);
+
+    const handleApplyCustomRange = React.useCallback(() => {
+        if (!customFromDraft || !customToDraft || customFromDraft > customToDraft) {
+            return;
+        }
+
+        setAppliedFrom(customFromDraft);
+        setAppliedTo(customToDraft);
+        setMode("customRange");
+    }, [customFromDraft, customToDraft]);
+
+    const handleChangeMode = React.useCallback((nextMode: WorkoutProgressMode) => {
+        setMode(nextMode);
+    }, []);
+
     return (
         <div className="space-y-6">
             <PageHeader
@@ -48,8 +78,14 @@ export function ProgressPage() {
             <ProgressPeriodToolbar
                 mode={mode}
                 compareTo={compareTo}
-                onChangeMode={setMode}
+                customFrom={customFromDraft}
+                customTo={customToDraft}
+                customRangeLabel={customRangeLabel}
+                onChangeMode={handleChangeMode}
                 onChangeCompareTo={setCompareTo}
+                onChangeCustomFrom={setCustomFromDraft}
+                onChangeCustomTo={setCustomToDraft}
+                onApplyCustomRange={handleApplyCustomRange}
             />
 
             {query.isFetching ? (

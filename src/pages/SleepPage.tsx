@@ -1,3 +1,5 @@
+// src/pages/SleepPage.tsx
+
 import React from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -13,7 +15,11 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { useWorkoutDay } from "@/hooks/useWorkoutDay";
 import { useUpdateSleep } from "@/hooks/useUpdateSleep";
 
-import type { SleepBlock } from "@/types/workoutDay.types";
+import type {
+    SleepBlock,
+    WorkoutDataSource,
+    WorkoutSourceDevice,
+} from "@/types/workoutDay.types";
 import { calcSleepEfficiencyPct } from "@/utils/dayExplorer";
 import { DeviceSelect } from "@/components/DeviceSelect";
 
@@ -54,6 +60,31 @@ function formatPercent(p: number | null): string {
     return `${Math.round(p)}%`;
 }
 
+function normalizeWorkoutDataSource(value: string | null): WorkoutDataSource | null {
+    if (value === "manual" || value === "healthkit" || value === "health-connect") {
+        return value;
+    }
+
+    return null;
+}
+
+function createEmptySleepBlock(): SleepBlock {
+    return {
+        timeAsleepMinutes: null,
+        timeInBedMinutes: null,
+        score: null,
+        awakeMinutes: null,
+        remMinutes: null,
+        coreMinutes: null,
+        deepMinutes: null,
+        source: null,
+        sourceDevice: null,
+        importedAt: null,
+        lastSyncedAt: null,
+        raw: null,
+    };
+}
+
 export function SleepPage() {
     const { t } = useI18n();
     const today = React.useMemo(() => new Date(), []);
@@ -62,31 +93,15 @@ export function SleepPage() {
     const query = useWorkoutDay(date, true);
     const updateSleep = useUpdateSleep();
 
-    const [form, setForm] = React.useState<SleepBlock>({
-        timeAsleepMinutes: null,
+    const [form, setForm] = React.useState<SleepBlock>(createEmptySleepBlock);
 
-        // ✅ NEW
-        timeInBedMinutes: null,
-
-        score: null,
-
-        awakeMinutes: null,
-        remMinutes: null,
-        coreMinutes: null,
-        deepMinutes: null,
-
-        source: null,
-        raw: null,
-    });
-
-    // Hydrate form when day changes / loads
     React.useEffect(() => {
         const day = query.data ?? null;
         const sleep = day?.sleep ?? null;
 
         setForm({
             timeAsleepMinutes: sleep?.timeAsleepMinutes ?? null,
-            timeInBedMinutes: sleep?.timeInBedMinutes ?? null, // ✅ NEW
+            timeInBedMinutes: sleep?.timeInBedMinutes ?? null,
             score: sleep?.score ?? null,
 
             awakeMinutes: sleep?.awakeMinutes ?? null,
@@ -95,6 +110,10 @@ export function SleepPage() {
             deepMinutes: sleep?.deepMinutes ?? null,
 
             source: sleep?.source ?? null,
+            sourceDevice: sleep?.sourceDevice ?? null,
+            importedAt: sleep?.importedAt ?? null,
+            lastSyncedAt: sleep?.lastSyncedAt ?? null,
+
             raw: sleep?.raw ?? null,
         });
     }, [query.data]);
@@ -110,7 +129,7 @@ export function SleepPage() {
     const isSaving = updateSleep.isPending;
 
     const total = form.timeAsleepMinutes ?? null;
-    const inBed = form.timeInBedMinutes ?? null; // ✅ NEW
+    const inBed = form.timeInBedMinutes ?? null;
     const score = form.score ?? null;
 
     const stageSum =
@@ -123,13 +142,14 @@ export function SleepPage() {
 
     const hasAnySleepValue =
         form.timeAsleepMinutes != null ||
-        form.timeInBedMinutes != null || // ✅ NEW
+        form.timeInBedMinutes != null ||
         form.score != null ||
         form.awakeMinutes != null ||
         form.remMinutes != null ||
         form.coreMinutes != null ||
         form.deepMinutes != null ||
-        (form.source ?? null) != null;
+        form.source != null ||
+        form.sourceDevice != null;
 
     const onSave = async () => {
         try {
@@ -196,13 +216,11 @@ export function SleepPage() {
                             <div className="font-mono">{minutesToHhMm(total)}</div>
                         </div>
 
-                        {/* ✅ NEW: Time in bed */}
                         <div className="w-full sm:w-auto rounded-lg border bg-background px-3 py-2 text-sm">
                             <div className="text-xs text-muted-foreground">{t("sleep.summary.timeInBed")}</div>
                             <div className="font-mono">{minutesToHhMm(inBed)}</div>
                         </div>
 
-                        {/* ✅ NEW: Efficiency */}
                         <div className="w-full sm:w-auto rounded-lg border bg-background px-3 py-2 text-sm">
                             <div className="text-xs text-muted-foreground">{t("sleep.summary.efficiency")}</div>
                             <div className="font-mono">{formatPercent(efficiencyPct)}</div>
@@ -236,13 +254,14 @@ export function SleepPage() {
                 </div>
             ) : null}
 
-            {query.isError ? <JsonDetails title={t("sleep.errorJsonTitle")} data={query.error} defaultOpen /> : null}
+            {query.isError ? (
+                <JsonDetails title={t("sleep.errorJsonTitle")} data={query.error} defaultOpen />
+            ) : null}
 
             {query.isSuccess && !hasAnySleepValue ? (
                 <EmptyState title={t("sleep.empty.title")} description={t("sleep.empty.desc")} />
             ) : null}
 
-            {/* Form */}
             <div className="rounded-xl border bg-card p-3 sm:p-4 space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="space-y-1">
@@ -262,7 +281,6 @@ export function SleepPage() {
                         <div className="text-xs text-muted-foreground">{t("sleep.hints.timeAsleepMinutes")}</div>
                     </div>
 
-                    {/* ✅ NEW: time in bed */}
                     <div className="space-y-1">
                         <label className="text-sm font-medium">{t("sleep.fields.timeInBedMinutes")}</label>
                         <input
@@ -304,7 +322,10 @@ export function SleepPage() {
                             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                             value={numOrEmpty(form.awakeMinutes)}
                             onChange={(e) =>
-                                setForm((p) => ({ ...p, awakeMinutes: parseNullableInt(e.target.value) }))
+                                setForm((p) => ({
+                                    ...p,
+                                    awakeMinutes: parseNullableInt(e.target.value),
+                                }))
                             }
                         />
                     </div>
@@ -315,7 +336,12 @@ export function SleepPage() {
                             inputMode="numeric"
                             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                             value={numOrEmpty(form.remMinutes)}
-                            onChange={(e) => setForm((p) => ({ ...p, remMinutes: parseNullableInt(e.target.value) }))}
+                            onChange={(e) =>
+                                setForm((p) => ({
+                                    ...p,
+                                    remMinutes: parseNullableInt(e.target.value),
+                                }))
+                            }
                         />
                     </div>
 
@@ -326,7 +352,10 @@ export function SleepPage() {
                             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                             value={numOrEmpty(form.coreMinutes)}
                             onChange={(e) =>
-                                setForm((p) => ({ ...p, coreMinutes: parseNullableInt(e.target.value) }))
+                                setForm((p) => ({
+                                    ...p,
+                                    coreMinutes: parseNullableInt(e.target.value),
+                                }))
                             }
                         />
                     </div>
@@ -338,22 +367,53 @@ export function SleepPage() {
                             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                             value={numOrEmpty(form.deepMinutes)}
                             onChange={(e) =>
-                                setForm((p) => ({ ...p, deepMinutes: parseNullableInt(e.target.value) }))
+                                setForm((p) => ({
+                                    ...p,
+                                    deepMinutes: parseNullableInt(e.target.value),
+                                }))
                             }
                         />
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium">{t("sleep.fields.source")}</label>
+                        <select
+                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                            value={form.source ?? ""}
+                            onChange={(e) =>
+                                setForm((p) => ({
+                                    ...p,
+                                    source: normalizeWorkoutDataSource(
+                                        e.target.value ? e.target.value : null
+                                    ),
+                                }))
+                            }
+                        >
+                            <option value="">{t("sleep.placeholders.source")}</option>
+                            <option value="manual">manual</option>
+                            <option value="healthkit">healthkit</option>
+                            <option value="health-connect">health-connect</option>
+                        </select>
                     </div>
 
                     <div className="space-y-1 sm:col-span-2 lg:col-span-2">
                         <DeviceSelect
                             t={t}
-                            value={form.source}
-                            onChange={(v) => setForm((p) => ({ ...p, source: v }))}
+                            value={form.sourceDevice}
+                            onChange={(v) =>
+                                setForm((p) => ({
+                                    ...p,
+                                    sourceDevice: (v ?? null) as WorkoutSourceDevice | null,
+                                }))
+                            }
                         />
                     </div>
                 </div>
             </div>
 
-            {query.isSuccess ? <JsonDetails title={t("sleep.debugJsonTitle")} data={query.data} /> : null}
+            {query.isSuccess ? (
+                <JsonDetails title={t("sleep.debugJsonTitle")} data={query.data} />
+            ) : null}
         </div>
     );
 }

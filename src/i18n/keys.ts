@@ -210,6 +210,31 @@ export const i18nKeys = [
     "dashboard.media.video",
 
     // Days
+    "days.training.outdoorSessions",
+
+    "days.sleep.sourceDevice",
+    "days.sleep.importedAt",
+    "days.sleep.lastSyncedAt",
+
+    "days.sessions.gymTrainingTitle",
+    "days.sessions.gymTrainingEmpty",
+    "days.sessions.outdoorTitle",
+    "days.sessions.outdoorEmpty",
+
+    "days.sessions.sourceDevice",
+    "days.sessions.importedAt",
+    "days.sessions.lastSyncedAt",
+    "days.sessions.externalId",
+
+    "days.sessions.route",
+    "days.sessions.routeYes",
+    "days.sessions.routeNo",
+    "days.sessions.routePoints",
+    "days.sessions.avgSpeed",
+    "days.sessions.maxSpeed",
+    "days.sessions.speedUnit",
+    "days.sessions.strideLength",
+    "days.sessions.strideLengthUnit",
     "days.toast.summaryLoaded",
     "days.refetchBothTitle",
     "days.loaded",

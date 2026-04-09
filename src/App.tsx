@@ -1,3 +1,5 @@
+// src/App.tsx
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -21,6 +23,7 @@ import { MovementsPage } from "@/pages/MovementsPage";
 import { SleepPage } from "@/pages/SleepPage";
 import { MyProfilePage } from "@/pages/MyProfilePage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { OutdoorPage } from "@/pages/OutdoorPage";
 
 import { TrainerDashboardPage } from "@/pages/trainer/TrainerDashboardPage";
 
@@ -48,6 +51,7 @@ export default function App() {
           <Route path="/weeks" element={<WeeklySummaryPage />} />
           <Route path="/trends" element={<TrendsPage />} />
           <Route path="/media" element={<MediaPage />} />
+          <Route path="/outdoor" element={<OutdoorPage />} />
 
           {user?.coachMode !== "TRAINEE" && (
             <Route path="/routines" element={<RoutinesPage />} />

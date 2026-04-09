@@ -159,10 +159,35 @@ export const en: Record<I18nKey, string> = {
     "dashboard.media.video": "VIDEO",
 
     // Days
+    "days.training.outdoorSessions": "Outdoor sessions",
+
+    "days.sleep.sourceDevice": "Source device",
+    "days.sleep.importedAt": "Imported at",
+    "days.sleep.lastSyncedAt": "Last synced",
+
+    "days.sessions.gymTrainingTitle": "Gym / Training",
+    "days.sessions.gymTrainingEmpty": "No gym or training sessions for this day.",
+    "days.sessions.outdoorTitle": "Outdoor",
+    "days.sessions.outdoorEmpty": "No outdoor sessions for this day.",
+
+    "days.sessions.sourceDevice": "Source device",
+    "days.sessions.importedAt": "Imported at",
+    "days.sessions.lastSyncedAt": "Last synced",
+    "days.sessions.externalId": "External ID",
+
+    "days.sessions.route": "Route",
+    "days.sessions.routeYes": "Yes",
+    "days.sessions.routeNo": "No",
+    "days.sessions.routePoints": "Route points",
+    "days.sessions.avgSpeed": "Avg speed",
+    "days.sessions.maxSpeed": "Max speed",
+    "days.sessions.speedUnit": "km/h",
+    "days.sessions.strideLength": "Stride length",
+    "days.sessions.strideLengthUnit": "m",
     "days.toast.summaryLoaded": "Loaded day summary",
     "days.refetchBothTitle": "Refetch both queries",
     "days.loaded": "Loaded:",
-    "days.kpi.trainingSeconds": "Training (s)",
+    "days.kpi.trainingSeconds": "Training (mins)",
     "days.kpi.activeKcal": "Active kcal",
     "days.kpi.sleepMinutes": "Sleep (min)",
     "days.empty.title": "Pick a date and click Load",

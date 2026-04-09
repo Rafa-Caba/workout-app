@@ -160,10 +160,35 @@ export const es: Record<I18nKey, string> = {
     "dashboard.media.video": "VIDEO",
 
     // Days
+    "days.training.outdoorSessions": "Sesiones outdoor",
+
+    "days.sleep.sourceDevice": "Dispositivo origen",
+    "days.sleep.importedAt": "Importado",
+    "days.sleep.lastSyncedAt": "Última sync",
+
+    "days.sessions.gymTrainingTitle": "Gym / Training",
+    "days.sessions.gymTrainingEmpty": "Sin sesiones de gym o training para este día.",
+    "days.sessions.outdoorTitle": "Outdoor",
+    "days.sessions.outdoorEmpty": "Sin sesiones outdoor para este día.",
+
+    "days.sessions.sourceDevice": "Dispositivo origen",
+    "days.sessions.importedAt": "Importado",
+    "days.sessions.lastSyncedAt": "Última sync",
+    "days.sessions.externalId": "ID externo",
+
+    "days.sessions.route": "Ruta",
+    "days.sessions.routeYes": "Sí",
+    "days.sessions.routeNo": "No",
+    "days.sessions.routePoints": "Puntos de ruta",
+    "days.sessions.avgSpeed": "Vel. prom",
+    "days.sessions.maxSpeed": "Vel. máx",
+    "days.sessions.speedUnit": "km/h",
+    "days.sessions.strideLength": "Zancada",
+    "days.sessions.strideLengthUnit": "m",
     "days.toast.summaryLoaded": "Resumen cargado",
     "days.refetchBothTitle": "Recargar ambas consultas",
     "days.loaded": "Cargado:",
-    "days.kpi.trainingSeconds": "Entrenamiento (seg)",
+    "days.kpi.trainingSeconds": "Entrenamiento (mins)",
     "days.kpi.activeKcal": "Kcal activas",
     "days.kpi.sleepMinutes": "Sueño (min)",
     "days.empty.title": "Elige una fecha y pulsa Cargar",

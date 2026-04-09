@@ -1,5 +1,11 @@
+// src/components/dayExplorer/DayTrainingMetaPanel.tsx
+
 import React from "react";
-import type { TrainingBlock, WorkoutSession } from "@/types/workoutDay.types";
+import type {
+    TrainingBlock,
+    WorkoutActivityType,
+    WorkoutSession,
+} from "@/types/workoutDay.types";
 
 type TFn = (key: any, vars?: any) => string;
 
@@ -9,10 +15,26 @@ function isFiniteNumber(n: unknown): n is number {
 
 function sumMedia(sessions: WorkoutSession[]): number {
     let total = 0;
-    for (const s of sessions) {
-        if (Array.isArray(s.media)) total += s.media.length;
+
+    for (const session of sessions) {
+        if (Array.isArray(session.media)) total += session.media.length;
     }
+
     return total;
+}
+
+function isOutdoorActivityType(value: WorkoutActivityType): boolean {
+    return value === "walking" || value === "running";
+}
+
+function splitSessions(sessions: WorkoutSession[]): {
+    gymSessions: WorkoutSession[];
+    outdoorSessions: WorkoutSession[];
+} {
+    return {
+        gymSessions: sessions.filter((session) => !isOutdoorActivityType(session.activityType)),
+        outdoorSessions: sessions.filter((session) => isOutdoorActivityType(session.activityType)),
+    };
 }
 
 export function DayTrainingMetaPanel({
@@ -32,9 +54,12 @@ export function DayTrainingMetaPanel({
 
     const sessions: WorkoutSession[] = Array.isArray(training.sessions) ? training.sessions : [];
     const mediaTotal = sumMedia(sessions);
+    const { gymSessions, outdoorSessions } = splitSessions(sessions);
 
     const source = training.source?.trim() ? training.source.trim() : null;
-    const dayRpe = isFiniteNumber(training.dayEffortRpe) ? `${Math.round(training.dayEffortRpe)}` : null;
+    const dayRpe = isFiniteNumber(training.dayEffortRpe)
+        ? `${Math.round(training.dayEffortRpe)}`
+        : null;
 
     return (
         <div className="w-full min-w-0 rounded-2xl border bg-card p-4">
@@ -45,7 +70,13 @@ export function DayTrainingMetaPanel({
                     <span className="inline-flex min-w-0 items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs">
                         <span aria-hidden="true" className="shrink-0">🏋️</span>
                         <span className="text-muted-foreground">{t("days.training.sessions")}:</span>
-                        <span className="font-mono tabular-nums text-foreground">{sessions.length}</span>
+                        <span className="font-mono tabular-nums text-foreground">{gymSessions.length}</span>
+                    </span>
+
+                    <span className="inline-flex min-w-0 items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs">
+                        <span aria-hidden="true" className="shrink-0">🚶</span>
+                        <span className="text-muted-foreground">{t("days.training.outdoorSessions")}:</span>
+                        <span className="font-mono tabular-nums text-foreground">{outdoorSessions.length}</span>
                     </span>
 
                     <span className="inline-flex min-w-0 items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs">

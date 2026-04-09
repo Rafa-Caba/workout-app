@@ -1,3 +1,5 @@
+// src/components/DeviceSelect.tsx
+
 import * as React from "react";
 
 type TFn = (key: any, vars?: any) => string;

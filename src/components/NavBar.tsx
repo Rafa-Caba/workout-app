@@ -1,3 +1,14 @@
+// src/components/NavBar.tsx
+
+/**
+ * NavBar
+ *
+ * Updated mobile behavior:
+ * - replaces the small-screen dropdown nav with a slide-in drawer
+ * - keeps desktop nav unchanged
+ * - includes navigation, insights links, language toggle, profile/settings/logout
+ */
+
 import * as React from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,7 +25,7 @@ import {
     DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useAppSettingsStore } from "@/state/appSettings.store";
 import { useThemeSyncFromAppSettings } from "@/hooks/useThemeSyncFromAppSettings";
 
@@ -51,6 +62,40 @@ function TopNavLink({
     );
 }
 
+function DrawerNavLink({
+    to,
+    label,
+    active,
+    onClick,
+}: {
+    to: string;
+    label: string;
+    active: boolean;
+    onClick: () => void;
+}) {
+    return (
+        <Link
+            to={to}
+            onClick={onClick}
+            className={[
+                "block",
+                "w-full",
+                "rounded-xl",
+                "border",
+                "px-3",
+                "py-3",
+                "text-sm",
+                "transition",
+                active
+                    ? "bg-primary text-primary-foreground border-transparent shadow-sm"
+                    : "bg-background hover:bg-muted/60",
+            ].join(" ")}
+        >
+            {label}
+        </Link>
+    );
+}
+
 function getInitials(name: string): string {
     const parts = name.trim().split(/\s+/).filter(Boolean);
     if (parts.length === 0) return "U";
@@ -72,7 +117,6 @@ type NavItem = {
 export function NavBar() {
     const { t, lang, setLang } = useI18n();
 
-    // AppSettings (public, for everyone)
     const appSettings = useAppSettingsStore((s) => s.settings);
     const loadAppSettings = useAppSettingsStore((s) => s.loadAppSettings);
 
@@ -85,19 +129,34 @@ export function NavBar() {
 
     const pathname = location.pathname;
 
-    // Sync server theme defaults if user has no explicit local preference saved
     useThemeSyncFromAppSettings();
+
+    const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
     React.useEffect(() => {
         void loadAppSettings();
     }, [loadAppSettings]);
+
+    React.useEffect(() => {
+        setMobileMenuOpen(false);
+    }, [pathname]);
+
+    React.useEffect(() => {
+        if (!mobileMenuOpen) return;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [mobileMenuOpen]);
 
     const appName =
         appSettings?.appName && appSettings.appName.trim().length > 0
             ? appSettings.appName
             : "Workout App";
 
-    // Public endpoint does not include subtitle; keep local fallback
     const appSubtitle =
         lang === "es"
             ? "Seguimiento de entrenamiento y sueño"
@@ -109,6 +168,7 @@ export function NavBar() {
 
     const onLogout = async () => {
         await logout();
+        setMobileMenuOpen(false);
         navigate("/login", { replace: true });
     };
 
@@ -125,9 +185,14 @@ export function NavBar() {
         () => [
             { label: t("nav.home"), to: "/", end: true },
             { label: "Gym Check", to: "/gym-check", end: true },
+            { label: "Outdoor", to: "/outdoor", end: true },
 
-            // this flag currently means "hide when trainee"
-            { label: t("nav.routines"), to: "/routines", end: true, showRoutines: user?.coachMode === "TRAINEE" },
+            {
+                label: t("nav.routines"),
+                to: "/routines",
+                end: true,
+                showRoutines: user?.coachMode === "TRAINEE",
+            },
 
             { label: t("nav.movements"), to: "/movements", end: true },
             { label: "Sleep", to: "/sleep", end: true },
@@ -137,8 +202,12 @@ export function NavBar() {
             { label: t("nav.media"), to: "/media", end: true },
             { label: t("nav.pva"), to: "/plan-vs-actual", end: true },
 
-            // Trainer dashboard (only TRAINER)
-            { label: lang === "es" ? "Entrenador" : "Trainer", to: "/trainer", end: true, trainerOnly: true },
+            {
+                label: lang === "es" ? "Entrenador" : "Trainer",
+                to: "/trainer",
+                end: true,
+                trainerOnly: true,
+            },
 
             { label: "Admin", to: "/admin", end: true, adminOnly: true },
         ],
@@ -161,107 +230,43 @@ export function NavBar() {
         .filter((item) => !item.showRoutines || !isTrainee);
 
     return (
-        <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/70">
-            <div className="mx-auto max-w-6xl px-3 sm:px-4 py-3">
-                {/* Row 1: Brand + acciones */}
-                <div className="flex items-start sm:items-center justify-between gap-3">
-                    <div className="min-w-0">
-                        {/* Desktop (sm+): branding + badge inline */}
-                        <div className="hidden sm:flex items-center gap-3 min-w-0">
-                            {/* Branding */}
-                            <div className="flex items-center gap-3 min-w-0">
-                                {logoUrl ? (
-                                    <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border bg-background shrink-0">
-                                        <img
-                                            src={logoUrl}
-                                            alt={appName}
-                                            className="h-full w-full object-cover"
-                                            loading="lazy"
-                                        />
+        <>
+            <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/70">
+                <div className="mx-auto max-w-6xl px-3 sm:px-4 py-3">
+                    <div className="flex items-start sm:items-center justify-between gap-3">
+                        <div className="min-w-0">
+                            <div className="hidden sm:flex items-center gap-3 min-w-0">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    {logoUrl ? (
+                                        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border bg-background shrink-0">
+                                            <img
+                                                src={logoUrl}
+                                                alt={appName}
+                                                className="h-full w-full object-cover"
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="flex h-9 w-9 items-center justify-center rounded-xl border bg-background text-xs font-semibold shrink-0">
+                                            {appName.slice(0, 2).toUpperCase()}
+                                        </div>
+                                    )}
+
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-sm font-semibold leading-tight truncate">
+                                            {appName}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground leading-tight truncate">
+                                            {appSubtitle}
+                                        </span>
                                     </div>
-                                ) : (
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border bg-background text-xs font-semibold shrink-0">
-                                        {appName.slice(0, 2).toUpperCase()}
-                                    </div>
-                                )}
-
-                                <div className="flex flex-col min-w-0">
-                                    <span className="text-sm font-semibold leading-tight truncate">
-                                        {appName}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground leading-tight truncate">
-                                        {appSubtitle}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Badge (desktop) */}
-                            <div className="shrink-0">
-                                <span
-                                    className={[
-                                        "inline-flex items-center gap-2 rounded-full border px-3 py-1",
-                                        "text-xs font-semibold tracking-wide",
-                                        "bg-background/70 backdrop-blur shadow-sm",
-                                        user?.role === "admin"
-                                            ? "border-primary/25 text-primary"
-                                            : user?.coachMode === "TRAINEE"
-                                                ? "border-accent/25 text-accent-foreground"
-                                                : "border-muted-foreground/20 text-muted-foreground",
-                                    ].join(" ")}
-                                >
-                                    <span
-                                        className={[
-                                            "h-2 w-2 rounded-full",
-                                            user?.role === "admin"
-                                                ? "bg-primary"
-                                                : user?.coachMode === "TRAINEE"
-                                                    ? "bg-accent"
-                                                    : "bg-muted-foreground",
-                                        ].join(" ")}
-                                        aria-hidden="true"
-                                    />
-                                    {user?.role === "admin"
-                                        ? "Admin"
-                                        : user?.coachMode === "TRAINEE"
-                                            ? "Trainee"
-                                            : "Coach"}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Mobile (<sm): branding stacked + badge under subtitle */}
-                        <div className="sm:hidden flex items-start gap-3 min-w-0">
-                            {logoUrl ? (
-                                <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border bg-background shrink-0">
-                                    <img
-                                        src={logoUrl}
-                                        alt={appName}
-                                        className="h-full w-full object-cover"
-                                        loading="lazy"
-                                    />
-                                </div>
-                            ) : (
-                                <div className="flex h-9 w-9 items-center justify-center rounded-xl border bg-background text-xs font-semibold shrink-0">
-                                    {appName.slice(0, 2).toUpperCase()}
-                                </div>
-                            )}
-
-                            <div className="min-w-0 flex-1">
-                                <div className="flex flex-col min-w-0">
-                                    <span className="text-sm font-semibold leading-tight truncate">
-                                        {appName}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground leading-tight truncate">
-                                        {appSubtitle}
-                                    </span>
                                 </div>
 
-                                {/* Badge (mobile) */}
-                                <div className="mt-2">
+                                <div className="shrink-0">
                                     <span
                                         className={[
                                             "inline-flex items-center gap-2 rounded-full border px-3 py-1",
-                                            "text-[11px] font-semibold tracking-wide",
+                                            "text-xs font-semibold tracking-wide",
                                             "bg-background/70 backdrop-blur shadow-sm",
                                             user?.role === "admin"
                                                 ? "border-primary/25 text-primary"
@@ -289,202 +294,325 @@ export function NavBar() {
                                     </span>
                                 </div>
                             </div>
+
+                            <div className="sm:hidden flex items-start gap-3 min-w-0">
+                                {logoUrl ? (
+                                    <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border bg-background shrink-0">
+                                        <img
+                                            src={logoUrl}
+                                            alt={appName}
+                                            className="h-full w-full object-cover"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border bg-background text-xs font-semibold shrink-0">
+                                        {appName.slice(0, 2).toUpperCase()}
+                                    </div>
+                                )}
+
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-sm font-semibold leading-tight truncate">
+                                            {appName}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground leading-tight truncate">
+                                            {appSubtitle}
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-2">
+                                        <span
+                                            className={[
+                                                "inline-flex items-center gap-2 rounded-full border px-3 py-1",
+                                                "text-[11px] font-semibold tracking-wide",
+                                                "bg-background/70 backdrop-blur shadow-sm",
+                                                user?.role === "admin"
+                                                    ? "border-primary/25 text-primary"
+                                                    : user?.coachMode === "TRAINEE"
+                                                        ? "border-accent/25 text-accent-foreground"
+                                                        : "border-muted-foreground/20 text-muted-foreground",
+                                            ].join(" ")}
+                                        >
+                                            <span
+                                                className={[
+                                                    "h-2 w-2 rounded-full",
+                                                    user?.role === "admin"
+                                                        ? "bg-primary"
+                                                        : user?.coachMode === "TRAINEE"
+                                                            ? "bg-accent"
+                                                            : "bg-muted-foreground",
+                                                ].join(" ")}
+                                                aria-hidden="true"
+                                            />
+                                            {user?.role === "admin"
+                                                ? "Admin"
+                                                : user?.coachMode === "TRAINEE"
+                                                    ? "Trainee"
+                                                    : "Coach"}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                            <div className="md:hidden">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    aria-label={lang === "es" ? "Menú" : "Menu"}
+                                    onClick={() => setMobileMenuOpen(true)}
+                                >
+                                    <Menu className="h-5 w-5" />
+                                </Button>
+                            </div>
+
+                            <ThemeToggle />
+
+                            <Button
+                                variant="outline"
+                                onClick={toggleLang}
+                                className="whitespace-nowrap hidden sm:inline-flex"
+                            >
+                                {lang === "es" ? t("lang.english") : t("lang.spanish")}
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                onClick={toggleLang}
+                                className="whitespace-nowrap sm:hidden h-9 px-3"
+                                aria-label={lang === "es" ? t("lang.english") : t("lang.spanish")}
+                                title={lang === "es" ? t("lang.english") : t("lang.spanish")}
+                            >
+                                {lang === "es" ? "EN" : "ES"}
+                            </Button>
+
+                            {accessToken ? (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button
+                                            type="button"
+                                            className={[
+                                                "h-11 w-11 sm:h-12 sm:w-12 ml-1 sm:ml-2 rounded-full border bg-background overflow-hidden",
+                                                "grid place-items-center",
+                                                "hover:bg-muted/60 transition",
+                                            ].join(" ")}
+                                            aria-label={t("nav.userMenu.account")}
+                                            title={t("nav.userMenu.account")}
+                                        >
+                                            {avatarUrl ? (
+                                                <img
+                                                    src={avatarUrl}
+                                                    alt={user?.name ?? "User"}
+                                                    className="h-full w-full object-cover"
+                                                    referrerPolicy="no-referrer"
+                                                />
+                                            ) : (
+                                                <span className="text-xs font-semibold text-muted-foreground">
+                                                    {initials}
+                                                </span>
+                                            )}
+                                        </button>
+                                    </DropdownMenuTrigger>
+
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>
+                                            {user?.name ?? t("nav.userMenu.account")}
+                                        </DropdownMenuLabel>
+
+                                        <DropdownMenuItem onClick={() => navigate("/me")}>
+                                            {t("nav.userMenu.myProfile")}
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuItem onClick={() => navigate("/settings")}>
+                                            {t("nav.userMenu.settings")}
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuSeparator />
+
+                                        <DropdownMenuItem onClick={onLogout}>
+                                            {t("nav.userMenu.logout")}
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            ) : (
+                                <Button asChild variant="outline" className="whitespace-nowrap">
+                                    <Link to="/login">{t("auth.login")}</Link>
+                                </Button>
+                            )}
                         </div>
                     </div>
 
-                    {/* Controles derecha */}
-                    <div className="flex items-center gap-2 shrink-0">
-                        {/* Mobile nav burger */}
-                        <div className="md:hidden">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        aria-label={lang === "es" ? "Menú" : "Menu"}
-                                    >
-                                        <Menu className="h-5 w-5" />
-                                    </Button>
-                                </DropdownMenuTrigger>
+                    <nav className="mt-3 hidden md:flex flex-wrap items-center gap-2">
+                        {visibleNavItems.map((item) => (
+                            <TopNavLink
+                                key={item.to}
+                                to={item.to}
+                                label={item.label}
+                                end={item.end}
+                            />
+                        ))}
 
-                                <DropdownMenuContent align="end" className="min-w-56">
-                                    <DropdownMenuLabel>
-                                        {lang === "es" ? "Navegación" : "Navigation"}
-                                    </DropdownMenuLabel>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button
+                                    type="button"
+                                    className={[
+                                        "text-sm rounded-lg px-3 py-2 border transition whitespace-nowrap",
+                                        inInsights
+                                            ? "bg-primary text-primary-foreground border-transparent shadow-sm"
+                                            : "bg-background hover:bg-muted/60",
+                                    ].join(" ")}
+                                >
+                                    {t("nav.insights")}
+                                </button>
+                            </DropdownMenuTrigger>
 
-                                    {visibleNavItems.map((item) => {
-                                        const active = isActiveItem(item);
-                                        return (
-                                            <DropdownMenuItem
-                                                key={item.to}
-                                                onClick={() => navigate(item.to)}
-                                                className={active ? "font-semibold" : ""}
-                                            >
-                                                {item.label}
-                                            </DropdownMenuItem>
-                                        );
-                                    })}
+                            <DropdownMenuContent align="start">
+                                <DropdownMenuItem onClick={() => navigate("/insights")}>
+                                    {t("nav.insights")}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => navigate("/insights/streaks")}>
+                                    {t("nav.streaks")}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate("/insights/prs")}>
+                                    {t("nav.prs")}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate("/insights/recovery")}>
+                                    {t("nav.recovery")}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </nav>
+                </div>
+            </header>
 
-                                    <DropdownMenuSeparator />
+            <div
+                className={[
+                    "fixed inset-0 z-50 md:hidden transition",
+                    mobileMenuOpen ? "pointer-events-auto" : "pointer-events-none",
+                ].join(" ")}
+                aria-hidden={!mobileMenuOpen}
+            >
+                <div
+                    className={[
+                        "absolute inset-0 bg-black/50 transition-opacity",
+                        mobileMenuOpen ? "opacity-100" : "opacity-0",
+                    ].join(" ")}
+                    onClick={() => setMobileMenuOpen(false)}
+                />
 
-                                    {/* Insights (expanded) */}
-                                    <DropdownMenuItem
-                                        onClick={() => navigate("/insights")}
-                                        className={
-                                            inInsights && pathname === "/insights" ? "font-semibold" : ""
-                                        }
-                                    >
-                                        {t("nav.insights")}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() => navigate("/insights/streaks")}
-                                        className={
-                                            pathname.startsWith("/insights/streaks") ? "font-semibold" : ""
-                                        }
-                                    >
-                                        {t("nav.streaks")}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() => navigate("/insights/prs")}
-                                        className={
-                                            pathname.startsWith("/insights/prs") ? "font-semibold" : ""
-                                        }
-                                    >
-                                        {t("nav.prs")}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() => navigate("/insights/recovery")}
-                                        className={
-                                            pathname.startsWith("/insights/recovery") ? "font-semibold" : ""
-                                        }
-                                    >
-                                        {t("nav.recovery")}
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                <aside
+                    className={[
+                        "absolute right-0 top-0 h-full w-[86%] max-w-[90] border-l bg-card shadow-2xl",
+                        "transition-transform duration-300 ease-out",
+                        "flex flex-col",
+                        mobileMenuOpen ? "translate-x-0" : "translate-x-full",
+                    ].join(" ")}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={lang === "es" ? "Menú lateral" : "Side menu"}
+                >
+                    <div className="flex items-center justify-between border-b px-4 py-4 shrink-0">
+                        <div className="min-w-0">
+                            <div className="text-sm font-semibold truncate">{appName}</div>
+                            <div className="text-xs text-muted-foreground truncate">
+                                {lang === "es" ? "Navegación" : "Navigation"}
+                            </div>
                         </div>
 
-                        <ThemeToggle />
-
                         <Button
                             variant="outline"
-                            onClick={toggleLang}
-                            className="whitespace-nowrap hidden sm:inline-flex"
+                            size="icon"
+                            onClick={() => setMobileMenuOpen(false)}
+                            aria-label={lang === "es" ? "Cerrar menú" : "Close menu"}
                         >
-                            {lang === "es" ? t("lang.english") : t("lang.spanish")}
+                            <X className="h-5 w-5" />
                         </Button>
+                    </div>
 
-                        <Button
-                            variant="outline"
-                            onClick={toggleLang}
-                            className="whitespace-nowrap sm:hidden h-9 px-3"
-                            aria-label={lang === "es" ? t("lang.english") : t("lang.spanish")}
-                            title={lang === "es" ? t("lang.english") : t("lang.spanish")}
-                        >
-                            {lang === "es" ? "EN" : "ES"}
-                        </Button>
+                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+                        <div className="space-y-2 columns-2">
+                            {visibleNavItems.map((item) => (
+                                <DrawerNavLink
+                                    key={item.to}
+                                    to={item.to}
+                                    label={item.label}
+                                    active={isActiveItem(item)}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                />
+                            ))}
+                        </div>
+
+                        <div>
+                            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                                {t("nav.insights")}
+                            </div>
+                            <div className="space-y-2 columns-2">
+
+                                <DrawerNavLink
+                                    to="/insights"
+                                    label={t("nav.insights")}
+                                    active={pathname === "/insights"}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                />
+                                <DrawerNavLink
+                                    to="/insights/streaks"
+                                    label={t("nav.streaks")}
+                                    active={pathname.startsWith("/insights/streaks")}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                />
+                                <DrawerNavLink
+                                    to="/insights/prs"
+                                    label={t("nav.prs")}
+                                    active={pathname.startsWith("/insights/prs")}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                />
+                                <DrawerNavLink
+                                    to="/insights/recovery"
+                                    label={t("nav.recovery")}
+                                    active={pathname.startsWith("/insights/recovery")}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                />
+                            </div>
+                        </div>
 
                         {accessToken ? (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
+                            <div>
+                                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                                    {t("nav.userMenu.account")}
+                                </div>
+                                <div className="space-y-2 columns-2">
+
+                                    <DrawerNavLink
+                                        to="/me"
+                                        label={t("nav.userMenu.myProfile")}
+                                        active={pathname === "/me"}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    />
+
+                                    <DrawerNavLink
+                                        to="/settings"
+                                        label={t("nav.userMenu.settings")}
+                                        active={pathname === "/settings"}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    />
+
                                     <button
                                         type="button"
-                                        className={[
-                                            "h-11 w-11 sm:h-12 sm:w-12 ml-1 sm:ml-2 rounded-full border bg-background overflow-hidden",
-                                            "grid place-items-center",
-                                            "hover:bg-muted/60 transition",
-                                        ].join(" ")}
-                                        aria-label={t("nav.userMenu.account")}
-                                        title={t("nav.userMenu.account")}
+                                        onClick={() => void onLogout()}
+                                        className="block w-full rounded-xl border bg-background px-3 py-3 text-left text-sm transition hover:bg-muted/60"
                                     >
-                                        {avatarUrl ? (
-                                            <img
-                                                src={avatarUrl}
-                                                alt={user?.name ?? "User"}
-                                                className="h-full w-full object-cover"
-                                                referrerPolicy="no-referrer"
-                                            />
-                                        ) : (
-                                            <span className="text-xs font-semibold text-muted-foreground">
-                                                {initials}
-                                            </span>
-                                        )}
-                                    </button>
-                                </DropdownMenuTrigger>
-
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>
-                                        {user?.name ?? t("nav.userMenu.account")}
-                                    </DropdownMenuLabel>
-
-                                    <DropdownMenuItem onClick={() => navigate("/me")}>
-                                        {t("nav.userMenu.myProfile")}
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem onClick={() => navigate("/settings")}>
-                                        {t("nav.userMenu.settings")}
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuSeparator />
-
-                                    <DropdownMenuItem onClick={onLogout}>
                                         {t("nav.userMenu.logout")}
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        ) : (
-                            <Button asChild variant="outline" className="whitespace-nowrap">
-                                <Link to="/login">{t("auth.login")}</Link>
-                            </Button>
-                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
-                </div>
-
-                {/* Row 2 — Desktop nav only */}
-                <nav className="mt-3 hidden md:flex flex-wrap items-center gap-2">
-                    {visibleNavItems.map((item) => (
-                        <TopNavLink
-                            key={item.to}
-                            to={item.to}
-                            label={item.label}
-                            end={item.end}
-                        />
-                    ))}
-
-                    {/* Insights dropdown (desktop) */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <button
-                                type="button"
-                                className={[
-                                    "text-sm rounded-lg px-3 py-2 border transition whitespace-nowrap",
-                                    inInsights
-                                        ? "bg-primary text-primary-foreground border-transparent shadow-sm"
-                                        : "bg-background hover:bg-muted/60",
-                                ].join(" ")}
-                            >
-                                {t("nav.insights")}
-                            </button>
-                        </DropdownMenuTrigger>
-
-                        <DropdownMenuContent align="start">
-                            <DropdownMenuItem onClick={() => navigate("/insights")}>
-                                {t("nav.insights")}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => navigate("/insights/streaks")}>
-                                {t("nav.streaks")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => navigate("/insights/prs")}>
-                                {t("nav.prs")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => navigate("/insights/recovery")}>
-                                {t("nav.recovery")}
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </nav>
+                </aside>
             </div>
-        </header>
+        </>
     );
 }

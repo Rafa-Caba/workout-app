@@ -1,3 +1,5 @@
+// src/components/dayExplorer/DaySleepPanel.tsx
+
 import React from "react";
 import type { WorkoutDay, WorkoutSession } from "@/types/workoutDay.types";
 import { BadgePill } from "@/components/dayExplorer/BadgePill";
@@ -23,10 +25,18 @@ function isFiniteNumber(n: unknown): n is number {
     return typeof n === "number" && Number.isFinite(n);
 }
 
+function cleanString(value: unknown): string | null {
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+
 function formatMinutes(min: number | null): string | null {
     if (!isFiniteNumber(min) || min <= 0) return null;
+
     const h = Math.floor(min / 60);
     const m = min % 60;
+
     return `${h}h ${m}m`;
 }
 
@@ -45,8 +55,9 @@ function computeAvgRpeFromSessions(sessions: WorkoutSession[]): number | null {
         .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
 
     if (!vals.length) return null;
+
     const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-    return Math.round(avg * 10) / 10; // 1 decimal
+    return Math.round(avg * 10) / 10;
 }
 
 /**
@@ -62,20 +73,32 @@ function computeReadiness(sleepScore: number | null, rpe: number | null): number
 
     if (isFiniteNumber(rpe)) {
         if (rpe >= 6) {
-            value -= (rpe - 5) * 6; // rpe 8 => -18, rpe 10 => -30
+            value -= (rpe - 5) * 6;
         } else {
-            value += (5 - rpe) * 2; // rpe 3 => +4
+            value += (5 - rpe) * 2;
         }
     }
 
     return Math.round(clamp(value, 0, 100));
 }
 
+function formatIsoDateTime(iso: string | null): string | null {
+    if (!iso) return null;
+
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return null;
+
+    return new Intl.DateTimeFormat("es-MX", {
+        dateStyle: "medium",
+        timeStyle: "short",
+    }).format(date);
+}
+
 export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
     const sleep = day.sleep ?? null;
 
     const timeAsleepMin = sleep?.timeAsleepMinutes ?? null;
-    const timeInBedMinDirect = sleep?.timeInBedMinutes ?? null; // ✅ NEW
+    const timeInBedMinDirect = sleep?.timeInBedMinutes ?? null;
     const score = sleep?.score ?? null;
 
     const remMin = sleep?.remMinutes ?? null;
@@ -113,16 +136,20 @@ export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
 
     const efficiencyPct = calcSleepEfficiencyPct(timeAsleepMin, timeInBedMin);
 
-    // RPE for readiness
     const sessions: WorkoutSession[] = Array.isArray(day.training?.sessions)
-        ? (day.training!.sessions as WorkoutSession[])
+        ? day.training.sessions
         : [];
 
     const dayRpe = isFiniteNumber(day.training?.dayEffortRpe)
-        ? (day.training!.dayEffortRpe as number)
+        ? day.training.dayEffortRpe
         : computeAvgRpeFromSessions(sessions);
 
     const readiness = computeReadiness(score, dayRpe);
+
+    const source = sleep?.source ?? null;
+    const sourceDevice = cleanString(sleep?.sourceDevice);
+    const importedAt = formatIsoDateTime(sleep?.importedAt ?? null);
+    const lastSyncedAt = formatIsoDateTime(sleep?.lastSyncedAt ?? null);
 
     return (
         <div className="w-full min-w-0 rounded-2xl border bg-card p-4 space-y-3">
@@ -155,7 +182,11 @@ export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
                 <BadgePill emoji="💤" label={t("days.sleep.core")} value={formatMinutes(coreMin)} />
                 <BadgePill emoji="⏱" label={t("days.sleep.awake")} value={formatMinutes(awakeMin)} />
 
-                <BadgePill emoji="📡" label={t("days.sleep.source")} value={sleep?.source ?? null} />
+                <BadgePill emoji="📡" label={t("days.sleep.source")} value={source} />
+                <BadgePill emoji="⌚" label={t("days.sleep.sourceDevice")} value={sourceDevice} />
+
+                <BadgePill emoji="⬇️" label={t("days.sleep.importedAt")} value={importedAt} />
+                <BadgePill emoji="🔄" label={t("days.sleep.lastSyncedAt")} value={lastSyncedAt} />
             </div>
         </div>
     );

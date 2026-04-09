@@ -80,7 +80,7 @@ export function ProgressPeriodToolbar({
                                     value={customFrom}
                                     onChange={(event) => onChangeCustomFrom(event.target.value)}
                                     className={[
-                                        "flex h-10 w-full md:w-48 rounded-md border border-input bg-background px-3 py-2",
+                                        "flex h-10 w-auto md:w-52 rounded-md border border-input bg-background px-3 py-2",
                                         "text-sm ring-offset-background",
                                         "file:border-0 file:bg-transparent file:text-sm file:font-medium",
                                         "placeholder:text-muted-foreground",
@@ -99,7 +99,7 @@ export function ProgressPeriodToolbar({
                                     value={customTo}
                                     onChange={(event) => onChangeCustomTo(event.target.value)}
                                     className={[
-                                        "flex h-10 w-full md:w-48 rounded-md border border-input bg-background px-3 py-2",
+                                        "flex h-10 w-auto md:w-52 rounded-md border border-input bg-background px-3 py-2",
                                         "text-sm ring-offset-background",
                                         "file:border-0 file:bg-transparent file:text-sm file:font-medium",
                                         "placeholder:text-muted-foreground",

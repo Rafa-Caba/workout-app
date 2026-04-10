@@ -30,6 +30,15 @@ type Props = {
     onSetArchived: (archived: boolean) => void;
 };
 
+const SPLIT_PRESETS: Array<{ value: string; labelKey: I18nKey }> = [
+    { value: "", labelKey: "routines.split.none" },
+    { value: "push", labelKey: "routines.split.push" },
+    { value: "pull", labelKey: "routines.split.pull" },
+    { value: "legs", labelKey: "routines.split.legs" },
+    { value: "upper/lower", labelKey: "routines.split.upperLower" },
+    { value: "ppl", labelKey: "routines.split.ppl" },
+];
+
 export function RoutinesAdvancedActions({
     openDefault,
     busy,
@@ -82,13 +91,19 @@ export function RoutinesAdvancedActions({
 
                     <div className="space-y-1">
                         <label className="text-sm font-medium">{t("routines.initSplit")}</label>
-                        <input
-                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+
+                        <select
+                            className="w-full rounded-md border bg-background px-3 py-2 text-base sm:text-sm"
                             value={initSplit}
                             onChange={(e) => setInitSplit(e.target.value)}
-                            placeholder={t("routines.initSplitPh")}
-                            disabled={initInputsDisabled}
-                        />
+                            disabled={busy}
+                        >
+                            {SPLIT_PRESETS.map((p) => (
+                                <option key={p.value} value={p.value}>
+                                    {t(p.labelKey)}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="space-y-1">

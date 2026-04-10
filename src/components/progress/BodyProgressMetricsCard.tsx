@@ -2,6 +2,8 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { BodyProgressMetric } from "@/types/bodyProgress.types";
+import { cn } from "@/lib/utils";
+import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
 
 function formatMetricValue(value: number | null, unit: "kg" | "percent" | "cm"): string {
     if (value === null || Number.isNaN(value)) {
@@ -61,7 +63,7 @@ export function BodyProgressMetricsCard({
     metrics: BodyProgressMetric[];
 }) {
     return (
-        <Card>
+        <Card className={themedPanelCard}>
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{subtitle}</CardDescription>
@@ -72,7 +74,7 @@ export function BodyProgressMetricsCard({
                     {metrics.map((metric) => (
                         <div
                             key={metric.key}
-                            className="rounded-xl border bg-background p-4"
+                            className={cn("rounded-xl border p-4", themedNestedCard)}
                         >
                             <div className="text-xs font-semibold text-muted-foreground">
                                 {metric.label}

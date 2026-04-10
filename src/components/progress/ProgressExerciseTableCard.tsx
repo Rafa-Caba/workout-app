@@ -1,6 +1,9 @@
 // src/components/progress/ProgressExerciseTableCard.tsx
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
+
 import type { WorkoutProgressExerciseTableRow } from "@/types/workoutProgress.types";
 import {
     formatExerciseBasisLabel,
@@ -13,7 +16,7 @@ type Props = {
 
 export function ProgressExerciseTableCard({ rows }: Props) {
     return (
-        <Card>
+        <Card className={themedPanelCard}>
             <CardHeader>
                 <CardTitle className="text-base">Top ejercicios</CardTitle>
             </CardHeader>
@@ -38,7 +41,7 @@ export function ProgressExerciseTableCard({ rows }: Props) {
                         return (
                             <div
                                 key={row.exerciseKey}
-                                className="rounded-xl border bg-background p-3 flex items-center gap-3"
+                                className={cn("rounded-xl border p-3 flex items-center gap-3", themedNestedCard)}
                             >
                                 <div className="flex-1 space-y-1 min-w-0">
                                     <div className="font-semibold truncate">{row.exerciseLabel}</div>

@@ -2,6 +2,10 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
+import { cn } from "@/lib/utils";
+import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
+
 import type {
     WorkoutExerciseComparisonBasis,
     WorkoutExerciseProgressItem,
@@ -37,7 +41,7 @@ export function ExerciseProgressSection({ items }: Props) {
     }, [filter, items]);
 
     return (
-        <Card>
+        <Card className={themedPanelCard}>
             <CardHeader>
                 <CardTitle className="text-base">Detalle por ejercicio</CardTitle>
                 <p className="text-sm text-muted-foreground">
@@ -74,7 +78,7 @@ export function ExerciseProgressSection({ items }: Props) {
                             return (
                                 <div
                                     key={item.exerciseKey}
-                                    className="rounded-xl border bg-background p-3 flex items-center gap-3"
+                                    className={cn("rounded-xl border p-3 flex items-center gap-3", themedNestedCard)}
                                 >
                                     <div className="flex-1 min-w-0 space-y-1">
                                         <div className="font-semibold truncate">{item.exerciseLabel}</div>

@@ -6,6 +6,8 @@ import type {
     WorkoutProgressHero,
 } from "@/types/workoutProgress.types";
 import { formatRangeLabel } from "./progressFormatters";
+import { cn } from "@/lib/utils";
+import { themedPanelCard, themedNestedCard, themedPill } from "@/theme/cardHierarchy";
 
 type Props = {
     hero: WorkoutProgressHero;
@@ -15,14 +17,14 @@ type Props = {
 
 export function ProgressHeroCard({ hero, range, compareRange }: Props) {
     return (
-        <Card>
+        <Card className={themedPanelCard}>
             <CardHeader>
                 <CardTitle className="text-base">{hero.title}</CardTitle>
                 <p className="text-sm text-muted-foreground">{hero.subtitle}</p>
             </CardHeader>
 
             <CardContent className="space-y-4">
-                <div className="rounded-xl border bg-background p-3 text-sm space-y-2">
+                <div className={cn("rounded-xl border p-3 text-sm space-y-2", themedNestedCard)}>
                     <div>
                         <span className="font-semibold">Rango actual:</span>{" "}
                         <span className="font-mono">{formatRangeLabel(range)}</span>
@@ -41,7 +43,7 @@ export function ProgressHeroCard({ hero, range, compareRange }: Props) {
                         {hero.items.map((item) => (
                             <span
                                 key={item}
-                                className="rounded-full border bg-background px-3 py-1 text-xs font-semibold"
+                                className={cn("rounded-full border px-3 py-1 text-xs font-semibold", themedPill)}
                             >
                                 {item}
                             </span>
@@ -49,7 +51,7 @@ export function ProgressHeroCard({ hero, range, compareRange }: Props) {
                     </div>
                 ) : null}
 
-                <div className="space-y-2">
+                <div className={cn("rounded-xl border p-3 space-y-2", themedNestedCard)}>
                     <p className="font-semibold">{hero.message}</p>
 
                     {hero.bullets.map((bullet) => (

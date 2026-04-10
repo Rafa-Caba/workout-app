@@ -3,6 +3,15 @@
 import React from "react";
 import { format } from "date-fns";
 
+import { cn } from "@/lib/utils";
+import {
+    themedInnerCard,
+    themedNestedCard,
+    themedPanelCard,
+    themedPill,
+    themedInteractive,
+} from "@/theme/cardHierarchy";
+
 import type {
     WorkoutActivityType,
     WorkoutDay,
@@ -321,7 +330,7 @@ function Metric({
     value: string | null;
 }) {
     return (
-        <div className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2">
+        <div className={cn("flex items-center justify-between gap-3 rounded-lg border px-3 py-2", themedNestedCard)}>
             <span className="text-xs text-muted-foreground">{label}</span>
             <span className="text-sm font-medium text-foreground">{value ?? "—"}</span>
         </div>
@@ -404,19 +413,19 @@ function SessionCard({
     return (
         <div
             key={buildSessionKey(session, index)}
-            className="w-full min-w-0 overflow-hidden rounded-2xl border bg-card"
+            className={cn("w-full min-w-0 overflow-hidden rounded-2xl border", themedPanelCard)}
         >
             <button
                 type="button"
                 onClick={() => setIsSessionOpen((prev) => !prev)}
-                className="w-full border-b p-4 text-left transition hover:bg-muted/40"
+                className={cn("w-full border-b p-4 text-left", themedInteractive)}
                 aria-expanded={isSessionOpen}
                 aria-label={isSessionOpen ? "Colapsar sesión" : "Expandir sesión"}
             >
                 <div className="min-w-0 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div className="min-w-0 w-full">
                         <div className="min-w-0 flex items-start gap-3">
-                            <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border bg-background text-sm text-foreground">
+                            <span className={cn("mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm text-foreground", themedNestedCard)}>
                                 {isSessionOpen ? "−" : "+"}
                             </span>
 
@@ -445,24 +454,24 @@ function SessionCard({
             {isSessionOpen ? (
                 <div className="space-y-4 p-4">
                     <div className="flex flex-wrap gap-2">
-                        <span className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-xs text-foreground">
+                        <span className={cn("inline-flex items-center rounded-full border px-3 py-1 text-xs text-foreground", themedPill)}>
                             {isOutdoor ? "🚶 Outdoor" : "🏋️ Gym / Training"}
                         </span>
 
                         {activityType ? (
-                            <span className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-xs text-foreground">
+                            <span className={cn("inline-flex items-center rounded-full border px-3 py-1 text-xs text-foreground", themedPill)}>
                                 {activityType === "walking" ? "Walking" : "Running"}
                             </span>
                         ) : null}
 
                         {sessionKind ? (
-                            <span className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-xs text-foreground">
+                            <span className={cn("inline-flex items-center rounded-full border px-3 py-1 text-xs text-foreground", themedPill)}>
                                 {sessionKind}
                             </span>
                         ) : null}
 
                         {source ? (
-                            <span className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-xs text-foreground">
+                            <span className={cn("inline-flex items-center rounded-full border px-3 py-1 text-xs text-foreground", themedPill)}>
                                 {source}
                             </span>
                         ) : null}
@@ -571,7 +580,7 @@ function SessionCard({
                             <button
                                 type="button"
                                 onClick={() => setIsExercisesOpen((prev) => !prev)}
-                                className="w-full p-3 rounded-t-xl border-b text-left transition hover:bg-muted/40"
+                                className={cn("w-full rounded-xl border-b p-3 text-left", themedNestedCard, themedInteractive)}
                                 aria-expanded={isExercisesOpen}
                                 aria-label={isExercisesOpen ? "Ocultar lista de ejercicios" : "Mostrar lista de ejercicios"}
                             >
@@ -608,7 +617,7 @@ function SessionCard({
                                         return (
                                             <div
                                                 key={exercise.id}
-                                                className="min-w-0 rounded-xl border bg-background p-3"
+                                                className={cn("min-w-0 rounded-xl border p-3", themedInnerCard)}
                                             >
                                                 <div className="space-y-3">
                                                     <div className="space-y-1">
@@ -779,13 +788,13 @@ export function DaySessionsPanel({
             <div className="space-y-3">
                 <div className="flex items-center gap-2">
                     <div className="text-sm font-semibold">{t("days.sessions.gymTrainingTitle")}</div>
-                    <span className="rounded-full border bg-background px-2 py-0.5 text-xs text-muted-foreground">
+                    <span className={cn("rounded-full border px-2 py-0.5 text-xs text-muted-foreground", themedPill)}>
                         {gymSessions.length}
                     </span>
                 </div>
 
                 {gymSessions.length === 0 ? (
-                    <div className="rounded-2xl border bg-card p-4 text-sm text-muted-foreground">
+                    <div className={cn("rounded-2xl border p-4 text-sm text-muted-foreground", themedPanelCard)}>
                         {t("days.sessions.gymTrainingEmpty")}
                     </div>
                 ) : (
@@ -805,7 +814,7 @@ export function DaySessionsPanel({
             <div className="space-y-3">
                 <div className="flex items-center gap-2">
                     <div className="text-sm font-semibold">{t("days.sessions.outdoorTitle")}</div>
-                    <span className="rounded-full border bg-background px-2 py-0.5 text-xs text-muted-foreground">
+                    <span className={cn("rounded-full border px-2 py-0.5 text-xs text-muted-foreground", themedPill)}>
                         {outdoorSessions.length}
                     </span>
                 </div>

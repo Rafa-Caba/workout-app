@@ -2,6 +2,8 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { WorkoutProgressHighlightsItem } from "@/types/workoutProgress.types";
+import { cn } from "@/lib/utils";
+import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
 
 type Props = {
     title?: string;
@@ -13,7 +15,7 @@ export function ProgressHighlightsCard({
     items,
 }: Props) {
     return (
-        <Card>
+        <Card className={themedPanelCard}>
             <CardHeader>
                 <CardTitle className="text-base">{title}</CardTitle>
             </CardHeader>
@@ -28,7 +30,7 @@ export function ProgressHighlightsCard({
                                 : "bg-muted-foreground";
 
                     return (
-                        <div key={item.id} className="rounded-xl border bg-background p-3 flex gap-3">
+                        <div key={item.id} className={cn("rounded-xl border p-3 flex gap-3", themedNestedCard)}>
                             <div className={`mt-1 h-2.5 w-2.5 rounded-full shrink-0 ${dotClass}`} />
                             <div className="space-y-1">
                                 <div className="font-semibold">{item.title}</div>

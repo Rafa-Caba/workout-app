@@ -1,4 +1,6 @@
-import React from "react";
+// src/components/dayExplorer/BadgePill.tsx
+import { cn } from "@/lib/utils";
+import { themedNestedCard } from "@/theme/cardHierarchy";
 
 export function BadgePill({
     emoji,
@@ -10,7 +12,12 @@ export function BadgePill({
     value: string | null;
 }) {
     return (
-        <span className="w-full min-w-0 flex items-center justify-between gap-3 rounded-full border bg-background px-3 py-2 sm:px-4">
+        <span
+            className={cn(
+                "w-full min-w-0 flex items-center justify-between gap-3 rounded-full border px-3 py-2 sm:px-4",
+                themedNestedCard
+            )}
+        >
             <span className="min-w-0 flex flex-1 items-center gap-2">
                 <span aria-hidden="true" className="shrink-0">
                     {emoji}

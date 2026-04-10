@@ -1,6 +1,9 @@
+// src/components/gymCheck/GymCheckPlanInfo.tsx
 import * as React from "react";
 import type { DayKey, DayPlan } from "@/utils/routines/plan";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
 
 function formatNullable(value: unknown): string {
     if (value === null || value === undefined || value === "") return "—";
@@ -33,7 +36,7 @@ export function GymCheckPlanInfo(props: Props) {
     const { lang, activeDay, dayLabels, activePlan } = props;
 
     return (
-        <Card className="w-full min-w-0">
+        <Card className={cn("w-full min-w-0", themedPanelCard)}>
             <CardHeader className="min-w-0">
                 <CardTitle className="min-w-0 wrap-break-words">{lang === "es" ? "Plan (info)" : "Plan (info)"}</CardTitle>
             </CardHeader>
@@ -43,7 +46,7 @@ export function GymCheckPlanInfo(props: Props) {
                     {lang === "es" ? `Día ${dayLabels[activeDay].es}` : `Day ${dayLabels[activeDay].en}`}
                 </div>
 
-                <div className="min-w-0 text-xs text-muted-foreground space-y-1">
+                <div className={cn("min-w-0 rounded-xl border p-3 text-xs text-muted-foreground space-y-1", themedNestedCard)}>
                     <div className="min-w-0 wrap-break-words">
                         <span className="font-semibold">{lang === "es" ? "Tipo" : "Type"}:</span>{" "}
                         {formatNullable((activePlan as any).sessionType)}

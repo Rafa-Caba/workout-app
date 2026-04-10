@@ -1,6 +1,10 @@
 // src/components/progress/SessionTypeProgressCard.tsx
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { cn } from "@/lib/utils";
+import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
+
 import type { WorkoutSessionTypeProgressItem } from "@/types/workoutProgress.types";
 import { formatMetricDelta, formatMetricValue } from "./progressFormatters";
 
@@ -10,7 +14,7 @@ type Props = {
 
 export function SessionTypeProgressCard({ items }: Props) {
     return (
-        <Card>
+        <Card className={themedPanelCard}>
             <CardHeader>
                 <CardTitle className="text-base">Progreso por tipo de sesión</CardTitle>
             </CardHeader>
@@ -24,7 +28,7 @@ export function SessionTypeProgressCard({ items }: Props) {
                     items.slice(0, 8).map((item) => (
                         <div
                             key={item.sessionType}
-                            className="rounded-xl border bg-background p-3 flex items-center gap-3"
+                            className={cn("rounded-xl border p-3 flex items-center gap-3", themedNestedCard)}
                         >
                             <div className="flex-1 min-w-0 space-y-1">
                                 <div className="font-semibold truncate">{item.sessionType}</div>

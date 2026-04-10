@@ -4,6 +4,8 @@ import React from "react";
 import type { WorkoutDay, WorkoutSession } from "@/types/workoutDay.types";
 import { BadgePill } from "@/components/dayExplorer/BadgePill";
 import { calcSleepEfficiencyPct } from "@/utils/dayExplorer";
+import { themedPanelCard } from "@/theme/cardHierarchy";
+import { cn } from "@/lib/utils";
 
 type TFn = (key: any, vars?: any) => string;
 
@@ -152,7 +154,7 @@ export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
     const lastSyncedAt = formatIsoDateTime(sleep?.lastSyncedAt ?? null);
 
     return (
-        <div className="w-full min-w-0 rounded-2xl border bg-card p-4 space-y-3">
+        <div className={cn("w-full min-w-0 rounded-2xl border p-4 space-y-3", themedPanelCard)}>
             <div className="min-w-0 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                 <div className="text-sm font-semibold">{t("days.sleep.title")}</div>
 

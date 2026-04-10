@@ -7,6 +7,8 @@ import {
     formatMetricValue,
     getTrendTone,
 } from "./progressFormatters";
+import { cn } from "@/lib/utils";
+import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
 
 type Props = {
     title: string;
@@ -16,7 +18,7 @@ type Props = {
 
 export function ProgressMetricsSection({ title, subtitle, metrics }: Props) {
     return (
-        <Card>
+        <Card className={themedPanelCard}>
             <CardHeader>
                 <CardTitle className="text-base">{title}</CardTitle>
                 <p className="text-sm text-muted-foreground">{subtitle}</p>
@@ -35,7 +37,7 @@ export function ProgressMetricsSection({ title, subtitle, metrics }: Props) {
                                     : "text-muted-foreground";
 
                         return (
-                            <div key={metric.key} className="rounded-xl border bg-background p-3 space-y-1">
+                            <div key={metric.key} className={cn("rounded-xl border p-3 space-y-1", themedNestedCard)}>
                                 <div className="text-xs font-semibold text-muted-foreground">
                                     {metric.shortLabel ?? metric.label}
                                 </div>

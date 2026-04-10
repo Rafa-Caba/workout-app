@@ -2,6 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { BodyProgressHighlight } from "@/types/bodyProgress.types";
+import { cn } from "@/lib/utils";
+import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
 
 function getToneClasses(tone: BodyProgressHighlight["tone"]): string {
     if (tone === "positive") return "text-primary";
@@ -21,7 +23,7 @@ export function BodyProgressHighlightsCard({
     }
 
     return (
-        <Card>
+        <Card className={themedPanelCard}>
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
             </CardHeader>
@@ -30,7 +32,7 @@ export function BodyProgressHighlightsCard({
                 {items.map((item) => (
                     <div
                         key={item.id}
-                        className="rounded-xl border bg-background p-4"
+                        className={cn("rounded-xl border p-4", themedNestedCard)}
                     >
                         <div className={`font-semibold ${getToneClasses(item.tone)}`}>
                             {item.title}

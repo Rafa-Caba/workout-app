@@ -2,6 +2,9 @@ import * as React from "react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { DeviceSelect } from "../DeviceSelect";
 
+import { cn } from "@/lib/utils";
+import { themedPanelCard } from "@/theme/cardHierarchy";
+
 type MetricsUiState = {
     startAtTime: string; // "HH:mm"
     endAtTime: string; // "HH:mm"
@@ -82,7 +85,7 @@ export function GymCheckDeviceMetricsCard({
 
     return (
         <details
-            className="w-full min-w-0 rounded-lg border bg-card p-4"
+            className={cn("w-full min-w-0 rounded-lg border p-4", themedPanelCard)}
             open={metricsOpen}
             onToggle={(e) => onToggleOpen((e.currentTarget as HTMLDetailsElement).open)}
         >

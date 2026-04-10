@@ -1,11 +1,11 @@
+// src/components/dayExplorer/DayExplorerToolbar.tsx
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { themedPanelCard } from "@/theme/cardHierarchy";
 
 type Tab = "summary" | "raw";
 
-// IMPORTANT: Our i18n `t` is strongly typed (union of keys),
-// so accepting `(key: string) => string` causes TS2322.
-// This signature is compatible with your typed `t`.
 type TFn = (key: any, vars?: any) => string;
 
 type Props = {
@@ -27,17 +27,17 @@ export function DayExplorerToolbar({
     onTabChange,
 }: Props) {
     return (
-        <div className="w-full min-w-0 rounded-2xl border bg-card p-4">
+        <div className={cn("w-full min-w-0 rounded-2xl border p-4", themedPanelCard)}>
             <div className="min-w-0 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div className="min-w-0 space-y-2">
                     <div className="text-xs text-muted-foreground">{t("days.toolbar.date")}</div>
 
-                    <div className="min-w-0 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    <div className="min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                         <input
                             type="date"
                             value={date}
                             onChange={(e) => onDateChange(e.target.value)}
-                            className="h-10 w-full sm:w-auto min-w-0 rounded-xl border bg-background px-3 text-base sm:text-sm"
+                            className="h-10 w-full min-w-0 rounded-xl border border-primary/15 bg-background px-3 text-base sm:w-auto sm:text-sm"
                         />
 
                         {isFetching ? (
@@ -46,7 +46,7 @@ export function DayExplorerToolbar({
                     </div>
                 </div>
 
-                <div className="w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center md:w-auto">
                     <Button
                         type="button"
                         variant={tab === "summary" ? "default" : "outline"}

@@ -4,6 +4,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { themedInnerCard, themedNestedCard, themedPanelCard } from "@/theme/cardHierarchy";
 
 import type { DayKey, ExerciseItem } from "@/utils/routines/plan";
 import type { AttachmentOption } from "@/utils/routines/attachments";
@@ -81,7 +82,7 @@ export function GymCheckExerciseCard(props: Props) {
     const canEditPerformedSets = !setsInputsDisabled;
 
     return (
-        <Card className={isDone ? "w-full min-w-0 opacity-95" : "w-full min-w-0"}>
+        <Card className={cn(isDone ? "w-full min-w-0 opacity-95" : "w-full min-w-0", themedPanelCard)}>
             <CardHeader className="min-w-0 pb-3">
                 <div className="min-w-0 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
@@ -172,7 +173,7 @@ export function GymCheckExerciseCard(props: Props) {
                     />
                 </div>
 
-                <div className="space-y-3 rounded-xl border p-3">
+                <div className={cn("space-y-3 rounded-xl border p-3", themedNestedCard)}>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <div className="font-semibold">
@@ -226,7 +227,8 @@ export function GymCheckExerciseCard(props: Props) {
                                     key={`${exerciseId}-set-${setItem.setIndex}-${setIndex}`}
                                     className={cn(
                                         "grid grid-cols-1 gap-2 rounded-lg border p-3 sm:grid-cols-[80px_1fr_1fr_1fr_auto]",
-                                        setsInputsDisabled && "bg-muted/40"
+                                        themedInnerCard,
+                                        setsInputsDisabled && "opacity-70"
                                     )}
                                 >
                                     <div className="flex items-center text-sm font-semibold">

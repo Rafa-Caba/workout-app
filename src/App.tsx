@@ -24,6 +24,7 @@ import { SleepPage } from "@/pages/SleepPage";
 import { MyProfilePage } from "@/pages/MyProfilePage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { OutdoorPage } from "@/pages/OutdoorPage";
+import { BodyMetricsPage } from "@/pages/BodyMetricsPage";
 
 import { TrainerDashboardPage } from "@/pages/trainer/TrainerDashboardPage";
 
@@ -37,15 +38,14 @@ export default function App() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        {/* Public */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
-        {/* Protected */}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<DashboardPage />} />
 
           <Route path="/me" element={<MyProfilePage />} />
+          <Route path="/me/body-metrics" element={<BodyMetricsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
 
           <Route path="/days" element={<DayExplorerPage />} />
@@ -70,7 +70,6 @@ export default function App() {
 
           <Route path="/progress" element={<ProgressPage />} />
 
-          {/* Trainer */}
           {user?.coachMode === "TRAINER" ? (
             <Route path="/trainer" element={<TrainerDashboardPage />} />
           ) : null}
@@ -80,7 +79,6 @@ export default function App() {
           )}
         </Route>
 
-        {/* Unknown routes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

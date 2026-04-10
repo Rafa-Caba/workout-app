@@ -1,4 +1,6 @@
+// src/pages/MyProfilePage.tsx
 import * as React from "react";
+import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -6,8 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { JsonDetails } from "@/components/JsonDetails";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useMe } from "@/hooks/useMe";
+import { useLatestBodyMetric } from "@/hooks/useLatestBodyMetric";
 import { ProfilePicModal } from "@/components/ProfilePicModal";
 import { EditProfileModal } from "@/components/EditProfileModal";
+import { BodyMetricsIllustration } from "@/components/bodyMetrics/BodyMetricsIllustration";
 
 function formatNullable(value: unknown): string {
     if (value === null || value === undefined || value === "") return "—";
@@ -62,9 +66,20 @@ function formatLastLogin(value: string | null | undefined, lang: string): string
     }
 }
 
+function formatPercent(value: number | null | undefined): string {
+    if (value == null || !Number.isFinite(value)) return "—";
+    return `${roundTo(value, 1)}%`;
+}
+
+function formatCm(value: number | null | undefined): string {
+    if (value == null || !Number.isFinite(value)) return "—";
+    return `${roundTo(value, 1)} cm`;
+}
+
 export function MyProfilePage() {
     const { t, lang } = useI18n();
     const { me, loading, error, refetch } = useMe(true);
+    const latestBodyMetricQuery = useLatestBodyMetric();
 
     const [picOpen, setPicOpen] = React.useState(false);
     const [editOpen, setEditOpen] = React.useState(false);
@@ -106,7 +121,6 @@ export function MyProfilePage() {
 
                         <CardContent className="p-4 sm:p-6">
                             <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-5">
-                                {/* Avatar */}
                                 <button
                                     type="button"
                                     onClick={() => setPicOpen(true)}
@@ -149,7 +163,6 @@ export function MyProfilePage() {
                                     <span className="text-right wrap-break-words">{formatNullable(me.heightCm)}</span>
                                 </div>
 
-                                {/* ✅ Weight displayed in preferred unit (kg/lb) */}
                                 <div className="grid grid-cols-[1fr_auto] items-center gap-3">
                                     <span className="text-muted-foreground">{t("profile.fields.weightKg")}</span>
                                     <span className="text-right wrap-break-words">
@@ -158,7 +171,7 @@ export function MyProfilePage() {
                                 </div>
 
                                 <div className="grid grid-cols-[1fr_auto] items-center gap-3">
-                                    <span className="text-muted-foreground">{t("settings.subtitle") /* reuse ok */}</span>
+                                    <span className="text-muted-foreground">{t("settings.subtitle")}</span>
                                     <span className="text-right wrap-break-words">
                                         {me.units ? `${me.units.weight} / ${me.units.distance}` : "—"}
                                     </span>
@@ -174,7 +187,6 @@ export function MyProfilePage() {
                                     <span className="text-right wrap-break-words">{formatNullable(me.activityGoal)}</span>
                                 </div>
 
-                                {/* Training Level */}
                                 <div className="grid grid-cols-[1fr_auto] items-center gap-3">
                                     <span className="text-muted-foreground">{t("profile.fields.trainingLevel")}</span>
                                     <span className="text-right wrap-break-words">
@@ -182,7 +194,6 @@ export function MyProfilePage() {
                                     </span>
                                 </div>
 
-                                {/* Health Notes */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-2">
                                     <span className="text-muted-foreground">{t("profile.fields.healthNotes")}</span>
                                     <div className="hidden md:block" />
@@ -193,13 +204,12 @@ export function MyProfilePage() {
 
                                 <div className="grid grid-cols-[1fr_auto] items-center gap-3 pt-2">
                                     <span className="text-muted-foreground">{t("profile.fields.coachMode")}</span>
-                                    <span className="min-w-0 text-right wrap-break-words">
+                                    <span className="text-right wrap-break-words">
                                         {formatNullable(me.coachMode === "NONE" ? "REGULAR" : me.coachMode)}
                                     </span>
                                 </div>
                             </div>
 
-                            {/* ✅ Footer row: lastLoginAt left (desktop), below (mobile) */}
                             <div className="mt-5 sm:mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="text-xs text-muted-foreground order-2 sm:order-1">
                                     {t("profile.fields.lastLoginAt")}:{" "}
@@ -211,6 +221,60 @@ export function MyProfilePage() {
                                         {t("profile.edit")}
                                     </Button>
                                 </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Historial corporal</CardTitle>
+                            <CardDescription>
+                                Sigue tu peso, cintura y composición corporal desde una sola pantalla.
+                            </CardDescription>
+                        </CardHeader>
+
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[180px_1fr] lg:items-center">
+                                <div className="flex justify-center">
+                                    <BodyMetricsIllustration />
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-2 rounded-xl border bg-background p-4 text-sm sm:grid-cols-2">
+                                    <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+                                        <span className="text-muted-foreground">Último registro</span>
+                                        <span className="font-medium">{latestBodyMetricQuery.data?.latest?.date ?? "—"}</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+                                        <span className="text-muted-foreground">Peso</span>
+                                        <span className="font-medium">
+                                            {formatWeightForDisplay(
+                                                latestBodyMetricQuery.data?.latest?.weightKg ?? null,
+                                                me.units?.weight ?? "kg"
+                                            )}
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+                                        <span className="text-muted-foreground">Grasa corporal</span>
+                                        <span className="font-medium">
+                                            {formatPercent(latestBodyMetricQuery.data?.latest?.bodyFatPct ?? null)}
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+                                        <span className="text-muted-foreground">Cintura</span>
+                                        <span className="font-medium">
+                                            {formatCm(latestBodyMetricQuery.data?.latest?.waistCm ?? null)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end">
+                                <Button asChild>
+                                    <Link to="/me/body-metrics">Ver métricas corporales</Link>
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>

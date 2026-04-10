@@ -1,10 +1,12 @@
 // src/pages/ProgressPage.tsx
 import React from "react";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 import { PageHeader } from "@/components/PageHeader";
 import { JsonDetails } from "@/components/JsonDetails";
 import { EmptyState } from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
 import { ExerciseProgressSection } from "@/components/progress/ExerciseProgressSection";
 import { ProgressExerciseTableCard } from "@/components/progress/ProgressExerciseTableCard";
 import { ProgressHeroCard } from "@/components/progress/ProgressHeroCard";
@@ -13,6 +15,9 @@ import { ProgressMetricsSection } from "@/components/progress/ProgressMetricsSec
 import { ProgressPeriodToolbar } from "@/components/progress/ProgressPeriodToolbar";
 import { SessionTypeProgressCard } from "@/components/progress/SessionTypeProgressCard";
 import { TopExerciseHighlightsCard } from "@/components/progress/TopExerciseHighlightsCard";
+import { BodyProgressHighlightsCard } from "@/components/progress/BodyProgressHighlightsCard";
+import { BodyProgressMetricsCard } from "@/components/progress/BodyProgressMetricsCard";
+import { useBodyProgress } from "@/hooks/useBodyProgress";
 import { useWorkoutProgress } from "@/hooks/useWorkoutProgress";
 import type {
     WorkoutProgressCompareTo,
@@ -38,13 +43,27 @@ export function ProgressPage() {
         includeExerciseProgress: true,
     });
 
+    const bodyQuery = useBodyProgress({
+        mode,
+        compareTo,
+        from: mode === "customRange" ? appliedFrom : undefined,
+        to: mode === "customRange" ? appliedTo : undefined,
+    });
+
     React.useEffect(() => {
         if (query.isError) {
             toast.error(query.error.message);
         }
     }, [query.isError, query.error]);
 
+    React.useEffect(() => {
+        if (bodyQuery.isError) {
+            toast.error(bodyQuery.error.message);
+        }
+    }, [bodyQuery.isError, bodyQuery.error]);
+
     const data = query.data ?? null;
+    const bodyData = bodyQuery.data ?? null;
 
     const customRangeLabel = React.useMemo(() => {
         if (mode !== "customRange" || !appliedFrom || !appliedTo) {
@@ -72,7 +91,7 @@ export function ProgressPage() {
         <div className="space-y-6">
             <PageHeader
                 title="Progreso"
-                subtitle="Compara entrenamiento, sueño, adherencia y mejoras por ejercicio."
+                subtitle="Compara entrenamiento, sueño, adherencia, mejoras por ejercicio y evolución corporal."
             />
 
             <ProgressPeriodToolbar
@@ -88,7 +107,7 @@ export function ProgressPage() {
                 onApplyCustomRange={handleApplyCustomRange}
             />
 
-            {query.isFetching ? (
+            {query.isFetching || bodyQuery.isFetching ? (
                 <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
                     Cargando progreso...
                 </div>
@@ -112,6 +131,25 @@ export function ProgressPage() {
                         range={data.range}
                         compareRange={data.compareRange}
                     />
+
+                    <BodyProgressMetricsCard
+                        title="Composición corporal"
+                        subtitle="Peso, grasa corporal y cintura comparados contra el periodo previo."
+                        metrics={bodyData?.metrics ?? []}
+                    />
+
+                    {bodyData?.highlights?.length ? (
+                        <BodyProgressHighlightsCard
+                            title="Highlights corporales"
+                            items={bodyData.highlights}
+                        />
+                    ) : null}
+
+                    <div className="flex justify-end">
+                        <Button asChild variant="outline">
+                            <Link to="/me/body-metrics">Ver historial corporal</Link>
+                        </Button>
+                    </div>
 
                     <ProgressMetricsSection
                         title="Entrenamiento"
@@ -145,6 +183,7 @@ export function ProgressPage() {
                     <SessionTypeProgressCard items={data.sessionTypeProgress} />
 
                     <JsonDetails title="JSON progreso" data={data} />
+                    <JsonDetails title="JSON body progress" data={bodyData} />
                 </>
             ) : null}
         </div>

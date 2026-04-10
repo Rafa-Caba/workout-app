@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import type { DayKey, ExerciseItem } from "@/utils/routines/plan";
 import type { AttachmentOption } from "@/utils/routines/attachments";
 import { GymCheckExerciseMediaStrip } from "@/components/gymCheck/GymCheckExerciseMediaStrip";
-import { useAuthStore } from "@/state/auth.store";
 import type { WorkoutExerciseSet } from "@/types/workoutDay.types";
 
 function formatNullable(value: unknown): string {
@@ -74,16 +73,8 @@ export function GymCheckExerciseCard(props: Props) {
         onRemoveMediaAt,
     } = props;
 
-    const { user } = useAuthStore();
-    const unitLoad = user?.units?.weight ?? "lb";
-
     const inputId = `gymcheck-file-${dayKey}-${exerciseId}`;
 
-    /**
-     * UI only:
-     * - Same behavior as RN: performed sets section starts collapsed.
-     * - User can expand/collapse manually without affecting data.
-     */
     const [performedSetsOpen, setPerformedSetsOpen] = React.useState(false);
 
     const setsInputsDisabled = busy || isDone;
@@ -168,7 +159,7 @@ export function GymCheckExerciseCard(props: Props) {
                             <span className="shrink-0 font-extrabold text-muted-foreground">
                                 {lang === "es" ? "Carga planeada" : "Planned load"}
                             </span>
-                            <span className="min-w-0 wrap-break-words text-right">{`${formatNullable(exercise.load)} ${unitLoad}`}</span>
+                            <span className="min-w-0 wrap-break-words text-right">{formatNullable(exercise.load)}</span>
                         </div>
                     </div>
 
@@ -269,7 +260,7 @@ export function GymCheckExerciseCard(props: Props) {
 
                                     <div className="space-y-1">
                                         <label className="text-xs text-muted-foreground">
-                                            {lang === "es" ? `Carga (${unitLoad})` : `Load (${unitLoad})`}
+                                            {lang === "es" ? "Carga" : "Load"}
                                         </label>
                                         <input
                                             type="number"
@@ -286,7 +277,7 @@ export function GymCheckExerciseCard(props: Props) {
                                                 const value = e.target.value.trim();
                                                 onChangePerformedSet(setIndex, {
                                                     weight: value === "" ? null : Number(value),
-                                                    unit: unitLoad,
+                                                    unit: setItem.unit,
                                                 });
                                             }}
                                             disabled={setsInputsDisabled}

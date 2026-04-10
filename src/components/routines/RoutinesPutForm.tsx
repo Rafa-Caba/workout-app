@@ -117,39 +117,12 @@ export function RoutinesPutForm({
     debugPlansTitle,
     plans,
     movementOptions,
-    scrollRootEl,
 }: Props) {
     const showJson = useSettingsStore((s) => s.settings.debug.showJson);
     const planned = (putBody.plannedDays ?? []) as string[];
 
-    const topSaveRef = React.useRef<HTMLDivElement | null>(null);
-    const [showStickySave, setShowStickySave] = React.useState(false);
-
-    React.useEffect(() => {
-        const el = topSaveRef.current;
-        if (!el) return;
-
-        setShowStickySave(false);
-
-        const io = new IntersectionObserver(
-            ([entry]) => {
-                // show sticky only when header button is NOT visible
-                setShowStickySave(!entry.isIntersecting);
-            },
-            {
-                root: scrollRootEl ?? null,
-                threshold: 0.01,
-                rootMargin: "-72px 0px 0px 0px",
-            }
-        );
-
-        io.observe(el);
-        return () => io.disconnect();
-    }, [scrollRootEl]);
-
     return (
         <div className="w-full min-w-0 space-y-4">
-            {/* Meta / header card */}
             <div className="w-full min-w-0 rounded-xl border bg-primary/5 border-primary/10 p-4 space-y-4">
                 <div className="min-w-0 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
@@ -161,7 +134,7 @@ export function RoutinesPutForm({
                         </div>
                     </div>
 
-                    <div ref={topSaveRef} className="w-full sm:w-auto">
+                    <div className="w-full sm:w-auto">
                         <Button
                             onClick={onSave}
                             disabled={busy || isSaving}
@@ -173,7 +146,6 @@ export function RoutinesPutForm({
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
-                    {/* Title */}
                     <div className="space-y-1 min-w-0">
                         <label className="text-xs font-medium">{t("routines.titleField")}</label>
                         <input
@@ -185,7 +157,6 @@ export function RoutinesPutForm({
                         />
                     </div>
 
-                    {/* Split preset + custom */}
                     <div className="grid gap-2 min-w-0">
                         <div className="space-y-1 min-w-0">
                             <label className="text-xs font-medium">{t("routines.splitField")}</label>
@@ -215,7 +186,6 @@ export function RoutinesPutForm({
                     </div>
                 </div>
 
-                {/* Planned days */}
                 <div className="space-y-2 min-w-0">
                     <div className="text-xs font-medium">{t("routines.plannedDays")}</div>
                     <div className="flex flex-wrap gap-2">
@@ -238,14 +208,12 @@ export function RoutinesPutForm({
                 </div>
             </div>
 
-            {/* Plan builder + day editor */}
             <div className="w-full min-w-0 rounded-xl border bg-accent/10 border-accent/50 p-4 space-y-3">
                 <div className="min-w-0">
                     <div className="text-sm font-semibold wrap-break-words">{planBuilderTitle}</div>
                     <div className="text-xs text-muted-foreground wrap-break-words">{planBuilderHint}</div>
                 </div>
 
-                {/* Day tabs */}
                 <div className="-mx-1 px-1 overflow-x-auto">
                     <div className="flex items-center gap-2 w-max">
                         {dayTabItems.map((d) => (
@@ -263,7 +231,6 @@ export function RoutinesPutForm({
                     </div>
                 </div>
 
-                {/* Day editor */}
                 <RoutinesDayEditor
                     activePlan={activePlan}
                     busy={busy}
@@ -281,35 +248,20 @@ export function RoutinesPutForm({
                     onUpdatePlan={onUpdatePlan}
                     onUpdateExercise={onUpdateExercise}
                     movementOptions={movementOptions}
-                    scrollRootEl={scrollRootEl}
                 />
+
+                <div className="pt-1 flex justify-end">
+                    <Button
+                        type="button"
+                        onClick={onSave}
+                        disabled={busy || isSaving}
+                        className="h-9 w-full sm:w-auto whitespace-nowrap"
+                    >
+                        {lang === "es" ? "Guardar (PUT)" : "Save (PUT)"}
+                    </Button>
+                </div>
             </div>
 
-            {/* Sticky Save (PUT) */}
-            {showStickySave ? (
-                <div
-                    className={[
-                        "fixed inset-x-0 bottom-0 z-50",
-                        "border-t bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/70",
-                        "md:backdrop-blur-none md:bg-card/0"
-                    ].join(" ")}
-                    style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-                >
-                    <div className="mx-auto max-w-6xl px-3 sm:px-4 py-3">
-                        <div className="flex items-center justify-end">
-                            <Button
-                                onClick={onSave}
-                                disabled={busy || isSaving}
-                                className="h-9 w-full sm:w-auto whitespace-nowrap"
-                            >
-                                {lang === "es" ? "Guardar (PUT)" : "Save (PUT)"}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            ) : null}
-
-            {/* Debug JSON blocks */}
             {showJson && (
                 <>
                     <details className="w-full min-w-0 rounded-xl border bg-card p-4">

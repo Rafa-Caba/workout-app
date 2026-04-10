@@ -56,19 +56,6 @@ type Props = {
     ) => void;
 };
 
-function getOverflowY(el: HTMLElement): string {
-    try {
-        return window.getComputedStyle(el).overflowY;
-    } catch {
-        return "";
-    }
-}
-
-function canScroll(el: HTMLElement | null | undefined): boolean {
-    if (!el) return true;
-    return el.scrollHeight > el.clientHeight + 1;
-}
-
 export function RoutinesDayEditor({
     activePlan,
     busy,
@@ -86,83 +73,8 @@ export function RoutinesDayEditor({
     onRemoveExercise,
     onUpdatePlan,
     onUpdateExercise,
-    scrollRootEl,
 }: Props) {
     const exercises = activePlan.exercises ?? [];
-
-    const addBtnWrapRef = React.useRef<HTMLDivElement | null>(null);
-    const [showStickyAdd, setShowStickyAdd] = React.useState(false);
-
-    React.useEffect(() => {
-        const sentinel = addBtnWrapRef.current;
-        if (!sentinel) return;
-
-        if (scrollRootEl && !canScroll(scrollRootEl)) {
-            setShowStickyAdd(false);
-            return;
-        }
-
-        setShowStickyAdd(false);
-
-        let raf1 = 0;
-        let raf2 = 0;
-        let hasScrolled = false;
-
-        const root = scrollRootEl ?? null;
-
-        const onScroll = () => {
-            const top = scrollRootEl ? scrollRootEl.scrollTop : window.scrollY;
-            hasScrolled = top > 8;
-
-            if (!hasScrolled) {
-                setShowStickyAdd(false);
-            }
-        };
-
-        const scrollTarget: EventTarget = scrollRootEl ?? window;
-        scrollTarget.addEventListener("scroll", onScroll, { passive: true });
-        onScroll();
-
-        const isMdUp =
-            typeof window !== "undefined"
-                ? window.matchMedia("(min-width: 768px)").matches
-                : false;
-
-        const rootMargin = isMdUp ? "-72px 0px 0px 0px" : "0px 0px 0px 0px";
-
-        const io = new IntersectionObserver(
-            ([entry]) => {
-                if (!hasScrolled) {
-                    setShowStickyAdd(false);
-                    return;
-                }
-
-                setShowStickyAdd(!entry.isIntersecting);
-            },
-            {
-                root,
-                threshold: 0,
-                rootMargin,
-            }
-        );
-
-        io.observe(sentinel);
-
-        raf1 = requestAnimationFrame(() => {
-            raf2 = requestAnimationFrame(() => {
-                if (!hasScrolled) {
-                    setShowStickyAdd(false);
-                }
-            });
-        });
-
-        return () => {
-            io.disconnect();
-            scrollTarget.removeEventListener("scroll", onScroll);
-            if (raf1) cancelAnimationFrame(raf1);
-            if (raf2) cancelAnimationFrame(raf2);
-        };
-    }, [scrollRootEl]);
 
     return (
         <div className="space-y-4">
@@ -175,11 +87,6 @@ export function RoutinesDayEditor({
                 </div>
 
                 <div className="w-full sm:w-auto">
-                    <div
-                        ref={addBtnWrapRef}
-                        className="h-px w-full"
-                        aria-hidden="true"
-                    />
                     <Button
                         variant="outline"
                         className="h-9 w-full px-3 sm:w-auto"
@@ -280,20 +187,16 @@ export function RoutinesDayEditor({
                 <div className="space-y-3 border-primary/80">
                     {exercises.map((ex, idx) => {
                         const exerciseId = ex.id;
-                        const selectedIds = Array.isArray(
-                            ex.attachmentPublicIds
-                        )
+                        const selectedIds = Array.isArray(ex.attachmentPublicIds)
                             ? ex.attachmentPublicIds
                             : [];
 
                         const isThisUploading =
                             exerciseUploadBusy &&
-                            uploadingExercise?.dayKey ===
-                            (activePlan.dayKey as DayKey) &&
+                            uploadingExercise?.dayKey === (activePlan.dayKey as DayKey) &&
                             uploadingExercise?.exerciseId === exerciseId;
 
-                        const pendingFiles =
-                            getPendingFilesForExercise(exerciseId);
+                        const pendingFiles = getPendingFilesForExercise(exerciseId);
 
                         return (
                             <RoutinesExerciseCard
@@ -309,10 +212,7 @@ export function RoutinesDayEditor({
                                     onPickFilesForExercise(exerciseId, files)
                                 }
                                 onRemovePending={(fileIndex) =>
-                                    onRemovePendingForExercise(
-                                        exerciseId,
-                                        fileIndex
-                                    )
+                                    onRemovePendingForExercise(exerciseId, fileIndex)
                                 }
                                 busy={busy}
                                 isThisUploading={isThisUploading}
@@ -320,63 +220,44 @@ export function RoutinesDayEditor({
                                 lang={lang}
                                 ph={ph}
                                 onRemove={() =>
-                                    onRemoveExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx
-                                    )
+                                    onRemoveExercise(activePlan.dayKey as DayKey, idx)
                                 }
                                 onChangeMovement={({ movementId, movementName }) => {
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        {
-                                            movementId,
-                                            movementName,
-                                            name: movementName ?? ex.name,
-                                        }
-                                    );
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, {
+                                        movementId,
+                                        movementName,
+                                        name: movementName ?? ex.name,
+                                    });
                                 }}
                                 onChangeName={(next) =>
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        { name: next }
-                                    )
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, {
+                                        name: next,
+                                    })
                                 }
                                 onChangeNotes={(next) =>
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        { notes: next || undefined }
-                                    )
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, {
+                                        notes: next || undefined,
+                                    })
                                 }
                                 onChangeSets={(next) =>
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        { sets: next || undefined }
-                                    )
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, {
+                                        sets: next || undefined,
+                                    })
                                 }
                                 onChangeReps={(next) =>
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        { reps: next || undefined }
-                                    )
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, {
+                                        reps: next || undefined,
+                                    })
                                 }
                                 onChangeRpe={(next) =>
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        { rpe: next || undefined }
-                                    )
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, {
+                                        rpe: next || undefined,
+                                    })
                                 }
                                 onChangeLoad={(next) =>
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        { load: next || undefined }
-                                    )
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, {
+                                        load: next || undefined,
+                                    })
                                 }
                                 onToggleAttachment={(publicId) => {
                                     const nextIds = new Set(selectedIds);
@@ -387,14 +268,9 @@ export function RoutinesDayEditor({
                                         nextIds.add(publicId);
                                     }
 
-                                    onUpdateExercise(
-                                        activePlan.dayKey as DayKey,
-                                        idx,
-                                        {
-                                            attachmentPublicIds:
-                                                Array.from(nextIds),
-                                        }
-                                    );
+                                    onUpdateExercise(activePlan.dayKey as DayKey, idx, {
+                                        attachmentPublicIds: Array.from(nextIds),
+                                    });
                                 }}
                             />
                         );
@@ -408,46 +284,19 @@ export function RoutinesDayEditor({
                         </div>
                     ) : null}
                 </div>
-            </div>
 
-            {showStickyAdd ? (
-                <div
-                    className="
-                        pointer-events-none fixed inset-x-0 z-40 border-t
-                        bg-card/95
-                        backdrop-blur supports-backdrop-filter:bg-card/70
-                        md:z-50 md:rounded-xl md:border md:bg-card md:backdrop-blur-none
-                        bottom-[calc(env(safe-area-inset-bottom)+55px)]
-                        sm:bottom-[calc(env(safe-area-inset-bottom)+0px)]
-                    "
-                    style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-                >
-                    <div className="mx-auto max-w-6xl px-3 py-2 sm:px-4">
-                        <div
-                            className="
-                                pointer-events-auto flex items-center gap-2
-                                justify-stretch
-                                pb-2
-                                sm:justify-start
-                                md:justify-between md:pb-0
-                            "
-                        >
-                            <Button
-                                variant="outline"
-                                className="h-9 w-full px-3 shadow-sm sm:w-auto"
-                                onClick={() =>
-                                    onAddExercise(activePlan.dayKey as DayKey)
-                                }
-                                disabled={busy}
-                            >
-                                {t("routines.addExercise")}
-                            </Button>
-
-                            <div className="hidden w-full md:block" />
-                        </div>
-                    </div>
+                <div className="pt-1">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="h-9 w-full sm:w-auto"
+                        onClick={() => onAddExercise(activePlan.dayKey as DayKey)}
+                        disabled={busy}
+                    >
+                        {t("routines.addExercise")}
+                    </Button>
                 </div>
-            ) : null}
+            </div>
         </div>
     );
 }

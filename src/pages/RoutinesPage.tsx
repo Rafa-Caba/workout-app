@@ -40,7 +40,7 @@ import { safeParseJson, safeStringify } from "@/utils/routines/json";
 
 import { PlanVsActualPanel } from "@/components/pva/PlanVsActualPanel";
 
-import { RoutineAttachmentsSection } from "@/components/routines/RoutineAttachmentsSection";
+// import { RoutineAttachmentsSection } from "@/components/routines/RoutineAttachmentsSection";
 import { RoutinesModeToggle } from "@/components/routines/RoutinesModeToggle";
 import { RoutinesWeekPickerCard } from "@/components/routines/RoutinesWeekPickerCard";
 import { RoutinesPutForm } from "@/components/routines/RoutinesPutForm";
@@ -734,9 +734,10 @@ export function RoutinesPage() {
                 exNotes: "Opcional…",
                 sets: "3",
                 reps: "8-10",
-                load: user?.units?.weight === "kg" ? "kg / barra" : "lb / barra",
+                load: "Ej. 45, 9 placas, barra + 25",
             };
         }
+
         return {
             sessionType: "e.g. Pull Power",
             focus: "e.g. Back + biceps",
@@ -745,7 +746,7 @@ export function RoutinesPage() {
             exNotes: "Optional…",
             sets: "3",
             reps: "8-10",
-            load: user?.units?.weight === "kg" ? "kg / bar" : "lb / bar",
+            load: "e.g. 45, 9 plates, bar + 25",
         };
     }, [lang]);
 
@@ -1025,7 +1026,7 @@ export function RoutinesPage() {
                         </>
                     ) : null}
 
-                    {routine ? (
+                    {/* {routine ? (
                         <RoutineAttachmentsSection
                             t={t}
                             lang={lang}
@@ -1035,7 +1036,7 @@ export function RoutinesPage() {
                             onUpload={uploadWeekAttachments}
                             onDelete={deleteWeekAttachment}
                         />
-                    ) : null}
+                    ) : null} */}
                 </>
             ) : null}
 

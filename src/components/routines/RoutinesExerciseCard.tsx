@@ -1,3 +1,4 @@
+// src/components/routines/RoutinesExerciseCard.tsx
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ExerciseAttachmentPicker } from "@/components/routines/ExerciseAttachmentPicker";
@@ -48,13 +49,8 @@ type Props = {
     ph: Placeholders;
 
     onRemove: () => void;
-
-    // name is still editable
     onChangeName: (next: string) => void;
-
-    // movement mapping
     onChangeMovement: (args: { movementId?: string; movementName?: string }) => void;
-
     onChangeNotes: (next: string) => void;
     onChangeSets: (next: string) => void;
     onChangeReps: (next: string) => void;
@@ -109,7 +105,6 @@ export function RoutinesExerciseCard({
                 hasMovementMapping ? "border-primary/30 bg-primary/5" : "border-border bg-card"
             )}
         >
-            {/* Header ejercicio + botón eliminar */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 flex flex-wrap items-center gap-2">
                     <div className="text-sm font-medium">
@@ -140,9 +135,7 @@ export function RoutinesExerciseCard({
                 </Button>
             </div>
 
-            {/* Campos principales */}
             <div className="grid gap-3 md:grid-cols-2">
-                {/* Movement selector */}
                 <div className="space-y-1 md:col-span-2 min-w-0">
                     <label className="text-xs font-medium">{lang === "es" ? "Movimiento" : "Movement"}</label>
 
@@ -189,7 +182,6 @@ export function RoutinesExerciseCard({
                     ) : null}
                 </div>
 
-                {/* Name (editable) */}
                 <div className="space-y-1 min-w-0">
                     <label className="text-xs font-medium">{t("routines.exName")}</label>
                     <input
@@ -212,7 +204,6 @@ export function RoutinesExerciseCard({
                     />
                 </div>
 
-                {/* Sets / Reps / RPE / Load */}
                 <div className="space-y-1 min-w-0">
                     <label className="text-xs font-medium">{t("routines.sets")}</label>
                     <input
@@ -297,7 +288,6 @@ export function RoutinesExerciseCard({
                 </div>
             </div>
 
-            {/* Attachments */}
             <ExerciseAttachmentPicker
                 title={t("routines.exerciseAttachments")}
                 emptyText={t("routines.noAttachmentsToLink")}

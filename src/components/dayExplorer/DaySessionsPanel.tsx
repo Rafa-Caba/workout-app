@@ -341,6 +341,9 @@ function SessionCard({
     index: number;
     onOpenMedia: (item: MediaLikeItem) => void;
 }) {
+    const [isSessionOpen, setIsSessionOpen] = React.useState(true);
+    const [isExercisesOpen, setIsExercisesOpen] = React.useState(false);
+
     const sessionTitle = cleanString(session.type) ?? t("days.sessions.unknownType");
     const activityType = session.activityType;
     const isOutdoor = isOutdoorActivityType(activityType);
@@ -403,282 +406,324 @@ function SessionCard({
             key={buildSessionKey(session, index)}
             className="w-full min-w-0 overflow-hidden rounded-2xl border bg-card"
         >
-            <div className="border-b p-4">
+            <button
+                type="button"
+                onClick={() => setIsSessionOpen((prev) => !prev)}
+                className="w-full border-b p-4 text-left transition hover:bg-muted/40"
+                aria-expanded={isSessionOpen}
+                aria-label={isSessionOpen ? "Colapsar sesión" : "Expandir sesión"}
+            >
                 <div className="min-w-0 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div className="min-w-0 w-full">
-                        <div className="min-w-0 flex flex-col gap-2">
-                            <div className="min-w-0 flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+                        <div className="min-w-0 flex items-start gap-3">
+                            <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border bg-background text-sm text-foreground">
+                                {isSessionOpen ? "−" : "+"}
+                            </span>
+
+                            <div className="min-w-0 flex-1">
                                 <div className="min-w-0 text-base font-semibold wrap-break-words md:truncate">
                                     {t("days.sessions.dayPrefix")} {sessionTitle}
                                 </div>
 
+                                <div className="mt-1 text-xs text-muted-foreground">
+                                    {isSessionOpen
+                                        ? "Click para colapsar esta sesión"
+                                        : "Click para expandir esta sesión"}
+                                </div>
+
                                 {session.notes ? (
-                                    <div className="w-full text-sm text-muted-foreground wrap-break-words md:w-auto md:max-w-full md:text-right">
+                                    <div className="mt-2 w-full text-sm text-muted-foreground wrap-break-words md:max-w-full">
                                         {session.notes}
                                     </div>
                                 ) : null}
                             </div>
-
-                            <div className="flex flex-wrap gap-2">
-                                <span className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-xs text-foreground">
-                                    {isOutdoor ? "🚶 Outdoor" : "🏋️ Gym / Training"}
-                                </span>
-
-                                {activityType ? (
-                                    <span className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-xs text-foreground">
-                                        {activityType === "walking" ? "Walking" : "Running"}
-                                    </span>
-                                ) : null}
-
-                                {sessionKind ? (
-                                    <span className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-xs text-foreground">
-                                        {sessionKind}
-                                    </span>
-                                ) : null}
-
-                                {source ? (
-                                    <span className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-xs text-foreground">
-                                        {source}
-                                    </span>
-                                ) : null}
-                            </div>
-
-                            <div className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                <BadgePill emoji="⏱️" label={t("days.sessions.duration")} value={duration} />
-                                <BadgePill emoji="📎" label={t("days.sessions.media")} value={`${mediaCount}`} />
-
-                                <BadgePill emoji="🔥" label={t("days.sessions.activeKcal")} value={activeKcal} />
-                                <BadgePill emoji="🧮" label={t("days.sessions.totalKcal")} value={totalKcal} />
-
-                                <BadgePill emoji="❤️" label={t("days.sessions.avgHr")} value={avgHr} />
-                                <BadgePill emoji="⬆️" label={t("days.sessions.maxHr")} value={maxHr} />
-
-                                <BadgePill emoji="🚶" label={t("days.sessions.stepsLabel")} value={steps} />
-                                <BadgePill emoji="📏" label={t("days.sessions.distanceLabel")} value={distance} />
-
-                                <BadgePill emoji="⛰️" label={t("days.sessions.elevationLabel")} value={elevation} />
-                                <BadgePill
-                                    emoji="⏱️"
-                                    label={t("days.sessions.paceLabel")}
-                                    value={pace ? `${pace} ${t("days.sessions.paceUnit")}` : null}
-                                />
-
-                                <BadgePill emoji="🔁" label={t("days.sessions.cadenceLabel")} value={cadence} />
-                                <BadgePill emoji="🎯" label={t("days.sessions.rpe")} value={rpe} />
-
-                                <BadgePill emoji="🟢" label={t("days.sessions.startAt")} value={startAt} />
-                                <BadgePill emoji="🔴" label={t("days.sessions.endAt")} value={endAt} />
-
-                                <BadgePill
-                                    emoji="🏋️"
-                                    label={t("days.sessions.exercises")}
-                                    value={exercisesCount > 0 ? `${exercisesCount}` : null}
-                                />
-
-                                <BadgePill
-                                    emoji="📚"
-                                    label={t("days.sessions.sets")}
-                                    value={setsCount > 0 ? `${loggedSets}/${setsCount}` : null}
-                                />
-
-                                <BadgePill
-                                    emoji="⌚"
-                                    label={t("days.sessions.sourceDevice")}
-                                    value={sourceDevice}
-                                />
-                                <BadgePill
-                                    emoji="⬇️"
-                                    label={t("days.sessions.importedAt")}
-                                    value={importedAt}
-                                />
-
-                                <BadgePill
-                                    emoji="🔄"
-                                    label={t("days.sessions.lastSyncedAt")}
-                                    value={lastSyncedAt}
-                                />
-                                <BadgePill
-                                    emoji="🆔"
-                                    label={t("days.sessions.externalId")}
-                                    value={externalId}
-                                />
-                            </div>
-
-                            {isOutdoor ? (
-                                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                    <Metric
-                                        label={t("days.sessions.route")}
-                                        value={session.hasRoute ? t("days.sessions.routeYes") : t("days.sessions.routeNo")}
-                                    />
-                                    <Metric
-                                        label={t("days.sessions.routePoints")}
-                                        value={isFiniteNumber(routePoints) ? `${routePoints}` : null}
-                                    />
-                                    <Metric
-                                        label={t("days.sessions.avgSpeed")}
-                                        value={
-                                            isFiniteNumber(avgSpeedKmh)
-                                                ? `${avgSpeedKmh.toFixed(2)} ${t("days.sessions.speedUnit")}`
-                                                : null
-                                        }
-                                    />
-                                    <Metric
-                                        label={t("days.sessions.maxSpeed")}
-                                        value={
-                                            isFiniteNumber(maxSpeedKmh)
-                                                ? `${maxSpeedKmh.toFixed(2)} ${t("days.sessions.speedUnit")}`
-                                                : null
-                                        }
-                                    />
-                                    <Metric
-                                        label={t("days.sessions.strideLength")}
-                                        value={
-                                            isFiniteNumber(strideLengthM)
-                                                ? `${strideLengthM.toFixed(2)} ${t("days.sessions.strideLengthUnit")}`
-                                                : null
-                                        }
-                                    />
-                                </div>
-                            ) : null}
                         </div>
                     </div>
                 </div>
-            </div>
+            </button>
 
-            <div className="space-y-4 p-4">
-                {exercises && exercises.length > 0 ? (
-                    <div className="space-y-3">
-                        <div className="text-xs font-semibold text-muted-foreground">
-                            {t("days.sessions.exercisesList")} ({exercises.length})
+            {isSessionOpen ? (
+                <div className="space-y-4 p-4">
+                    <div className="flex flex-wrap gap-2">
+                        <span className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-xs text-foreground">
+                            {isOutdoor ? "🚶 Outdoor" : "🏋️ Gym / Training"}
+                        </span>
+
+                        {activityType ? (
+                            <span className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-xs text-foreground">
+                                {activityType === "walking" ? "Walking" : "Running"}
+                            </span>
+                        ) : null}
+
+                        {sessionKind ? (
+                            <span className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-xs text-foreground">
+                                {sessionKind}
+                            </span>
+                        ) : null}
+
+                        {source ? (
+                            <span className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-xs text-foreground">
+                                {source}
+                            </span>
+                        ) : null}
+                    </div>
+
+                    <div className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <BadgePill emoji="⏱️" label={t("days.sessions.duration")} value={duration} />
+                        <BadgePill emoji="📎" label={t("days.sessions.media")} value={`${mediaCount}`} />
+
+                        <BadgePill emoji="🔥" label={t("days.sessions.activeKcal")} value={activeKcal} />
+                        <BadgePill emoji="🧮" label={t("days.sessions.totalKcal")} value={totalKcal} />
+
+                        <BadgePill emoji="❤️" label={t("days.sessions.avgHr")} value={avgHr} />
+                        <BadgePill emoji="⬆️" label={t("days.sessions.maxHr")} value={maxHr} />
+
+                        <BadgePill emoji="🚶" label={t("days.sessions.stepsLabel")} value={steps} />
+                        <BadgePill emoji="📏" label={t("days.sessions.distanceLabel")} value={distance} />
+
+                        <BadgePill emoji="⛰️" label={t("days.sessions.elevationLabel")} value={elevation} />
+                        <BadgePill
+                            emoji="⏱️"
+                            label={t("days.sessions.paceLabel")}
+                            value={pace ? `${pace} ${t("days.sessions.paceUnit")}` : null}
+                        />
+
+                        <BadgePill emoji="🔁" label={t("days.sessions.cadenceLabel")} value={cadence} />
+                        <BadgePill emoji="🎯" label={t("days.sessions.rpe")} value={rpe} />
+
+                        <BadgePill emoji="🟢" label={t("days.sessions.startAt")} value={startAt} />
+                        <BadgePill emoji="🔴" label={t("days.sessions.endAt")} value={endAt} />
+
+                        <BadgePill
+                            emoji="🏋️"
+                            label={t("days.sessions.exercises")}
+                            value={exercisesCount > 0 ? `${exercisesCount}` : null}
+                        />
+
+                        <BadgePill
+                            emoji="📚"
+                            label={t("days.sessions.sets")}
+                            value={setsCount > 0 ? `${loggedSets}/${setsCount}` : null}
+                        />
+
+                        <BadgePill
+                            emoji="⌚"
+                            label={t("days.sessions.sourceDevice")}
+                            value={sourceDevice}
+                        />
+                        <BadgePill
+                            emoji="⬇️"
+                            label={t("days.sessions.importedAt")}
+                            value={importedAt}
+                        />
+
+                        <BadgePill
+                            emoji="🔄"
+                            label={t("days.sessions.lastSyncedAt")}
+                            value={lastSyncedAt}
+                        />
+                        <BadgePill
+                            emoji="🆔"
+                            label={t("days.sessions.externalId")}
+                            value={externalId}
+                        />
+                    </div>
+
+                    {isOutdoor ? (
+                        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            <Metric
+                                label={t("days.sessions.route")}
+                                value={session.hasRoute ? t("days.sessions.routeYes") : t("days.sessions.routeNo")}
+                            />
+                            <Metric
+                                label={t("days.sessions.routePoints")}
+                                value={isFiniteNumber(routePoints) ? `${routePoints}` : null}
+                            />
+                            <Metric
+                                label={t("days.sessions.avgSpeed")}
+                                value={
+                                    isFiniteNumber(avgSpeedKmh)
+                                        ? `${avgSpeedKmh.toFixed(2)} ${t("days.sessions.speedUnit")}`
+                                        : null
+                                }
+                            />
+                            <Metric
+                                label={t("days.sessions.maxSpeed")}
+                                value={
+                                    isFiniteNumber(maxSpeedKmh)
+                                        ? `${maxSpeedKmh.toFixed(2)} ${t("days.sessions.speedUnit")}`
+                                        : null
+                                }
+                            />
+                            <Metric
+                                label={t("days.sessions.strideLength")}
+                                value={
+                                    isFiniteNumber(strideLengthM)
+                                        ? `${strideLengthM.toFixed(2)} ${t("days.sessions.strideLengthUnit")}`
+                                        : null
+                                }
+                            />
                         </div>
+                    ) : null}
 
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                            {exercises.map((exercise) => {
-                                const actualSetChipTexts = getExerciseActualSetChipTexts(exercise);
-                                const hasActualSets = actualSetChipTexts.length > 0;
-                                const setValue = getExerciseSetsDisplayValue(exercise);
-                                const repsValue = getExerciseRepsValue(exercise);
-                                const loadValue = getExerciseLoadValue(exercise);
-                                const rpeValue = getExerciseRpeValue(exercise);
-                                const attachmentsCount = getExerciseAttachmentsCount(exercise);
+                    {exercises && exercises.length > 0 ? (
+                        <div className="space-y-3 rounded-xl border">
+                            <button
+                                type="button"
+                                onClick={() => setIsExercisesOpen((prev) => !prev)}
+                                className="w-full p-3 rounded-t-xl border-b text-left transition hover:bg-muted/40"
+                                aria-expanded={isExercisesOpen}
+                                aria-label={isExercisesOpen ? "Ocultar lista de ejercicios" : "Mostrar lista de ejercicios"}
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <div className="text-xs font-semibold text-muted-foreground">
+                                            {t("days.sessions.exercisesList")} ({exercises.length})
+                                        </div>
 
-                                return (
-                                    <div
-                                        key={exercise.id}
-                                        className="min-w-0 rounded-xl border bg-background p-3"
-                                    >
-                                        <div className="space-y-3">
-                                            <div className="space-y-1">
-                                                <div className="text-sm font-semibold wrap-break-words">
-                                                    {getExerciseDisplayName(exercise)}
-                                                </div>
-
-                                                {getExerciseNotes(exercise) ? (
-                                                    <div className="text-xs text-muted-foreground wrap-break-words">
-                                                        {getExerciseNotes(exercise)}
-                                                    </div>
-                                                ) : null}
-                                            </div>
-
-                                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                                <Metric
-                                                    label={t("days.sessions.sets")}
-                                                    value={setValue}
-                                                />
-                                                <Metric
-                                                    label={t("days.sessions.reps")}
-                                                    value={hasActualSets ? "Real" : repsValue}
-                                                />
-                                                <Metric
-                                                    label={t("days.sessions.load")}
-                                                    value={loadValue}
-                                                />
-                                                <Metric
-                                                    label={t("days.sessions.rpe")}
-                                                    value={rpeValue}
-                                                />
-                                            </div>
-
-                                            {hasActualSets ? (
-                                                <div className="flex flex-wrap gap-2">
-                                                    {actualSetChipTexts.map((text, chipIndex) => (
-                                                        <span
-                                                            key={`${exercise.id}-actual-set-${chipIndex}`}
-                                                            className="inline-flex max-w-full items-center rounded-full border bg-card px-3 py-1 text-xs text-foreground"
-                                                        >
-                                                            <span className="truncate">{text}</span>
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            ) : null}
-
-                                            {attachmentsCount > 0 ? (
-                                                <div className="text-xs text-muted-foreground">
-                                                    {t("days.sessions.media")}: {attachmentsCount}
-                                                </div>
-                                            ) : null}
+                                        <div className="mt-1 text-xs text-muted-foreground">
+                                            {isExercisesOpen
+                                                ? "Click aquí para ocultar los detalles"
+                                                : "Click aquí para ver los detalles"}
                                         </div>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                ) : null}
 
-                {Array.isArray(session.media) && session.media.length > 0 ? (
-                    <div className="space-y-2">
-                        <div className="text-xs font-semibold text-muted-foreground">
-                            {t("days.sessions.mediaGrid")}
-                        </div>
+                                    <span className="inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full border bg-card px-2 text-xs font-semibold text-foreground">
+                                        {isExercisesOpen ? "−" : "+"}
+                                    </span>
+                                </div>
+                            </button>
 
-                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6">
-                            {session.media.map((media) => {
-                                const item = toMediaLikeItem(media, {
-                                    date: day.date,
-                                    sessionType: sessionTitle,
-                                    source: "day",
-                                });
+                            {isExercisesOpen ? (
+                                <div className="grid grid-cols-1 gap-3 p-3 md:grid-cols-2">
+                                    {exercises.map((exercise) => {
+                                        const actualSetChipTexts = getExerciseActualSetChipTexts(exercise);
+                                        const hasActualSets = actualSetChipTexts.length > 0;
+                                        const setValue = getExerciseSetsDisplayValue(exercise);
+                                        const repsValue = getExerciseRepsValue(exercise);
+                                        const loadValue = getExerciseLoadValue(exercise);
+                                        const rpeValue = getExerciseRpeValue(exercise);
+                                        const attachmentsCount = getExerciseAttachmentsCount(exercise);
 
-                                const isImage = item.resourceType === "image";
-                                const isVideo = item.resourceType === "video";
+                                        return (
+                                            <div
+                                                key={exercise.id}
+                                                className="min-w-0 rounded-xl border bg-background p-3"
+                                            >
+                                                <div className="space-y-3">
+                                                    <div className="space-y-1">
+                                                        <div className="text-sm font-semibold wrap-break-words">
+                                                            {getExerciseDisplayName(exercise)}
+                                                        </div>
 
-                                return (
-                                    <button
-                                        key={media.publicId}
-                                        type="button"
-                                        className="w-full overflow-hidden rounded-lg border bg-background transition-shadow hover:shadow-sm"
-                                        onClick={() => onOpenMedia(item)}
-                                        title={media.publicId}
-                                    >
-                                        <div className="aspect-square w-full overflow-hidden bg-black/5">
-                                            {isImage ? (
-                                                <img
-                                                    src={item.url}
-                                                    alt={media.publicId}
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            ) : isVideo ? (
-                                                <video
-                                                    src={item.url}
-                                                    className="h-full w-full object-cover"
-                                                    muted
-                                                    playsInline
-                                                />
-                                            ) : (
-                                                <div className="flex h-full w-full items-center justify-center px-2 text-xs text-muted-foreground">
-                                                    {t("media.open")}
+                                                        {getExerciseNotes(exercise) ? (
+                                                            <div className="text-xs text-muted-foreground wrap-break-words">
+                                                                {getExerciseNotes(exercise)}
+                                                            </div>
+                                                        ) : null}
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                        <Metric
+                                                            label={t("days.sessions.sets")}
+                                                            value={setValue}
+                                                        />
+                                                        <Metric
+                                                            label={t("days.sessions.reps")}
+                                                            value={hasActualSets ? "Real" : repsValue}
+                                                        />
+                                                        <Metric
+                                                            label={t("days.sessions.load")}
+                                                            value={loadValue}
+                                                        />
+                                                        <Metric
+                                                            label={t("days.sessions.rpe")}
+                                                            value={rpeValue}
+                                                        />
+                                                    </div>
+
+                                                    {hasActualSets ? (
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {actualSetChipTexts.map((text, chipIndex) => (
+                                                                <span
+                                                                    key={`${exercise.id}-actual-set-${chipIndex}`}
+                                                                    className="inline-flex max-w-full items-center rounded-full border bg-card px-3 py-1 text-xs text-foreground"
+                                                                >
+                                                                    <span className="truncate">{text}</span>
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : null}
+
+                                                    {attachmentsCount > 0 ? (
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {t("days.sessions.media")}: {attachmentsCount}
+                                                        </div>
+                                                    ) : null}
                                                 </div>
-                                            )}
-                                        </div>
-                                    </button>
-                                );
-                            })}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : null}
                         </div>
-                    </div>
-                ) : (
-                    <div className="text-xs text-muted-foreground">{t("days.sessions.noMedia")}</div>
-                )}
-            </div>
+                    ) : null}
+
+                    {Array.isArray(session.media) && session.media.length > 0 ? (
+                        <div className="space-y-2">
+                            <div className="text-xs font-semibold text-muted-foreground">
+                                {t("days.sessions.mediaGrid")}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6">
+                                {session.media.map((media) => {
+                                    const item = toMediaLikeItem(media, {
+                                        date: day.date,
+                                        sessionType: sessionTitle,
+                                        source: "day",
+                                    });
+
+                                    const isImage = item.resourceType === "image";
+                                    const isVideo = item.resourceType === "video";
+
+                                    return (
+                                        <button
+                                            key={media.publicId}
+                                            type="button"
+                                            className="w-full overflow-hidden rounded-lg border bg-background transition-shadow hover:shadow-sm"
+                                            onClick={() => onOpenMedia(item)}
+                                            title={media.publicId}
+                                        >
+                                            <div className="aspect-square w-full overflow-hidden bg-black/5">
+                                                {isImage ? (
+                                                    <img
+                                                        src={item.url}
+                                                        alt={media.publicId}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : isVideo ? (
+                                                    <video
+                                                        src={item.url}
+                                                        className="h-full w-full object-cover"
+                                                        muted
+                                                        playsInline
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center px-2 text-xs text-muted-foreground">
+                                                        {t("media.open")}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-xs text-muted-foreground">{t("days.sessions.noMedia")}</div>
+                    )}
+                </div>
+            ) : null}
         </div>
     );
 }

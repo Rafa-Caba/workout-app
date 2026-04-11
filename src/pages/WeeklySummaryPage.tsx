@@ -1,3 +1,4 @@
+// src/pages/WeeklySummaryPage.tsx
 import React from "react";
 import { format, addWeeks, startOfISOWeek, endOfISOWeek } from "date-fns";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ import { extractWeekKpis } from "@/utils/weeksExplorer";
 type Tab = "week" | "range";
 
 type AnyRecord = Record<string, unknown>;
+
 function isRecord(v: unknown): v is AnyRecord {
     return typeof v === "object" && v !== null;
 }
@@ -27,8 +29,21 @@ function todayIso(): string {
 
 function getDaysCountFromSummary(data: unknown): number | null {
     if (!isRecord(data)) return null;
-    const v = (data as any).daysCount;
+    const v = data.daysCount;
     return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
+/**
+ * Formats values passed into StatCard so large decimal tails do not break mobile UI.
+ * - numbers => rounded to max 2 decimals
+ * - strings / other values => returned as-is
+ */
+function formatStatValue(value: unknown): React.ReactNode {
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return Number(value.toFixed(2)).toString();
+    }
+
+    return value as React.ReactNode;
 }
 
 export function WeeklySummaryPage() {
@@ -71,7 +86,6 @@ export function WeeklySummaryPage() {
     const active = tab === "week" ? weekQuery : rangeQuery;
     const isFetching = active.isFetching;
 
-    // Errors
     React.useEffect(() => {
         if (weekQuery.isError) toast.error(weekQuery.error.message);
     }, [weekQuery.isError, weekQuery.error]);
@@ -109,8 +123,7 @@ export function WeeklySummaryPage() {
     const daysCount = getDaysCountFromSummary(active.data ?? null);
     const showEmptyForZero = active.isSuccess && daysCount === 0;
 
-    // By-type optional media column
-    const hasMediaCountPerType = extracted.bySessionType.some((r) => typeof (r as any).mediaCount === "number");
+    const hasMediaCountPerType = extracted.bySessionType.some((r) => typeof (r as { mediaCount?: unknown }).mediaCount === "number");
 
     return (
         <div className="px-4 sm:px-0 space-y-6">
@@ -147,28 +160,28 @@ export function WeeklySummaryPage() {
                                 />
                             </label>
 
-                            <div className="w-full sm:w-auto flex gap-2">
-                                <Button className="flex-1 sm:flex-none" variant="outline" onClick={goPrevWeek} disabled={isFetching}>
+                            <div className="my-1 grid w-full grid-cols-2 gap-2 sm:my-0 sm:w-auto">
+                                <Button className="w-full sm:w-auto" variant="outline" onClick={goPrevWeek} disabled={isFetching}>
                                     {t("week.prev")}
                                 </Button>
-                                <Button className="flex-1 sm:flex-none" variant="outline" onClick={goNextWeek} disabled={isFetching}>
+                                <Button className="w-full sm:w-auto" variant="outline" onClick={goNextWeek} disabled={isFetching}>
                                     {t("week.next")}
                                 </Button>
                             </div>
 
-                            <div className="sm:ml-auto text-xs text-muted-foreground wrap-break-words">
+                            <div className="sm:ml-auto text-xs text-muted-foreground wrap-wrap-break-words">
                                 {t("week.selectedWeekKey")}:{" "}
                                 <span className="font-mono text-foreground">{derivedWeekKey}</span>
                             </div>
                         </div>
 
                         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 text-sm">
-                            <div className="rounded-md border bg-background px-3 py-2 w-full sm:w-auto">
+                            <div className="flex flex-col sm:flex-row sm:gap-3 rounded-md border bg-background px-3 py-2 w-full sm:w-auto">
                                 <span className="text-muted-foreground">{t("week.weekRange")}:</span>{" "}
                                 <span className="font-mono">{weekRangeLabel}</span>
                             </div>
 
-                            <div className="text-xs text-muted-foreground wrap-break-words sm:ml-auto">
+                            <div className="text-xs text-muted-foreground wrap-wrap-break-words sm:ml-auto">
                                 {t("week.loaded")}:{" "}
                                 <span className="font-mono">{runWeekKey}</span>{" "}
                                 <Button
@@ -205,7 +218,7 @@ export function WeeklySummaryPage() {
                             />
                         </label>
 
-                        <span className="sm:ml-auto text-xs text-muted-foreground wrap-break-words">
+                        <span className="sm:ml-auto text-xs text-muted-foreground wrap-wrap-break-words">
                             {t("week.loaded")}:{" "}
                             <span className="font-mono">{runFrom}</span> → <span className="font-mono">{runTo}</span>
                         </span>
@@ -229,51 +242,72 @@ export function WeeklySummaryPage() {
                 {tab === "week" && weekQuery.isSuccess && weekData && !showEmptyForZero ? (
                     <>
                         <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
-                            <StatCard label={t("weeks.kpi.days")} value={extracted.kpis.daysCount} />
-                            <StatCard label={t("weeks.kpi.sessions")} value={extracted.kpis.sessionsCount} />
-                            <StatCard label={t("weeks.kpi.durationMin")} value={extracted.kpis.durationMinutes} />
-                            <StatCard label={t("weeks.kpi.activeKcal")} value={extracted.kpis.activeKcal} />
-                            <StatCard label={t("weeks.kpi.media")} value={extracted.kpis.mediaCount} />
-                            <StatCard label={t("weeks.kpi.sleepDays")} value={extracted.kpis.sleepDays} />
-                            <StatCard label={t("weeks.kpi.sleepAvgMin")} value={extracted.kpis.sleepAvgTotal} />
-                            <StatCard label={t("weeks.kpi.sleepScore")} value={extracted.kpis.sleepAvgScore} />
-
-                            {/* NEW: REM / Deep */}
-                            <StatCard label={t("weeks.kpi.sleepAvgRemMin")} value={extracted.kpis.sleepAvgRem} />
-                            <StatCard label={t("weeks.kpi.sleepAvgDeepMin")} value={extracted.kpis.sleepAvgDeep} />
-
-                            <StatCard label={t("weeks.kpi.hr")} value={`${extracted.kpis.avgHr} / ${extracted.kpis.maxHr}`} />
+                            <StatCard label={t("weeks.kpi.days")} value={formatStatValue(extracted.kpis.daysCount)} />
+                            <StatCard label={t("weeks.kpi.sessions")} value={formatStatValue(extracted.kpis.sessionsCount)} />
+                            <StatCard label={t("weeks.kpi.durationMin")} value={formatStatValue(extracted.kpis.durationMinutes)} />
+                            <StatCard label={t("weeks.kpi.activeKcal")} value={formatStatValue(extracted.kpis.activeKcal)} />
+                            <StatCard label={t("weeks.kpi.media")} value={formatStatValue(extracted.kpis.mediaCount)} />
+                            <StatCard label={t("weeks.kpi.sleepDays")} value={formatStatValue(extracted.kpis.sleepDays)} />
+                            <StatCard label={t("weeks.kpi.sleepAvgMin")} value={formatStatValue(extracted.kpis.sleepAvgTotal)} />
+                            <StatCard label={t("weeks.kpi.sleepScore")} value={formatStatValue(extracted.kpis.sleepAvgScore)} />
+                            <StatCard label={t("weeks.kpi.sleepAvgRemMin")} value={formatStatValue(extracted.kpis.sleepAvgRem)} />
+                            <StatCard label={t("weeks.kpi.sleepAvgDeepMin")} value={formatStatValue(extracted.kpis.sleepAvgDeep)} />
+                            <StatCard
+                                label={t("weeks.kpi.hr")}
+                                value={`${formatStatValue(extracted.kpis.avgHr)} / ${formatStatValue(extracted.kpis.maxHr)}`}
+                            />
                         </div>
 
                         {extracted.bySessionType.length > 0 ? (
                             <div className="rounded-xl border bg-background p-4">
                                 <div className="text-sm font-medium">{t("weeks.byType.title")}</div>
 
-                                <div className="mt-3 overflow-auto -mx-4 sm:mx-0">
-                                    <div className="min-w-[180] sm:min-w-0 px-4 sm:px-0">
+                                <div className="mt-4 overflow-x-auto">
+                                    <div className="min-w-[140]">
                                         <table className="w-full text-sm">
                                             <thead className="text-muted-foreground">
                                                 <tr className="border-b">
-                                                    <th className="py-2 text-left font-medium">{t("weeks.byType.type")}</th>
-                                                    <th className="py-2 text-right font-medium">{t("weeks.byType.sessions")}</th>
-                                                    <th className="py-2 text-right font-medium">{t("weeks.byType.durationMin")}</th>
-                                                    <th className="py-2 text-right font-medium">{t("weeks.byType.kcal")}</th>
+                                                    <th className="py-3 pr-6 text-left font-medium whitespace-nowrap">
+                                                        {t("weeks.byType.type")}
+                                                    </th>
+                                                    <th className="py-3 px-4 text-right font-medium whitespace-nowrap">
+                                                        {t("weeks.byType.sessions")}
+                                                    </th>
+                                                    <th className="py-3 px-4 text-right font-medium whitespace-nowrap">
+                                                        {t("weeks.byType.durationMin")}
+                                                    </th>
+                                                    <th className="py-3 px-4 text-right font-medium whitespace-nowrap">
+                                                        {t("weeks.byType.kcal")}
+                                                    </th>
 
                                                     {hasMediaCountPerType ? (
-                                                        <th className="py-2 text-right font-medium">{t("weeks.byType.media")}</th>
+                                                        <th className="py-3 pl-4 text-right font-medium whitespace-nowrap">
+                                                            {t("weeks.byType.media")}
+                                                        </th>
                                                     ) : null}
                                                 </tr>
                                             </thead>
+
                                             <tbody>
                                                 {extracted.bySessionType.map((row, idx) => (
                                                     <tr key={`${row.sessionType}-${idx}`} className="border-b last:border-b-0">
-                                                        <td className="py-2">{row.sessionType}</td>
-                                                        <td className="py-2 text-right">{row.sessionsCount}</td>
-                                                        <td className="py-2 text-right">{row.durationMinutes}</td>
-                                                        <td className="py-2 text-right">{row.activeKcal}</td>
+                                                        <td className="py-3 pr-6 align-top">
+                                                            <span className="wrap-break-words">{row.sessionType}</span>
+                                                        </td>
+                                                        <td className="py-3 px-4 text-right tabular-nums whitespace-nowrap">
+                                                            {formatStatValue(row.sessionsCount)}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-right tabular-nums whitespace-nowrap">
+                                                            {formatStatValue(row.durationMinutes)}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-right tabular-nums whitespace-nowrap">
+                                                            {formatStatValue(row.activeKcal)}
+                                                        </td>
 
                                                         {hasMediaCountPerType ? (
-                                                            <td className="py-2 text-right">{(row as any).mediaCount ?? "—"}</td>
+                                                            <td className="py-3 pl-4 text-right tabular-nums whitespace-nowrap">
+                                                                {formatStatValue((row as { mediaCount?: unknown }).mediaCount ?? "—")}
+                                                            </td>
                                                         ) : null}
                                                     </tr>
                                                 ))}
@@ -292,7 +326,6 @@ export function WeeklySummaryPage() {
                     <>
                         {showEmptyForZero ? null : <JsonDetails title={t("weeks.json.rangeTitle")} data={rangeQuery.data} />}
 
-                        {/* If it's empty but backend still returned JSON, keep it accessible */}
                         {showEmptyForZero ? <JsonDetails title={t("weeks.json.rangeTitle")} data={rangeQuery.data} /> : null}
                     </>
                 ) : null}

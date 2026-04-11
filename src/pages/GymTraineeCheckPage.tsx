@@ -542,53 +542,14 @@ export function GymTraineeCheckPage() {
     const routineExists = Boolean(safeRemoteDay?.plannedRoutine);
     const gymCheckSessionExists = hasGymCheckSession(remoteDay);
 
-    // Sticky actions visibility (show when top actions are out of view)
-    const topActionsRef = React.useRef<HTMLDivElement | null>(null);
-    const [showStickyActions, setShowStickyActions] = React.useState(false);
-
-    React.useEffect(() => {
-        const el = topActionsRef.current;
-        if (!el) return;
-
-        const io = new IntersectionObserver(
-            ([entry]) => {
-                setShowStickyActions(!entry.isIntersecting);
-            },
-            {
-                root: null,
-                threshold: 0.01,
-                rootMargin: "-72px 0px 0px 0px",
-            }
-        );
-
-        io.observe(el);
-        return () => io.disconnect();
-    }, []);
-
     return (
         <div className="space-y-4 sm:space-y-6">
             <PageHeader
                 title="Gym Check"
                 subtitle={
                     lang === "es"
-                        ? "Plan asignado por tu entrenador + checklist + métricas"
-                        : "Coach-assigned plan + checklist + metrics"
-                }
-                right={
-                    <div className="w-full sm:w-auto" ref={topActionsRef}>
-                        <GymCheckSessionMetrics
-                            t={t}
-                            lang={lang}
-                            busy={busy}
-                            routineExists={routineExists}
-                            doneCount={doneCount}
-                            gymCheckSessionExists={gymCheckSessionExists}
-                            onSyncToLoadedWeek={syncToLoadedWeek}
-                            onSaveGymCheckToDb={onSaveGymCheckToDb}
-                            onCreateRealSession={onCreateRealSession}
-                            onResetWeek={resetWeek}
-                        />
-                    </div>
+                        ? "Checklist de rutina por día + métricas del dispositivo + media por ejercicio"
+                        : "Daily routine checklist + device metrics + per-exercise media"
                 }
             />
 
@@ -730,38 +691,25 @@ export function GymTraineeCheckPage() {
                                     );
                                 })}
                             </div>
+
+                            <div className="pt-2">
+                                <GymCheckSessionMetrics
+                                    t={t}
+                                    lang={lang}
+                                    busy={busy}
+                                    routineExists={routineExists}
+                                    doneCount={doneCount}
+                                    gymCheckSessionExists={gymCheckSessionExists}
+                                    onSyncToLoadedWeek={syncToLoadedWeek}
+                                    onSaveGymCheckToDb={onSaveGymCheckToDb}
+                                    onCreateRealSession={onCreateRealSession}
+                                    onResetWeek={resetWeek}
+                                />
+                            </div>
                         </>
                     )}
                 </div>
             )}
-
-            {/* Sticky bottom actions (mobile) */}
-            {routineExists && showStickyActions ? (
-                <div
-                    className={[
-                        "fixed inset-x-0 bottom-0 z-50 md:hidden",
-                        "border-t bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/70",
-                    ].join(" ")}
-                    style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-                >
-                    <div className="mx-auto max-w-6xl px-3 sm:px-4 py-2">
-                        <GymCheckSessionMetrics
-                            t={t}
-                            lang={lang}
-                            busy={busy}
-                            routineExists={routineExists}
-                            doneCount={doneCount}
-                            gymCheckSessionExists={gymCheckSessionExists}
-                            onSyncToLoadedWeek={syncToLoadedWeek}
-                            onSaveGymCheckToDb={onSaveGymCheckToDb}
-                            onCreateRealSession={onCreateRealSession}
-                            onResetWeek={resetWeek}
-                        />
-                    </div>
-                </div>
-            ) : null}
-
-            {routineExists ? <div className="h-24 md:hidden" /> : null}
 
             {viewer ? <MediaViewerModal item={viewer} onClose={() => setViewer(null)} /> : null}
         </div>

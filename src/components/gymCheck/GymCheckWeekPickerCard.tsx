@@ -86,10 +86,9 @@ export function GymCheckWeekPickerCard(props: Props) {
                     </Button>
                 </div>
 
-                <div className={cn("min-w-0 rounded-xl border p-3 text-xs text-muted-foreground wrap-break-words", themedNestedCard)}>
-                    {lang === "es" ? "Seleccionado" : "Selected"}:{" "}
-                    <span className="break-all font-mono">{derivedWeekKey}</span> •{" "}
-                    {lang === "es" ? "Cargado" : "Loaded"}: <span className="break-all font-mono">{runWeekKey}</span> •{" "}
+                <div className={cn("min-w-0 flex flex-col sm:flex-row rounded-xl border p-3 text-xs text-muted-foreground wrap-break-words", themedNestedCard)}>
+                    <span className="break-all font-mono"> {lang === "es" ? "Seleccionado" : "Selected"}:{" "}{derivedWeekKey}{" "}•{" "}</span>
+                    <span className="break-all font-mono">{lang === "es" ? "Cargado" : "Loaded"}: {runWeekKey}{" "}•{" "}</span>{" "}
                     <span className="break-all font-mono">{weekRangeLabel}</span>
                 </div>
 

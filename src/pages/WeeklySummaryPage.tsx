@@ -156,7 +156,7 @@ export function WeeklySummaryPage() {
                             <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
                                 <input
                                     type="date"
-                                    className="mt-1 sm:mt-0 sm:ml-2 w-full sm:w-auto h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
+                                    className="mt-1 sm:mt-0 sm:ml-2 sm:w-full h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
                                     value={weekDate}
                                     onChange={(e) => setWeekDate(e.target.value)}
                                 />
@@ -206,7 +206,7 @@ export function WeeklySummaryPage() {
                         <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
                             <input
                                 type="date"
-                                className="mt-1 sm:mt-0 sm:ml-2 w-full sm:w-auto h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
+                                className="mt-1 sm:mt-0 sm:ml-2 sm:w-full h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
                                 value={from}
                                 onChange={(e) => setFrom(e.target.value)}
                             />
@@ -218,7 +218,7 @@ export function WeeklySummaryPage() {
                         <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
                             <input
                                 type="date"
-                                className="mt-1 sm:mt-0 sm:ml-2 w-full sm:w-auto h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
+                                className="mt-1 sm:mt-0 sm:ml-2 sm:w-full h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
                                 value={to}
                                 onChange={(e) => setTo(e.target.value)}
                             />

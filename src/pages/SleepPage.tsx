@@ -205,7 +205,7 @@ export function SleepPage() {
                         <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
                             <input
                                 type="date"
-                                className="w-full md:w-auto rounded-md border bg-background px-3 py-2 text-sm"
+                                className="sm:w-full rounded-md border bg-background px-3 py-2 text-sm"
                                 value={date}
                                 onChange={(e) => setDate(e.target.value)}
                             />

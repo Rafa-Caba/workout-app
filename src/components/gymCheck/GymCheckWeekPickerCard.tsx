@@ -65,7 +65,7 @@ export function GymCheckWeekPickerCard(props: Props) {
                     <label className="text-sm text-muted-foreground">{t("week.pickDateInWeek")}</label>
                     <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
                         <input
-                            className="h-10 w-full min-w-0 rounded-lg border border-primary/15 bg-background px-3 text-base sm:w-auto sm:text-sm"
+                            className="h-10 min-w-0 rounded-lg border border-primary/15 bg-background px-3 text-base sm:w-full sm:text-sm"
                             type="date"
                             value={weekDate}
                             onChange={(e) => onWeekDateChange(e.target.value)}

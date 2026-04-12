@@ -38,7 +38,7 @@ export function DayExplorerToolbar({
                                 type="date"
                                 value={date}
                                 onChange={(e) => onDateChange(e.target.value)}
-                                className="h-10 w-full min-w-0 rounded-xl border border-primary/15 bg-background px-3 text-base sm:w-auto sm:text-sm"
+                                className="h-10 min-w-0 rounded-xl border border-primary/15 bg-background px-3 text-base sm:w-full sm:text-sm"
                             />
                         </div>
 

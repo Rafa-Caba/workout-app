@@ -289,7 +289,7 @@ export function TrainerDashboardPage() {
                                 value={date}
                                 onChange={(e) => setDate(e.target.value)}
                                 className={cn(
-                                    "h-9 w-full sm:w-[50] rounded-md border bg-background px-3 text-sm",
+                                    "h-9 sm:w-full rounded-md border bg-background px-3 text-sm",
                                     "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                 )}
                                 disabled={!hasSelected}

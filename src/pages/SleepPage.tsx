@@ -202,12 +202,14 @@ export function SleepPage() {
                 <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-3">
                     <div className="w-full md:w-auto space-y-1">
                         <label className="text-sm font-medium">{t("common.date")}</label>
-                        <input
-                            type="date"
-                            className="w-full md:w-auto rounded-md border bg-background px-3 py-2 text-sm"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                        />
+                        <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
+                            <input
+                                type="date"
+                                className="w-full md:w-auto rounded-md border bg-background px-3 py-2 text-sm"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                            />
+                        </div>
                     </div>
 
                     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2 md:ml-auto">

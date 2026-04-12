@@ -575,6 +575,7 @@ export const i18nKeys = [
     "pva.debugTitle",
     "pva.couldNotInterpretTitle",
     "pva.couldNotInterpretDesc",
+    "pva.sync",
 
     // Insights landing + pages
     "pages.insights.title",

@@ -45,7 +45,7 @@ type PvaDay = {
     } | null;
     status: string;
 
-    // ✅ added by mergePlanVsActualPlanned
+    // added by mergePlanVsActualPlanned
     gymCheck?: GymCheckSummary;
 };
 
@@ -115,7 +115,7 @@ export function PlanVsActualPage() {
         return toWeekKey(d);
     }, [weekDate]);
 
-    // ✅ auto-load when picker changes (debounced)
+    // auto-load when picker changes (debounced)
     const [runWeekKey, setRunWeekKey] = React.useState(() => toWeekKey(today));
     const query = usePlanVsActual(runWeekKey);
 
@@ -218,7 +218,7 @@ export function PlanVsActualPage() {
         <div className="space-y-5 sm:space-y-6">
             <PageHeader
                 title={t("pages.pva.title")}
-                subtitle={`GET /api/workout/weeks/:weekKey/plan-vs-actual`}
+                subtitle={`Aquí se ve lo planeado en Rutinas vs lo Real en Gym`}
                 right={
                     <div className="w-full sm:w-auto">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
@@ -234,15 +234,17 @@ export function PlanVsActualPage() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
                     <label className="text-sm flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
                         <span className="whitespace-nowrap">{t("pva.pickDateInWeek")}</span>
-                        <input
-                            type="date"
-                            className="w-full sm:w-auto rounded-md border bg-background px-3 py-2 text-sm"
-                            value={weekDate}
-                            onChange={(e) => setWeekDate(e.target.value)}
-                        />
+                        <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
+                            <input
+                                type="date"
+                                className="w-full sm:w-auto rounded-md border bg-background px-3 py-2 text-sm"
+                                value={weekDate}
+                                onChange={(e) => setWeekDate(e.target.value)}
+                            />
+                        </div>
                     </label>
 
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+                    <div className="my-1 grid w-full grid-cols-2 gap-2 sm:my-0 sm:w-auto">
                         <Button className="w-full sm:w-auto" variant="outline" onClick={goPrevWeek} disabled={query.isFetching}>
                             ← {t("pva.prevWeek")}
                         </Button>
@@ -257,7 +259,7 @@ export function PlanVsActualPage() {
                             <span className="font-mono">{runWeekKey}</span>{" "}
                             <Button
                                 variant="ghost"
-                                className="h-8 px-2 align-middle"
+                                className="h-8 px-2 py-0 align-middle"
                                 onClick={syncToLoadedWeek}
                                 disabled={query.isFetching}
                             >
@@ -265,9 +267,9 @@ export function PlanVsActualPage() {
                             </Button>
                         </span>
 
-                        <span className="text-xs text-muted-foreground wrap-break-words">
+                        {/* <span className="text-xs text-muted-foreground wrap-break-words">
                             {t("pva.queryKeyLabel")}: <span className="font-mono">["planVsActual","{runWeekKey}"]</span>
-                        </span>
+                        </span> */}
                     </div>
                 </div>
             </div>

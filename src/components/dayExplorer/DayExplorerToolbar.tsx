@@ -33,12 +33,14 @@ export function DayExplorerToolbar({
                     <div className="text-xs text-muted-foreground">{t("days.toolbar.date")}</div>
 
                     <div className="min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                        <input
-                            type="date"
-                            value={date}
-                            onChange={(e) => onDateChange(e.target.value)}
-                            className="h-10 w-full min-w-0 rounded-xl border border-primary/15 bg-background px-3 text-base sm:w-auto sm:text-sm"
-                        />
+                        <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
+                            <input
+                                type="date"
+                                value={date}
+                                onChange={(e) => onDateChange(e.target.value)}
+                                className="h-10 w-full min-w-0 rounded-xl border border-primary/15 bg-background px-3 text-base sm:w-auto sm:text-sm"
+                            />
+                        </div>
 
                         {isFetching ? (
                             <span className="text-xs text-muted-foreground">{t("days.toolbar.loading")}</span>

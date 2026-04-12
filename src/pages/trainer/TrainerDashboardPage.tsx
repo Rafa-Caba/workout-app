@@ -283,16 +283,18 @@ export function TrainerDashboardPage() {
                         <label className="block text-xs text-muted-foreground mb-1">
                             {lang === "es" ? "Día (YYYY-MM-DD)" : "Day (YYYY-MM-DD)"}
                         </label>
-                        <input
-                            type="date"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                            className={cn(
-                                "h-9 w-full sm:w-[50] rounded-md border bg-background px-3 text-sm",
-                                "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            )}
-                            disabled={!hasSelected}
-                        />
+                        <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
+                            <input
+                                type="date"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                className={cn(
+                                    "h-9 w-full sm:w-[50] rounded-md border bg-background px-3 text-sm",
+                                    "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                )}
+                                disabled={!hasSelected}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

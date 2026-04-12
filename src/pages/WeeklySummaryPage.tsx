@@ -152,15 +152,17 @@ export function WeeklySummaryPage() {
                         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
                             <label className="text-sm w-full sm:w-auto">
                                 <span className="block sm:inline">{t("week.pickDateInWeek")}</span>{" "}
+                            </label>
+                            <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
                                 <input
                                     type="date"
                                     className="mt-1 sm:mt-0 sm:ml-2 w-full sm:w-auto h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
                                     value={weekDate}
                                     onChange={(e) => setWeekDate(e.target.value)}
                                 />
-                            </label>
+                            </div>
 
-                            <div className="my-1 grid w-full grid-cols-2 gap-2 sm:my-0 sm:w-auto">
+                            <div className="my-1 grid w-auto grid-cols-2 gap-2 sm:my-0 sm:w-auto">
                                 <Button className="w-full sm:w-auto" variant="outline" onClick={goPrevWeek} disabled={isFetching}>
                                     {t("week.prev")}
                                 </Button>
@@ -197,28 +199,32 @@ export function WeeklySummaryPage() {
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center">
                         <label className="text-sm w-full sm:w-auto">
                             <span className="block sm:inline">{t("common.from")}</span>{" "}
+                        </label>
+                        <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
                             <input
                                 type="date"
                                 className="mt-1 sm:mt-0 sm:ml-2 w-full sm:w-auto h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
                                 value={from}
                                 onChange={(e) => setFrom(e.target.value)}
                             />
-                        </label>
+                        </div>
 
                         <label className="text-sm w-full sm:w-auto">
                             <span className="block sm:inline">{t("common.to")}</span>{" "}
+                        </label>
+                        <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
                             <input
                                 type="date"
                                 className="mt-1 sm:mt-0 sm:ml-2 w-full sm:w-auto h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
                                 value={to}
                                 onChange={(e) => setTo(e.target.value)}
                             />
-                        </label>
+                        </div>
 
-                        <span className="sm:ml-auto text-xs text-muted-foreground wrap-wrap-break-words">
+                        <span className="sm:ml-auto text-xs mt-1 text-muted-foreground wrap-wrap-break-words">
                             {t("week.loaded")}:{" "}
                             <span className="font-mono">{runFrom}</span> → <span className="font-mono">{runTo}</span>
                         </span>

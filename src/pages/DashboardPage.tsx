@@ -1,4 +1,6 @@
+// src/pages/DashboardPage.tsx
 import React from "react";
+
 import { useAuthStore } from "@/state/auth.store";
 import { useDashboard } from "@/hooks/useDashboard";
 import { PageHeader } from "@/components/PageHeader";
@@ -12,10 +14,26 @@ import {
     pickTrendPointForWeek,
     secondsToHhMm,
 } from "@/utils/dashboard/format";
-import { MediaFeedItem } from "@/types/media.types";
+import type { MediaFeedItem } from "@/types/media.types";
 import { MediaViewerModal } from "@/components/media/MediaViewerModal";
 import { useWorkoutProgress } from "@/hooks/useWorkoutProgress";
 import { ProgressExercisePreviewCard } from "@/components/progress/ProgressExercisePreviewCard";
+
+function formatDashboardNumber(value: number | null | undefined): string {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+        return "—";
+    }
+
+    return Number(value.toFixed(2)).toString();
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof Error && error.message.trim().length > 0) {
+        return error.message;
+    }
+
+    return fallback;
+}
 
 export function DashboardPage() {
     const { t } = useI18n();
@@ -72,12 +90,11 @@ export function DashboardPage() {
                         <CardTitle className="text-base">{t("common.errorTitle")}</CardTitle>
                     </CardHeader>
                     <CardContent className="text-sm text-muted-foreground">
-                        {(d.error as any)?.message ?? t("dashboard.loadError")}
+                        {getErrorMessage(d.error, t("dashboard.loadError"))}
                     </CardContent>
                 </Card>
             ) : null}
 
-            {/* Last 7 days summary */}
             <Card>
                 <CardHeader>
                     <CardTitle className="text-base">{t("dashboard.last7.title")}</CardTitle>
@@ -89,7 +106,6 @@ export function DashboardPage() {
                 </CardHeader>
 
                 <CardContent className="grid gap-4 md:grid-cols-2">
-                    {/* Training summary */}
                     <div className="rounded-xl border bg-primary/5 border-primary/20 p-4">
                         <div className="text-sm font-semibold">
                             {t("dashboard.training.title")}
@@ -98,7 +114,7 @@ export function DashboardPage() {
                             <div>
                                 {t("dashboard.training.sessions")}{" "}
                                 <span className="text-foreground">
-                                    {rangeTraining?.sessionsCount ?? 0}
+                                    {formatDashboardNumber(rangeTraining?.sessionsCount ?? 0)}
                                 </span>
                             </div>
                             <div>
@@ -110,29 +126,28 @@ export function DashboardPage() {
                             <div>
                                 {t("dashboard.training.activeKcal")}{" "}
                                 <span className="text-foreground">
-                                    {rangeTraining?.activeKcal ?? "—"}
+                                    {formatDashboardNumber(rangeTraining?.activeKcal)}
                                 </span>
                             </div>
                             <div>
                                 {t("dashboard.training.hr")}{" "}
                                 <span className="text-foreground">
-                                    {rangeTraining?.avgHr ?? "—"}
+                                    {formatDashboardNumber(rangeTraining?.avgHr)}
                                 </span>{" "}
                                 · {t("dashboard.training.maxHr")}{" "}
                                 <span className="text-foreground">
-                                    {rangeTraining?.maxHr ?? "—"}
+                                    {formatDashboardNumber(rangeTraining?.maxHr)}
                                 </span>
                             </div>
                             <div>
                                 {t("dashboard.training.media")}{" "}
                                 <span className="text-foreground">
-                                    {rangeTraining?.mediaCount ?? 0}
+                                    {formatDashboardNumber(rangeTraining?.mediaCount ?? 0)}
                                 </span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Sleep summary */}
                     <div className="rounded-xl border bg-primary/5 border-primary/20 p-4">
                         <div className="text-sm font-semibold">
                             {t("dashboard.sleep.title")}
@@ -141,7 +156,7 @@ export function DashboardPage() {
                             <div>
                                 {t("dashboard.sleep.daysWithSleep")}{" "}
                                 <span className="text-foreground">
-                                    {rangeSleep?.daysWithSleep ?? 0}
+                                    {formatDashboardNumber(rangeSleep?.daysWithSleep ?? 0)}
                                 </span>
                             </div>
                             <div>
@@ -155,21 +170,21 @@ export function DashboardPage() {
                             <div>
                                 {t("dashboard.sleep.avgDeep")}{" "}
                                 <span className="text-foreground">
-                                    {rangeSleep?.avgDeepMinutes ?? "—"}
+                                    {formatDashboardNumber(rangeSleep?.avgDeepMinutes)}
                                 </span>{" "}
                                 min
                             </div>
                             <div>
                                 {t("dashboard.sleep.avgRem")}{" "}
                                 <span className="text-foreground">
-                                    {rangeSleep?.avgRemMinutes ?? "—"}
+                                    {formatDashboardNumber(rangeSleep?.avgRemMinutes)}
                                 </span>{" "}
                                 min
                             </div>
                             <div>
                                 {t("dashboard.sleep.avgScore")}{" "}
                                 <span className="text-foreground">
-                                    {rangeSleep?.avgScore ?? "—"}
+                                    {formatDashboardNumber(rangeSleep?.avgScore)}
                                 </span>
                             </div>
                         </div>
@@ -178,7 +193,6 @@ export function DashboardPage() {
             </Card>
 
             <div className="grid gap-4 lg:grid-cols-2">
-                {/* Today card */}
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-base">
@@ -191,6 +205,7 @@ export function DashboardPage() {
                                 {t("common.loading")}
                             </div>
                         ) : null}
+
                         {!day && !d.isLoading ? (
                             <div className="text-sm text-muted-foreground">
                                 {t("dashboard.todayCard.empty")}
@@ -208,7 +223,6 @@ export function DashboardPage() {
                                     </span>
                                 </div>
 
-                                {/* Today training */}
                                 <div className="rounded-xl border bg-primary/5 border-primary/20 p-3">
                                     <div className="text-sm font-semibold">
                                         {t("dashboard.training.title")}
@@ -217,7 +231,7 @@ export function DashboardPage() {
                                         <div>
                                             {t("dashboard.training.sessions")}{" "}
                                             <span className="text-foreground">
-                                                {day.training.sessionsCount}
+                                                {formatDashboardNumber(day.training.sessionsCount)}
                                             </span>
                                         </div>
                                         <div>
@@ -229,27 +243,27 @@ export function DashboardPage() {
                                         <div>
                                             {t("dashboard.training.activeKcal")}{" "}
                                             <span className="text-foreground">
-                                                {day.training.activeKcal ?? "—"}
+                                                {formatDashboardNumber(day.training.activeKcal)}
                                             </span>
                                         </div>
                                         <div>
                                             {t("dashboard.training.hr")}{" "}
                                             <span className="text-foreground">
-                                                {day.training.avgHr ?? "—"}
+                                                {formatDashboardNumber(day.training.avgHr)}
                                             </span>{" "}
                                             · {t("dashboard.training.maxHr")}{" "}
                                             <span className="text-foreground">
-                                                {day.training.maxHr ?? "—"}
+                                                {formatDashboardNumber(day.training.maxHr)}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Today sleep */}
                                 <div className="rounded-xl border bg-accent/10 border-accent/25 p-3">
                                     <div className="text-sm font-semibold">
                                         {t("dashboard.sleep.title")}
                                     </div>
+
                                     {!day.sleep ? (
                                         <div className="mt-2 text-sm text-muted-foreground">
                                             {t("dashboard.sleep.noData")}
@@ -267,18 +281,18 @@ export function DashboardPage() {
                                             <div>
                                                 {t("dashboard.sleep.deep")}{" "}
                                                 <span className="text-foreground">
-                                                    {day.sleep.deepMinutes ?? "—"}
+                                                    {formatDashboardNumber(day.sleep.deepMinutes)}
                                                 </span>{" "}
                                                 min · {t("dashboard.sleep.rem")}{" "}
                                                 <span className="text-foreground">
-                                                    {day.sleep.remMinutes ?? "—"}
+                                                    {formatDashboardNumber(day.sleep.remMinutes)}
                                                 </span>{" "}
                                                 min
                                             </div>
                                             <div>
                                                 {t("dashboard.sleep.score")}{" "}
                                                 <span className="text-foreground">
-                                                    {day.sleep.score ?? "—"}
+                                                    {formatDashboardNumber(day.sleep.score)}
                                                 </span>
                                             </div>
                                         </div>
@@ -289,7 +303,6 @@ export function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                {/* This week card */}
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-base">
@@ -302,6 +315,7 @@ export function DashboardPage() {
                                 {t("common.loading")}
                             </div>
                         ) : null}
+
                         {!week && !d.isLoading ? (
                             <div className="text-sm text-muted-foreground">
                                 {t("dashboard.thisWeek.empty")}
@@ -315,7 +329,6 @@ export function DashboardPage() {
                                     {week.range.from} → {week.range.to}
                                 </div>
 
-                                {/* Week training summary */}
                                 <div className="rounded-xl border bg-primary/5 border-primary/20 p-3">
                                     <div className="text-sm font-semibold">
                                         {t("dashboard.thisWeek.summaryTitle")}
@@ -324,7 +337,7 @@ export function DashboardPage() {
                                         <div>
                                             {t("dashboard.training.sessions")}{" "}
                                             <span className="text-foreground">
-                                                {week.training.sessionsCount}
+                                                {formatDashboardNumber(week.training.sessionsCount)}
                                             </span>
                                         </div>
                                         <div>
@@ -336,23 +349,22 @@ export function DashboardPage() {
                                         <div>
                                             {t("dashboard.training.activeKcal")}{" "}
                                             <span className="text-foreground">
-                                                {week.training.activeKcal ?? "—"}
+                                                {formatDashboardNumber(week.training.activeKcal)}
                                             </span>
                                         </div>
                                         <div>
                                             {t("dashboard.training.hr")}{" "}
                                             <span className="text-foreground">
-                                                {week.training.avgHr ?? "—"}
+                                                {formatDashboardNumber(week.training.avgHr)}
                                             </span>{" "}
                                             · {t("dashboard.training.maxHr")}{" "}
                                             <span className="text-foreground">
-                                                {week.training.maxHr ?? "—"}
+                                                {formatDashboardNumber(week.training.maxHr)}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Week trend */}
                                 <div className="rounded-xl border bg-accent/10 border-accent/25 p-3">
                                     <div className="text-sm font-semibold">
                                         {t("dashboard.thisWeek.trendTitle")}
@@ -365,11 +377,11 @@ export function DashboardPage() {
                                         <div className="mt-2 text-sm text-muted-foreground">
                                             {t("dashboard.thisWeek.daysLogged")}{" "}
                                             <span className="text-foreground">
-                                                {trendPoint.daysCount}
+                                                {formatDashboardNumber(trendPoint.daysCount)}
                                             </span>{" "}
                                             · {t("dashboard.thisWeek.media")}{" "}
                                             <span className="text-foreground">
-                                                {trendPoint.mediaCount}
+                                                {formatDashboardNumber(trendPoint.mediaCount)}
                                             </span>
                                         </div>
                                     )}
@@ -384,7 +396,6 @@ export function DashboardPage() {
                     isLoading={progress.isLoading}
                 />
 
-                {/* Streak card */}
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-base">
@@ -397,6 +408,7 @@ export function DashboardPage() {
                                 {t("common.loading")}
                             </div>
                         ) : null}
+
                         {!streaks && !d.isLoading ? (
                             <div className="text-sm text-muted-foreground">
                                 {t("dashboard.streak.empty")}
@@ -412,7 +424,7 @@ export function DashboardPage() {
                                     </span>
                                 </div>
                                 <div className="text-4xl font-extrabold tracking-tight text-primary">
-                                    {streaks.currentStreakDays}
+                                    {formatDashboardNumber(streaks.currentStreakDays)}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
                                     {t("dashboard.streak.days")}
@@ -420,7 +432,7 @@ export function DashboardPage() {
                                 <div className="text-sm text-muted-foreground">
                                     {t("dashboard.streak.longest")}{" "}
                                     <span className="text-foreground">
-                                        {streaks.longestStreakDays}
+                                        {formatDashboardNumber(streaks.longestStreakDays)}
                                     </span>{" "}
                                     · {t("dashboard.streak.lastDay")}{" "}
                                     <span className="text-foreground">
@@ -432,7 +444,6 @@ export function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                {/* Media card */}
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-base">
@@ -445,6 +456,7 @@ export function DashboardPage() {
                                 {t("common.loading")}
                             </div>
                         ) : null}
+
                         {!d.isLoading && media.length === 0 ? (
                             <div className="text-sm text-muted-foreground">
                                 {t("dashboard.media.empty")}

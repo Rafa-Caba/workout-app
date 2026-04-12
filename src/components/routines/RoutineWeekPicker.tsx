@@ -37,12 +37,14 @@ export function RoutineWeekPicker(props: {
             <div className="min-w-0 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
                 <label className="min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center text-sm">
                     <span className="shrink-0">{t("week.pickDateInWeek")}</span>
-                    <input
-                        type="date"
-                        className="w-full sm:w-auto rounded-md border bg-background px-3 py-2 text-base sm:text-sm"
-                        value={props.weekDate}
-                        onChange={(e) => props.setWeekDate(e.target.value)}
-                    />
+                    <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
+                        <input
+                            type="date"
+                            className="w-full sm:w-auto rounded-md border bg-background px-3 py-2 text-base sm:text-sm"
+                            value={props.weekDate}
+                            onChange={(e) => props.setWeekDate(e.target.value)}
+                        />
+                    </div>
                 </label>
 
                 <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">

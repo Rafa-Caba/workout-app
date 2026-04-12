@@ -419,7 +419,7 @@ export function EditProfileModal({
                                         <label className="text-sm font-medium">{t("profile.fields.birthDate")}</label>
                                         <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
                                             <input
-                                                className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+                                                className="rounded-lg border bg-background px-3 py-2 text-sm"
                                                 type="date"
                                                 value={form.birthDate}
                                                 onChange={(e) => setForm((s) => ({ ...s, birthDate: e.target.value }))}

@@ -159,7 +159,7 @@ export const en: Record<I18nKey, string> = {
     "dashboard.media.video": "VIDEO",
 
     // Days
-    "days.training.outdoorSessions": "Outdoor sessions",
+    "days.training.outdoorSessions": "Cardio sessions",
 
     "days.sleep.sourceDevice": "Source device",
     "days.sleep.importedAt": "Imported at",
@@ -167,8 +167,8 @@ export const en: Record<I18nKey, string> = {
 
     "days.sessions.gymTrainingTitle": "Gym / Training",
     "days.sessions.gymTrainingEmpty": "No gym or training sessions for this day.",
-    "days.sessions.outdoorTitle": "Outdoor",
-    "days.sessions.outdoorEmpty": "No outdoor sessions for this day.",
+    "days.sessions.outdoorTitle": "Cardio",
+    "days.sessions.outdoorEmpty": "No cardio sessions for this day.",
 
     "days.sessions.sourceDevice": "Source device",
     "days.sessions.importedAt": "Imported at",

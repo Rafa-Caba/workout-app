@@ -1,6 +1,7 @@
 // src/components/dayExplorer/DaySessionsPanel.tsx
 
 import React from "react";
+import type { I18nKey } from "@/i18n/translations";
 import { format } from "date-fns";
 
 import { cn } from "@/lib/utils";
@@ -25,7 +26,7 @@ import type { MediaLikeItem } from "@/components/media/MediaViewerModal";
 import { BadgePill } from "@/components/dayExplorer/BadgePill";
 
 type JsonRecord = Record<string, unknown>;
-type TFn = (key: any, vars?: any) => string;
+type TFn = (key: I18nKey, vars?: Record<string, string | number>) => string;
 
 type ExercisePlanMeta = {
     sets: string | null;
@@ -274,7 +275,7 @@ function getExerciseActualSetChipTexts(exercise: WorkoutExercise): string[] {
         .filter((item): item is string => Boolean(item));
 }
 
-function isOutdoorActivityType(value: WorkoutActivityType): boolean {
+function isCardioActivityType(value: WorkoutActivityType): boolean {
     return value === "walking" || value === "running";
 }
 
@@ -317,8 +318,8 @@ function splitSessions(sessions: WorkoutSession[]): {
     outdoorSessions: WorkoutSession[];
 } {
     return {
-        gymSessions: sessions.filter((session) => !isOutdoorActivityType(session.activityType)),
-        outdoorSessions: sessions.filter((session) => isOutdoorActivityType(session.activityType)),
+        gymSessions: sessions.filter((session) => !isCardioActivityType(session.activityType)),
+        outdoorSessions: sessions.filter((session) => isCardioActivityType(session.activityType)),
     };
 }
 
@@ -355,7 +356,7 @@ function SessionCard({
 
     const sessionTitle = cleanString(session.type) ?? t("days.sessions.unknownType");
     const activityType = session.activityType;
-    const isOutdoor = isOutdoorActivityType(activityType);
+    const isCardio = isCardioActivityType(activityType);
 
     const duration = formatDuration(session.durationSeconds ?? null);
     const mediaCount = Array.isArray(session.media) ? session.media.length : 0;
@@ -399,9 +400,9 @@ function SessionCard({
     const loggedSets = countLoggedSets(exercises);
 
     const routePoints = session.routeSummary?.pointCount ?? null;
-    const avgSpeedKmh = session.outdoorMetrics?.avgSpeedKmh ?? null;
-    const maxSpeedKmh = session.outdoorMetrics?.maxSpeedKmh ?? null;
-    const strideLengthM = session.outdoorMetrics?.strideLengthM ?? null;
+    const avgSpeedKmh = session.cardioMetrics?.avgSpeedKmh ?? session.outdoorMetrics?.avgSpeedKmh ?? null;
+    const maxSpeedKmh = session.cardioMetrics?.maxSpeedKmh ?? session.outdoorMetrics?.maxSpeedKmh ?? null;
+    const strideLengthM = session.cardioMetrics?.strideLengthM ?? session.outdoorMetrics?.strideLengthM ?? null;
 
     const source = getSessionSourceLabel(session);
     const sourceDevice = getSessionSourceDeviceLabel(session);
@@ -455,7 +456,7 @@ function SessionCard({
                 <div className="space-y-4 p-4">
                     <div className="flex flex-wrap gap-2">
                         <span className={cn("inline-flex items-center rounded-full border px-3 py-1 text-xs text-foreground", themedPill)}>
-                            {isOutdoor ? "🚶 Outdoor" : "🏋️ Gym / Training"}
+                            {isCardio ? "🚶 Cardio" : "🏋️ Gym / Training"}
                         </span>
 
                         {activityType ? (
@@ -538,7 +539,7 @@ function SessionCard({
                         />
                     </div>
 
-                    {isOutdoor ? (
+                    {isCardio ? (
                         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                             <Metric
                                 label={t("days.sessions.route")}

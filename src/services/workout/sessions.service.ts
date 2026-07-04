@@ -5,7 +5,7 @@ import type {
     WorkoutActivityType,
     WorkoutDay,
     WorkoutExercise,
-    WorkoutOutdoorMetrics,
+    WorkoutCardioMetrics,
     WorkoutRouteSummary,
     WorkoutSession,
 } from "@/types/workoutDay.types";
@@ -18,6 +18,7 @@ export type CreateSessionBody = {
     type: string;
 
     activityType?: WorkoutActivityType;
+    cardioEnvironment?: "outdoor" | "indoor" | null;
 
     startAt?: string | null;
     endAt?: string | null;
@@ -39,7 +40,10 @@ export type CreateSessionBody = {
 
     hasRoute?: boolean;
     routeSummary?: WorkoutRouteSummary | null;
-    outdoorMetrics?: WorkoutOutdoorMetrics | null;
+    cardioMetrics?: WorkoutCardioMetrics | null;
+
+    /** Deprecated compatibility field. New payloads should use cardioMetrics. */
+    outdoorMetrics?: WorkoutCardioMetrics | null;
 
     effortRpe?: number | null;
 
@@ -69,9 +73,18 @@ export type AttachSessionMediaBody = {
 export type ReturnDay = WorkoutDay;
 export type ReturnSession = { session: WorkoutSession | null; day?: WorkoutDay | null };
 
-type CreatedSessionResponse = {
-    session?: { id?: string } | null;
-};
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+class SessionIdMissingError extends Error {
+    status = 500;
+
+    constructor() {
+        super("Session created but response did not include session.id");
+        this.name = "SessionIdMissingError";
+    }
+}
 
 function extractSessionIdFromReturn(payload: ReturnDay | ReturnSession): string | null {
     if (payload && typeof payload === "object" && "session" in payload) {
@@ -91,12 +104,7 @@ function findGymCheckSessionIdFromDay(day: WorkoutDay): string | null {
 }
 
 function throwSessionIdMissingError(): never {
-    const error = new Error(
-        "Session created but response did not include session.id"
-    ) as Error & { status: number };
-
-    error.status = 500;
-    throw error;
+    throw new SessionIdMissingError();
 }
 
 export async function ensureWorkoutDayExists(date: string): Promise<void> {
@@ -104,8 +112,8 @@ export async function ensureWorkoutDayExists(date: string): Promise<void> {
 }
 
 export async function getWorkoutDay(date: string): Promise<WorkoutDay> {
-    const res = await api.get(`/workout/days/${encodeURIComponent(date)}`);
-    return res.data as WorkoutDay;
+    const res = await api.get<WorkoutDay>(`/workout/days/${encodeURIComponent(date)}`);
+    return res.data;
 }
 
 export async function createSession(
@@ -113,11 +121,11 @@ export async function createSession(
     payload: CreateSessionBody,
     opts?: { returnMode?: SessionReturnMode }
 ): Promise<ReturnDay | ReturnSession> {
-    const res = await api.post(`/workout/days/${encodeURIComponent(date)}/sessions`, payload, {
+    const res = await api.post<ReturnDay | ReturnSession>(`/workout/days/${encodeURIComponent(date)}/sessions`, payload, {
         params: opts?.returnMode ? { returnMode: opts.returnMode } : undefined,
     });
 
-    return res.data as ReturnDay | ReturnSession;
+    return res.data;
 }
 
 export async function patchSession(
@@ -126,7 +134,7 @@ export async function patchSession(
     payload: PatchSessionBody,
     opts?: { returnMode?: SessionReturnMode }
 ): Promise<ReturnDay | ReturnSession> {
-    const res = await api.patch(
+    const res = await api.patch<ReturnDay | ReturnSession>(
         `/workout/days/${encodeURIComponent(date)}/sessions/${encodeURIComponent(sessionId)}`,
         payload,
         {
@@ -134,7 +142,7 @@ export async function patchSession(
         }
     );
 
-    return res.data as ReturnDay | ReturnSession;
+    return res.data;
 }
 
 export async function deleteSession(
@@ -142,7 +150,7 @@ export async function deleteSession(
     sessionId: string,
     opts?: { returnMode?: SessionReturnMode; deleteMedia?: boolean }
 ): Promise<ReturnDay | ReturnSession> {
-    const res = await api.delete(
+    const res = await api.delete<ReturnDay | ReturnSession>(
         `/workout/days/${encodeURIComponent(date)}/sessions/${encodeURIComponent(sessionId)}`,
         {
             params: {
@@ -154,7 +162,7 @@ export async function deleteSession(
         }
     );
 
-    return res.data as ReturnDay | ReturnSession;
+    return res.data;
 }
 
 export async function attachSessionMedia(
@@ -163,7 +171,7 @@ export async function attachSessionMedia(
     payload: AttachSessionMediaBody,
     opts?: { returnMode?: SessionReturnMode }
 ): Promise<ReturnDay | ReturnSession> {
-    const res = await api.post(
+    const res = await api.post<ReturnDay | ReturnSession>(
         `/workout/days/${encodeURIComponent(date)}/sessions/${encodeURIComponent(sessionId)}/media/attach`,
         payload,
         {
@@ -171,7 +179,7 @@ export async function attachSessionMedia(
         }
     );
 
-    return res.data as ReturnDay | ReturnSession;
+    return res.data;
 }
 
 export async function upsertGymCheckSession(
@@ -208,8 +216,12 @@ export async function upsertGymCheckSession(
 export function extractSessionIdFromCreateResponse(data: unknown): string | null {
     if (!data || typeof data !== "object") return null;
 
-    const maybe = data as CreatedSessionResponse;
-    const id = maybe.session?.id;
+    if (!isRecord(data)) return null;
+
+    const session = data.session;
+    if (!isRecord(session)) return null;
+
+    const id = session.id;
 
     return typeof id === "string" && id.trim() ? id.trim() : null;
 }

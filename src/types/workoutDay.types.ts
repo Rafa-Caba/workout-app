@@ -1,8 +1,9 @@
 // src/types/workoutDay.types.ts
 
 /**
- * Keep FE names to avoid breaking imports.
- * This file mirrors BE shape while preserving existing FE type names.
+ * Keep FE names aligned with the backend WorkoutDay contract.
+ * Cardio is now the canonical domain for walking/running sessions, while
+ * Gym Check and routine sessions continue to live in the same training block.
  */
 
 /**
@@ -19,15 +20,23 @@ export type WeekKey = string; // "YYYY-W##"
  */
 
 export type WorkoutDataSource = "manual" | "healthkit" | "health-connect";
+export type WorkoutSessionDataSource = WorkoutDataSource | "app-live";
 
-export type WorkoutSessionKind = "device-import" | "gym-check" | "manual-outdoor";
+export type WorkoutSessionKind =
+    | "device-import"
+    | "gym-check"
+    | "manual-outdoor"
+    | "manual-cardio"
+    | "live-cardio";
 
 /**
  * Neutral activity family used by training sessions.
- * Keep current compatibility with existing gym/manual/device-import sessions,
- * while adding explicit outdoor support.
+ * walking/running can be indoor or outdoor depending on cardioEnvironment.
  */
 export type WorkoutActivityType = "walking" | "running" | null;
+export type WorkoutCardioActivityType = Exclude<WorkoutActivityType, null>;
+export type WorkoutCardioEnvironment = "outdoor" | "indoor" | null;
+export type WorkoutHealthWriteStatus = "pending" | "synced" | "failed";
 
 /**
  * Keep broad string support because device names may vary:
@@ -135,7 +144,7 @@ export type WorkoutExercise = {
  * =========================================================
  */
 
-export type WorkoutOutdoorMetrics = {
+export type WorkoutCardioMetrics = {
     distanceKm: number | null;
     steps: number | null;
     elevationGainM: number | null;
@@ -147,6 +156,12 @@ export type WorkoutOutdoorMetrics = {
     cadenceRpm: number | null;
     strideLengthM: number | null;
 };
+
+/**
+ * Legacy alias kept only so remaining not-yet-renamed Web files still compile.
+ * New code must use WorkoutCardioMetrics and cardioMetrics.
+ */
+export type WorkoutOutdoorMetrics = WorkoutCardioMetrics;
 
 export type WorkoutRouteSummary = {
     pointCount: number;
@@ -173,13 +188,20 @@ export type WorkoutSessionMeta = {
     dayEffortRpe?: number | null;
 
     /**
-     * New typed import/source fields
+     * Typed import/source fields
      */
-    source?: WorkoutDataSource | null;
+    source?: WorkoutSessionDataSource | null;
     sourceDevice?: WorkoutSourceDevice | null;
     importedAt?: ISODateTime | null;
     lastSyncedAt?: ISODateTime | null;
     sessionKind?: WorkoutSessionKind | null;
+
+    /**
+     * OS health write metadata for app-created live cardio sessions.
+     */
+    healthWriteStatus?: WorkoutHealthWriteStatus | null;
+    healthExternalId?: string | null;
+    healthWrittenAt?: ISODateTime | null;
 
     /**
      * Useful import helpers kept flexible
@@ -196,10 +218,18 @@ export type WorkoutSession = {
 
     /**
      * Neutral activity family.
-     * - walking / running for outdoor module
+     * - walking / running for Cardio
      * - null for existing gym/manual sessions that do not need this field
      */
     activityType: WorkoutActivityType;
+
+    /**
+     * Cardio environment.
+     * - outdoor for GPS/map sessions
+     * - indoor for treadmill sessions
+     * - null for non-cardio sessions or unknown imports
+     */
+    cardioEnvironment: WorkoutCardioEnvironment;
 
     startAt: ISODateTime | null;
     endAt: ISODateTime | null;
@@ -221,7 +251,12 @@ export type WorkoutSession = {
 
     hasRoute: boolean;
     routeSummary: WorkoutRouteSummary | null;
-    outdoorMetrics: WorkoutOutdoorMetrics | null;
+    cardioMetrics: WorkoutCardioMetrics | null;
+
+    /**
+     * Deprecated compatibility field. Backend now returns cardioMetrics.
+     */
+    outdoorMetrics?: WorkoutCardioMetrics | null;
 
     effortRpe: number | null;
 

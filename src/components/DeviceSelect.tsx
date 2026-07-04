@@ -1,8 +1,21 @@
 // src/components/DeviceSelect.tsx
 
 import * as React from "react";
+import type { I18nKey } from "@/i18n/translations";
 
-type TFn = (key: any, vars?: any) => string;
+type I18nVars = Record<string, string | number>;
+type TFn = (key: I18nKey, vars?: I18nVars) => string;
+
+type DeviceSelectTranslationKey = Extract<
+    I18nKey,
+    | "device.label"
+    | "device.placeholder"
+    | "device.other"
+    | "device.otherPlaceholder"
+    | "device.otherHint"
+>;
+
+type DeviceSelectLabel = DeviceSelectTranslationKey | string;
 
 type DeviceSelectProps = {
     t: TFn;
@@ -13,14 +26,14 @@ type DeviceSelectProps = {
     knownOptions?: string[];
     allowOther?: boolean;
 
-    labelKey?: string;
-    placeholderKey?: string;
+    labelKey?: DeviceSelectLabel;
+    placeholderKey?: DeviceSelectLabel;
 
     onBlur?: () => void;
 
-    otherLabelKey?: string;
-    otherPlaceholderKey?: string;
-    otherHintKey?: string;
+    otherLabelKey?: DeviceSelectLabel;
+    otherPlaceholderKey?: DeviceSelectLabel;
+    otherHintKey?: DeviceSelectLabel;
 
     disabled?: boolean;
 
@@ -28,6 +41,22 @@ type DeviceSelectProps = {
     selectClassName?: string;
     inputClassName?: string;
 };
+
+const DEVICE_SELECT_TRANSLATION_KEYS: readonly string[] = [
+    "device.label",
+    "device.placeholder",
+    "device.other",
+    "device.otherPlaceholder",
+    "device.otherHint",
+];
+
+function isDeviceSelectTranslationKey(value: string): value is DeviceSelectTranslationKey {
+    return DEVICE_SELECT_TRANSLATION_KEYS.includes(value);
+}
+
+function renderDeviceLabel(t: TFn, label: DeviceSelectLabel): string {
+    return isDeviceSelectTranslationKey(label) ? t(label) : label;
+}
 
 function normalize(s: string): string {
     return s.trim().replace(/\s+/g, " ");
@@ -107,40 +136,34 @@ export function DeviceSelect({
         return Array.from(new Set(base));
     }, [knownOptions, defaultDevices]);
 
-    // Derived: does current value match a known option?
     const matchedKnown = React.useMemo(() => {
         if (!value) return null;
         const norm = normalize(value).toLowerCase();
         return known.find((k) => normalize(k).toLowerCase() === norm) ?? null;
     }, [value, known]);
 
-    // track "Other" mode explicitly (don’t rely on value)
     const [otherSelected, setOtherSelected] = React.useState<boolean>(() => {
         if (!allowOther) return false;
         if (!value) return false;
         return isOtherValue(value, known);
     });
 
-    // Keep local "otherSelected" in sync when value changes externally
     React.useEffect(() => {
         if (!allowOther) {
             setOtherSelected(false);
             return;
         }
 
-        // If parent sets a known value, exit other mode
         if (matchedKnown) {
             setOtherSelected(false);
             return;
         }
 
-        // If parent sets a non-empty value that isn't known, enter other mode
         if (value && isOtherValue(value, known)) {
             setOtherSelected(true);
             return;
         }
 
-        // If value becomes null (cleared), exit other mode
         if (!value) {
             setOtherSelected(false);
         }
@@ -155,11 +178,10 @@ export function DeviceSelect({
         if (!otherSelected) setOtherText("");
     }, [otherSelected, value]);
 
-    // What option is selected in the dropdown?
     const selectValue = React.useMemo(() => {
         if (matchedKnown) return matchedKnown;
         if (allowOther && otherSelected) return "__other__";
-        return value ? value : ""; // fallback (should mostly be "")
+        return value ? value : "";
     }, [matchedKnown, allowOther, otherSelected, value]);
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -174,8 +196,6 @@ export function DeviceSelect({
         if (next === "__other__") {
             setOtherSelected(true);
 
-            // Do NOT force value to "", because that would kick us out of __other__ in some parents.
-            // Instead, keep existing otherText (or empty) and let the input drive updates.
             const normalized = normalize(otherText);
             onChange(normalized ? normalized : "");
             return;
@@ -194,7 +214,7 @@ export function DeviceSelect({
 
     return (
         <div className={["space-y-1", className].filter(Boolean).join(" ")}>
-            <label className="text-sm font-medium">{t(labelKey)}</label>
+            <label className="text-sm font-medium">{renderDeviceLabel(t, labelKey)}</label>
 
             <select
                 value={selectValue}
@@ -208,7 +228,7 @@ export function DeviceSelect({
                     .filter(Boolean)
                     .join(" ")}
             >
-                <option value="">{t(placeholderKey)}</option>
+                <option value="">{renderDeviceLabel(t, placeholderKey)}</option>
 
                 {known.map((opt) => (
                     <option key={opt} value={opt}>
@@ -216,7 +236,7 @@ export function DeviceSelect({
                     </option>
                 ))}
 
-                {allowOther ? <option value="__other__">{t(otherLabelKey)}</option> : null}
+                {allowOther ? <option value="__other__">{renderDeviceLabel(t, otherLabelKey)}</option> : null}
             </select>
 
             {allowOther && otherSelected ? (
@@ -225,7 +245,7 @@ export function DeviceSelect({
                         value={otherText}
                         onChange={handleOtherInputChange}
                         disabled={disabled}
-                        placeholder={t(otherPlaceholderKey)}
+                        placeholder={renderDeviceLabel(t, otherPlaceholderKey)}
                         onBlur={onBlur}
                         className={[
                             "w-full rounded-md border bg-background px-3 py-2 text-sm",
@@ -234,7 +254,9 @@ export function DeviceSelect({
                             .filter(Boolean)
                             .join(" ")}
                     />
-                    <div className="text-xs text-muted-foreground mt-1">{t(otherHintKey)}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                        {renderDeviceLabel(t, otherHintKey)}
+                    </div>
                 </div>
             ) : null}
         </div>

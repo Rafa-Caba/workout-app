@@ -160,7 +160,7 @@ export const es: Record<I18nKey, string> = {
     "dashboard.media.video": "VIDEO",
 
     // Days
-    "days.training.outdoorSessions": "Sesiones outdoor",
+    "days.training.outdoorSessions": "Sesiones Cardio",
 
     "days.sleep.sourceDevice": "Dispositivo origen",
     "days.sleep.importedAt": "Importado",
@@ -168,8 +168,8 @@ export const es: Record<I18nKey, string> = {
 
     "days.sessions.gymTrainingTitle": "Gym / Training",
     "days.sessions.gymTrainingEmpty": "Sin sesiones de gym o training para este día.",
-    "days.sessions.outdoorTitle": "Outdoor",
-    "days.sessions.outdoorEmpty": "Sin sesiones outdoor para este día.",
+    "days.sessions.outdoorTitle": "Cardio",
+    "days.sessions.outdoorEmpty": "Sin sesiones Cardio para este día.",
 
     "days.sessions.sourceDevice": "Dispositivo origen",
     "days.sessions.importedAt": "Importado",

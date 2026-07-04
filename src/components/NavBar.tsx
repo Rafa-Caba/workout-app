@@ -190,7 +190,7 @@ export function NavBar() {
         () => [
             { label: t("nav.home"), to: "/", end: true },
             { label: "Gym Check", to: "/gym-check", end: true },
-            { label: "Outdoor", to: "/outdoor", end: true },
+            { label: "Cardio", to: "/cardio", end: true, match: (currentPathname) => currentPathname === "/cardio" || currentPathname === "/outdoor" },
 
             {
                 label: t("nav.routines"),

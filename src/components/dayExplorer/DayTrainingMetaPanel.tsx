@@ -1,6 +1,7 @@
 // src/components/dayExplorer/DayTrainingMetaPanel.tsx
 
 import React from "react";
+import type { I18nKey } from "@/i18n/translations";
 import type {
     TrainingBlock,
     WorkoutActivityType,
@@ -9,7 +10,7 @@ import type {
 import { cn } from "@/lib/utils";
 import { themedPanelCard, themedPill } from "@/theme/cardHierarchy";
 
-type TFn = (key: any, vars?: any) => string;
+type TFn = (key: I18nKey, vars?: Record<string, string | number>) => string;
 
 function isFiniteNumber(n: unknown): n is number {
     return typeof n === "number" && Number.isFinite(n);
@@ -25,7 +26,7 @@ function sumMedia(sessions: WorkoutSession[]): number {
     return total;
 }
 
-function isOutdoorActivityType(value: WorkoutActivityType): boolean {
+function isCardioActivityType(value: WorkoutActivityType): boolean {
     return value === "walking" || value === "running";
 }
 
@@ -34,8 +35,8 @@ function splitSessions(sessions: WorkoutSession[]): {
     outdoorSessions: WorkoutSession[];
 } {
     return {
-        gymSessions: sessions.filter((session) => !isOutdoorActivityType(session.activityType)),
-        outdoorSessions: sessions.filter((session) => isOutdoorActivityType(session.activityType)),
+        gymSessions: sessions.filter((session) => !isCardioActivityType(session.activityType)),
+        outdoorSessions: sessions.filter((session) => isCardioActivityType(session.activityType)),
     };
 }
 

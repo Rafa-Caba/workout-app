@@ -24,6 +24,7 @@ import type {
 } from "@/types/workoutDay.types";
 import type { MediaLikeItem } from "@/components/media/MediaViewerModal";
 import { BadgePill } from "@/components/dayExplorer/BadgePill";
+import { CardioRouteMap } from "../cardio/CardioRouteMap";
 
 type JsonRecord = Record<string, unknown>;
 type TFn = (key: I18nKey, vars?: Record<string, string | number>) => string;
@@ -315,11 +316,11 @@ function getSessionExternalIdLabel(session: WorkoutSession): string | null {
 
 function splitSessions(sessions: WorkoutSession[]): {
     gymSessions: WorkoutSession[];
-    outdoorSessions: WorkoutSession[];
+    cardioSessions: WorkoutSession[];
 } {
     return {
         gymSessions: sessions.filter((session) => !isCardioActivityType(session.activityType)),
-        outdoorSessions: sessions.filter((session) => isCardioActivityType(session.activityType)),
+        cardioSessions: sessions.filter((session) => isCardioActivityType(session.activityType)),
     };
 }
 
@@ -399,10 +400,10 @@ function SessionCard({
     const setsCount = countSets(exercises);
     const loggedSets = countLoggedSets(exercises);
 
-    const routePoints = session.routeSummary?.pointCount ?? null;
-    const avgSpeedKmh = session.cardioMetrics?.avgSpeedKmh ?? session.outdoorMetrics?.avgSpeedKmh ?? null;
-    const maxSpeedKmh = session.cardioMetrics?.maxSpeedKmh ?? session.outdoorMetrics?.maxSpeedKmh ?? null;
-    const strideLengthM = session.cardioMetrics?.strideLengthM ?? session.outdoorMetrics?.strideLengthM ?? null;
+    const routePoints = Array.isArray(session.routePoints) ? session.routePoints.length : session.routeSummary?.pointCount ?? null;
+    const avgSpeedKmh = session.cardioMetrics?.avgSpeedKmh ?? null;
+    const maxSpeedKmh = session.cardioMetrics?.maxSpeedKmh ?? null;
+    const strideLengthM = session.cardioMetrics?.strideLengthM ?? null;
 
     const source = getSessionSourceLabel(session);
     const sourceDevice = getSessionSourceDeviceLabel(session);
@@ -574,6 +575,10 @@ function SessionCard({
                                 }
                             />
                         </div>
+                    ) : null}
+
+                    {isCardio ? (
+                        <CardioRouteMap session={session} />
                     ) : null}
 
                     {exercises && exercises.length > 0 ? (
@@ -752,7 +757,7 @@ export function DaySessionsPanel({
 
     const trainingSource = day.training?.source ?? null;
     const dayRpe = day.training?.dayEffortRpe ?? null;
-    const { gymSessions, outdoorSessions } = React.useMemo(() => splitSessions(sessions), [sessions]);
+    const { gymSessions, cardioSessions } = React.useMemo(() => splitSessions(sessions), [sessions]);
 
     if (sessions.length === 0) {
         return (
@@ -814,18 +819,18 @@ export function DaySessionsPanel({
 
             <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                    <div className="text-sm font-semibold">{t("days.sessions.outdoorTitle")}</div>
+                    <div className="text-sm font-semibold">{t("days.sessions.cardioTitle")}</div>
                     <span className={cn("rounded-full border px-2 py-0.5 text-xs text-muted-foreground", themedPill)}>
-                        {outdoorSessions.length}
+                        {cardioSessions.length}
                     </span>
                 </div>
 
-                {outdoorSessions.length === 0 ? (
+                {cardioSessions.length === 0 ? (
                     <div className="rounded-2xl border bg-card p-4 text-sm text-muted-foreground">
-                        {t("days.sessions.outdoorEmpty")}
+                        {t("days.sessions.cardioEmpty")}
                     </div>
                 ) : (
-                    outdoorSessions.map((session, index) => (
+                    cardioSessions.map((session, index) => (
                         <SessionCard
                             key={buildSessionKey(session, index)}
                             t={t}

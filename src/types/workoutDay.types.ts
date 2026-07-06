@@ -25,7 +25,6 @@ export type WorkoutSessionDataSource = WorkoutDataSource | "app-live";
 export type WorkoutSessionKind =
     | "device-import"
     | "gym-check"
-    | "manual-outdoor"
     | "manual-cardio"
     | "live-cardio";
 
@@ -157,11 +156,18 @@ export type WorkoutCardioMetrics = {
     strideLengthM: number | null;
 };
 
-/**
- * Legacy alias kept only so remaining not-yet-renamed Web files still compile.
- * New code must use WorkoutCardioMetrics and cardioMetrics.
- */
-export type WorkoutOutdoorMetrics = WorkoutCardioMetrics;
+
+export type WorkoutRoutePoint = {
+    latitude: number;
+    longitude: number;
+
+    altitudeM: number | null;
+    accuracyM: number | null;
+    speedMps: number | null;
+    headingDeg: number | null;
+
+    recordedAt: ISODateTime | null;
+};
 
 export type WorkoutRouteSummary = {
     pointCount: number;
@@ -251,12 +257,8 @@ export type WorkoutSession = {
 
     hasRoute: boolean;
     routeSummary: WorkoutRouteSummary | null;
+    routePoints: WorkoutRoutePoint[] | null;
     cardioMetrics: WorkoutCardioMetrics | null;
-
-    /**
-     * Deprecated compatibility field. Backend now returns cardioMetrics.
-     */
-    outdoorMetrics?: WorkoutCardioMetrics | null;
 
     effortRpe: number | null;
 

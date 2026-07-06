@@ -11,6 +11,7 @@
 
 import React from "react";
 
+import { CardioRouteMap } from "@/components/cardio/CardioRouteMap";
 import { Button } from "@/components/ui/button";
 import { getCanonicalCardioEnvironment } from "@/services/workout/cardio.service";
 import type { WorkoutSession } from "@/types/workoutDay.types";
@@ -94,7 +95,7 @@ export function CardioSessionCard({ session, onEdit, onDelete }: Props) {
     const sessionKind =
         typeof session.meta?.sessionKind === "string" ? session.meta.sessionKind : null;
     const healthWriteStatus = getHealthWriteLabel(session.meta?.healthWriteStatus);
-    const metrics = session.cardioMetrics ?? session.outdoorMetrics ?? null;
+    const metrics = session.cardioMetrics ?? null;
     const environment = getCanonicalCardioEnvironment(session);
 
     return (
@@ -170,6 +171,8 @@ export function CardioSessionCard({ session, onEdit, onDelete }: Props) {
                             value={formatNullableNumber(session.routeSummary?.pointCount ?? null)}
                         />
                     </div>
+
+                    <CardioRouteMap session={session} />
 
                     <div className="rounded-xl border bg-background p-3">
                         <div className="text-xs font-medium text-muted-foreground">Notas</div>

@@ -57,10 +57,6 @@ export function getCanonicalCardioEnvironment(
         return "outdoor";
     }
 
-    if (session.meta?.sessionKind === "manual-outdoor") {
-        return "outdoor";
-    }
-
     return null;
 }
 
@@ -174,7 +170,7 @@ export function createEmptyCardioFormValues(): CardioFormValues {
 }
 
 function getSessionCardioMetrics(session: WorkoutSession) {
-    return session.cardioMetrics ?? session.outdoorMetrics ?? null;
+    return session.cardioMetrics ?? null;
 }
 
 export function mapCardioSessionToFormValues(
@@ -310,6 +306,7 @@ export function buildCardioCreatePayload(
 
         hasRoute,
         routeSummary,
+        routePoints: null,
         cardioMetrics: {
             distanceKm,
             steps,

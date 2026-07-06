@@ -32,11 +32,11 @@ function isCardioActivityType(value: WorkoutActivityType): boolean {
 
 function splitSessions(sessions: WorkoutSession[]): {
     gymSessions: WorkoutSession[];
-    outdoorSessions: WorkoutSession[];
+    cardioSessions: WorkoutSession[];
 } {
     return {
         gymSessions: sessions.filter((session) => !isCardioActivityType(session.activityType)),
-        outdoorSessions: sessions.filter((session) => isCardioActivityType(session.activityType)),
+        cardioSessions: sessions.filter((session) => isCardioActivityType(session.activityType)),
     };
 }
 
@@ -57,7 +57,7 @@ export function DayTrainingMetaPanel({
 
     const sessions: WorkoutSession[] = Array.isArray(training.sessions) ? training.sessions : [];
     const mediaTotal = sumMedia(sessions);
-    const { gymSessions, outdoorSessions } = splitSessions(sessions);
+    const { gymSessions, cardioSessions } = splitSessions(sessions);
 
     const source = training.source?.trim() ? training.source.trim() : null;
     const dayRpe = isFiniteNumber(training.dayEffortRpe)
@@ -78,8 +78,8 @@ export function DayTrainingMetaPanel({
 
                     <span className={cn("inline-flex min-w-0 items-center gap-2 rounded-full border px-3 py-1 text-xs", themedPill)}>
                         <span aria-hidden="true" className="shrink-0">🚶</span>
-                        <span className="text-muted-foreground">{t("days.training.outdoorSessions")}:</span>
-                        <span className="font-mono tabular-nums text-foreground">{outdoorSessions.length}</span>
+                        <span className="text-muted-foreground">{t("days.training.cardioSessions")}:</span>
+                        <span className="font-mono tabular-nums text-foreground">{cardioSessions.length}</span>
                     </span>
 
                     <span className={cn("inline-flex min-w-0 items-center gap-2 rounded-full border px-3 py-1 text-xs", themedPill)}>

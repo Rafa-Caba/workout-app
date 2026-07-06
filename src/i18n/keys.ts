@@ -210,7 +210,7 @@ export const i18nKeys = [
     "dashboard.media.video",
 
     // Days
-    "days.training.outdoorSessions",
+    "days.training.cardioSessions",
 
     "days.sleep.sourceDevice",
     "days.sleep.importedAt",
@@ -218,8 +218,8 @@ export const i18nKeys = [
 
     "days.sessions.gymTrainingTitle",
     "days.sessions.gymTrainingEmpty",
-    "days.sessions.outdoorTitle",
-    "days.sessions.outdoorEmpty",
+    "days.sessions.cardioTitle",
+    "days.sessions.cardioEmpty",
 
     "days.sessions.sourceDevice",
     "days.sessions.importedAt",

@@ -53,7 +53,6 @@ export default function App() {
           <Route path="/trends" element={<TrendsPage />} />
           <Route path="/media" element={<MediaPage />} />
           <Route path="/cardio" element={<CardioPage />} />
-          <Route path="/outdoor" element={<Navigate to="/cardio" replace />} />
 
           {user?.coachMode !== "TRAINEE" && (
             <Route path="/routines" element={<RoutinesPage />} />

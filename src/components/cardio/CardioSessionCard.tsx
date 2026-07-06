@@ -138,41 +138,47 @@ export function CardioSessionCard({ session, onEdit, onDelete }: Props) {
                         ) : null}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 xl:grid-cols-4">
-                        <Metric label="Inicio" value={formatDateTime(session.startAt)} />
-                        <Metric label="Fin" value={formatDateTime(session.endAt)} />
-                        <Metric label="Duración" value={formatDuration(session.durationSeconds)} />
-                        <Metric label="Distancia" value={formatDistanceKm(session.distanceKm)} />
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-3 sm:border-r-2 sm:pr-2">
+                            <Metric label="Inicio" value={formatDateTime(session.startAt)} />
+                            <Metric label="Fin" value={formatDateTime(session.endAt)} />
+                            <Metric label="Duración" value={formatDuration(session.durationSeconds)} />
+                            <Metric label="Distancia" value={formatDistanceKm(session.distanceKm)} />
 
-                        <Metric label="Pasos" value={formatNullableNumber(session.steps)} />
-                        <Metric label="Kcal activas" value={formatNullableNumber(session.activeKcal)} />
-                        <Metric label="FC prom" value={formatNullableNumber(session.avgHr)} />
-                        <Metric label="FC máx" value={formatNullableNumber(session.maxHr)} />
+                            <Metric label="Pasos" value={formatNullableNumber(session.steps)} />
+                            <Metric label="Kcal activas" value={formatNullableNumber(session.activeKcal)} />
+                            <Metric label="FC prom" value={formatNullableNumber(session.avgHr)} />
+                            <Metric label="FC máx" value={formatNullableNumber(session.maxHr)} />
 
-                        <Metric label="Ritmo" value={formatPace(session.paceSecPerKm)} />
-                        <Metric label="Cadencia" value={formatNullableNumber(session.cadenceRpm, "rpm")} />
-                        <Metric label="Elevación" value={formatNullableNumber(session.elevationGainM, "m")} />
-                        <Metric label="Dispositivo" value={sourceDevice ?? "—"} />
+                            <Metric label="Ritmo" value={formatPace(session.paceSecPerKm)} />
+                            <Metric label="Cadencia" value={formatNullableNumber(session.cadenceRpm, "rpm")} />
+                            <Metric label="Elevación" value={formatNullableNumber(session.elevationGainM, "m")} />
+                            <Metric label="Dispositivo" value={sourceDevice ?? "—"} />
 
-                        <Metric
-                            label="Vel. prom"
-                            value={formatNullableNumber(metrics?.avgSpeedKmh ?? null, "km/h")}
-                        />
-                        <Metric
-                            label="Vel. máx"
-                            value={formatNullableNumber(metrics?.maxSpeedKmh ?? null, "km/h")}
-                        />
+                            <Metric
+                                label="Vel. prom"
+                                value={formatNullableNumber(metrics?.avgSpeedKmh ?? null, "km/h")}
+                            />
+                            <Metric
+                                label="Vel. máx"
+                                value={formatNullableNumber(metrics?.maxSpeedKmh ?? null, "km/h")}
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <hr className="sm:hidden" />
+
+                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 xl:grid-cols-4">
+                                <Metric label="Ruta" value={session.hasRoute ? "Sí" : "No"} />
+                                <Metric
+                                    label="Puntos de ruta"
+                                    value={formatNullableNumber(session.routeSummary?.pointCount ?? null)}
+                                />
+                            </div>
+
+                            <CardioRouteMap session={session} />
+                        </div>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 xl:grid-cols-4">
-                        <Metric label="Ruta" value={session.hasRoute ? "Sí" : "No"} />
-                        <Metric
-                            label="Puntos de ruta"
-                            value={formatNullableNumber(session.routeSummary?.pointCount ?? null)}
-                        />
-                    </div>
-
-                    <CardioRouteMap session={session} />
 
                     <div className="rounded-xl border bg-background p-3">
                         <div className="text-xs font-medium text-muted-foreground">Notas</div>

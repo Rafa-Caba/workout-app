@@ -1,24 +1,26 @@
+// src/pages/DayExplorerPage.tsx
+// MUI Day Explorer page. Keeps summary/detail data hooks intact while moving
+// the visible layout to MUI cards, tabs, and responsive panels.
+
 import React from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-
-import { PageHeader } from "@/components/PageHeader";
-import { EmptyState } from "@/components/EmptyState";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 
 import { useI18n } from "@/i18n/I18nProvider";
 import { useDaySummary } from "@/hooks/useDaySummary";
 import { useWorkoutDay } from "@/hooks/useWorkoutDay";
-
 import { buildDayExplorerKpis } from "@/utils/dayExplorer";
 import { DayExplorerToolbar } from "@/components/dayExplorer/DayExplorerToolbar";
 import { DayExplorerKpisPanel } from "@/components/dayExplorer/DayExplorerKpis";
-
 import { MediaViewerModal, type MediaLikeItem } from "@/components/media/MediaViewerModal";
 import { DaySessionsPanel } from "@/components/dayExplorer/DaySessionsPanel";
 import { DaySleepPanel } from "@/components/dayExplorer/DaySleepPanel";
 import { DayTrainingMetaPanel } from "@/components/dayExplorer/DayTrainingMetaPanel";
-
 import { JsonDetails } from "@/components/JsonDetails";
+import { AppCard, AppEmptyState, AppPage } from "@/components/mui";
 
 type Tab = "summary" | "raw";
 
@@ -66,9 +68,7 @@ export function DayExplorerPage() {
     const kpis = React.useMemo(() => buildDayExplorerKpis(summaryData), [summaryData]);
 
     return (
-        <div className="space-y-6">
-            <PageHeader title={t("pages.days.title")} subtitle={t("pages.days.subtitle")} />
-
+        <AppPage maxWidth="xl" title={t("pages.days.title")} subtitle={t("pages.days.subtitle")}>
             <DayExplorerToolbar
                 t={t}
                 date={date}
@@ -80,30 +80,37 @@ export function DayExplorerPage() {
 
             {tab === "summary" && summary.isSuccess ? <DayExplorerKpisPanel t={t} kpis={kpis} /> : null}
 
-            {!date ? <EmptyState title={t("days.empty.title")} description={t("days.empty.desc")} /> : null}
+            {!date ? <AppEmptyState title={t("days.empty.title")} description={t("days.empty.desc")} /> : null}
 
             {tab === "raw" && day.isSuccess && rawDayData ? (
-                <div className="space-y-4">
+                <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2 }, minWidth: 0 }}>
                     <DayTrainingMetaPanel t={t} training={rawDayData.training} />
                     <DaySleepPanel t={t} day={rawDayData} />
                     <DaySessionsPanel t={t} day={rawDayData} onOpenMedia={setOpenMedia} />
-                </div>
+                </Box>
             ) : null}
 
             {isFetching ? (
-                <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
+                <Alert severity="info" variant="outlined">
                     {t("common.fetching")}
-                </div>
+                </Alert>
             ) : null}
 
-            {errorForJson ? <JsonDetails title={t("days.debug.errorJsonTitle")} data={errorForJson} defaultOpen /> : null}
+            {errorForJson ? (
+                <JsonDetails title={t("days.debug.errorJsonTitle")} data={errorForJson} defaultOpen />
+            ) : null}
 
-            <JsonDetails
-                title={tab === "summary" ? t("days.debug.summaryJsonTitle") : t("days.debug.dayJsonTitle")}
-                data={dataForJson}
-            />
+            <AppCard padding="sm" tone="soft">
+                <Typography variant="caption" color="text.secondary">
+                    Debug JSON solo se muestra cuando la opción de depuración está activa.
+                </Typography>
+                <JsonDetails
+                    title={tab === "summary" ? t("days.debug.summaryJsonTitle") : t("days.debug.dayJsonTitle")}
+                    data={dataForJson}
+                />
+            </AppCard>
 
             {openMedia ? <MediaViewerModal item={openMedia} onClose={() => setOpenMedia(null)} /> : null}
-        </div>
+        </AppPage>
     );
 }

@@ -1,20 +1,22 @@
 // src/pages/SleepPage.tsx
+// MUI Sleep editor page. Keeps the existing sleep hooks and backend contract,
+// while migrating the visible form, toolbar, and summary cards to MUI.
 
 import React from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 
-import { Button } from "@/components/ui/button";
 import type { ApiError } from "@/api/httpErrors";
-
-import { PageHeader } from "@/components/PageHeader";
 import { JsonDetails } from "@/components/JsonDetails";
-import { EmptyState } from "@/components/EmptyState";
-
 import { useI18n } from "@/i18n/I18nProvider";
 import { useWorkoutDay } from "@/hooks/useWorkoutDay";
 import { useUpdateSleep } from "@/hooks/useUpdateSleep";
-
 import type {
     SleepBlock,
     WorkoutDataSource,
@@ -22,6 +24,15 @@ import type {
 } from "@/types/workoutDay.types";
 import { calcSleepEfficiencyPct } from "@/utils/dayExplorer";
 import { DeviceSelect } from "@/components/DeviceSelect";
+import {
+    AppActionRow,
+    AppCard,
+    AppEmptyState,
+    AppFormGrid,
+    AppMetricCard,
+    AppPage,
+    AppToolbar,
+} from "@/components/mui";
 
 function toastApiError(e: unknown, fallback: string) {
     const err = e as Partial<ApiError> | undefined;
@@ -83,6 +94,32 @@ function createEmptySleepBlock(): SleepBlock {
         lastSyncedAt: null,
         raw: null,
     };
+}
+
+function NumericSleepField({
+    label,
+    helper,
+    value,
+    placeholder,
+    onChange,
+}: {
+    label: string;
+    helper?: string;
+    value: number | null;
+    placeholder?: string;
+    onChange: (next: string) => void;
+}) {
+    return (
+        <TextField
+            fullWidth
+            label={label}
+            value={numOrEmpty(value)}
+            placeholder={placeholder}
+            onChange={(event) => onChange(event.target.value)}
+            helperText={helper}
+            type="number"
+        />
+    );
 }
 
 export function SleepPage() {
@@ -170,90 +207,65 @@ export function SleepPage() {
     };
 
     return (
-        <div className="space-y-5 sm:space-y-6">
-            <PageHeader
-                title={t("sleep.title")}
-                subtitle={t("sleep.subtitle")}
-                right={
-                    <div className="w-full sm:w-auto">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
-                            <Button
-                                className="w-full sm:w-auto"
-                                variant="outline"
-                                onClick={() => query.refetch()}
-                                disabled={query.isFetching || isSaving}
-                            >
-                                {t("common.refetch")}
-                            </Button>
-
-                            <Button
-                                className="w-full sm:w-auto"
-                                onClick={onSave}
-                                disabled={query.isFetching || isSaving}
-                            >
-                                {isSaving ? t("common.saving") : t("common.save")}
-                            </Button>
-                        </div>
-                    </div>
+        <AppPage
+            maxWidth="xl"
+            title={t("sleep.title")}
+            subtitle={t("sleep.subtitle")}
+            actions={
+                <AppActionRow dense>
+                    <Button
+                        variant="outlined"
+                        onClick={() => query.refetch()}
+                        disabled={query.isFetching || isSaving}
+                    >
+                        {t("common.refetch")}
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={onSave}
+                        disabled={query.isFetching || isSaving}
+                    >
+                        {isSaving ? t("common.saving") : t("common.save")}
+                    </Button>
+                </AppActionRow>
+            }
+        >
+            <AppToolbar
+                dense
+                start={
+                    <TextField
+                        label={t("common.date")}
+                        type="date"
+                        value={date}
+                        onChange={(event) => setDate(event.target.value)}
+                        sx={{ width: { xs: "100%", sm: 220 } }}
+                    />
+                }
+                end={
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: {
+                                xs: "repeat(2, minmax(0, 1fr))",
+                                md: "repeat(5, minmax(120px, auto))",
+                            },
+                            gap: 1,
+                            width: "100%",
+                        }}
+                    >
+                        <AppMetricCard compact label={t("sleep.summary.timeAsleep")} value={minutesToHhMm(total)} />
+                        <AppMetricCard compact label={t("sleep.summary.timeInBed")} value={minutesToHhMm(inBed)} />
+                        <AppMetricCard compact label={t("sleep.summary.efficiency")} value={formatPercent(efficiencyPct)} />
+                        <AppMetricCard compact label={t("sleep.summary.score")} value={score == null ? "—" : score} />
+                        <AppMetricCard compact label={t("sleep.summary.stagesSum")} value={stageSum > 0 ? `${stageSum} min` : "—"} />
+                    </Box>
                 }
             />
 
-            <div className="rounded-xl border bg-card p-3 sm:p-4">
-                <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-3">
-                    <div className="w-full md:w-auto space-y-1">
-                        <label className="text-sm font-medium">{t("common.date")}</label>
-                        <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
-                            <input
-                                type="date"
-                                className="sm:w-full rounded-md border bg-background px-3 py-2 text-sm"
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2 md:ml-auto">
-                        <div className="w-full sm:w-auto rounded-lg border bg-background px-3 py-2 text-sm">
-                            <div className="text-xs text-muted-foreground">{t("sleep.summary.timeAsleep")}</div>
-                            <div className="font-mono">{minutesToHhMm(total)}</div>
-                        </div>
-
-                        <div className="w-full sm:w-auto rounded-lg border bg-background px-3 py-2 text-sm">
-                            <div className="text-xs text-muted-foreground">{t("sleep.summary.timeInBed")}</div>
-                            <div className="font-mono">{minutesToHhMm(inBed)}</div>
-                        </div>
-
-                        <div className="w-full sm:w-auto rounded-lg border bg-background px-3 py-2 text-sm">
-                            <div className="text-xs text-muted-foreground">{t("sleep.summary.efficiency")}</div>
-                            <div className="font-mono">{formatPercent(efficiencyPct)}</div>
-                        </div>
-
-                        <div className="w-full sm:w-auto rounded-lg border bg-background px-3 py-2 text-sm">
-                            <div className="text-xs text-muted-foreground">{t("sleep.summary.score")}</div>
-                            <div className="font-mono">{score == null ? "—" : score}</div>
-                        </div>
-
-                        <div className="w-full sm:w-auto rounded-lg border bg-background px-3 py-2 text-sm">
-                            <div className="text-xs text-muted-foreground">{t("sleep.summary.stagesSum")}</div>
-                            <div className="font-mono">{stageSum > 0 ? `${stageSum} min` : "—"}</div>
-                        </div>
-
-                        <Button
-                            className="w-full sm:w-auto"
-                            variant="outline"
-                            onClick={onClear}
-                            disabled={query.isFetching || isSaving}
-                        >
-                            {t("sleep.clear")}
-                        </Button>
-                    </div>
-                </div>
-            </div>
-
             {query.isFetching ? (
-                <div className="rounded-xl border bg-card p-3 sm:p-4 text-sm text-muted-foreground">
+                <Alert severity="info" variant="outlined">
                     {t("common.fetching")}
-                </div>
+                </Alert>
             ) : null}
 
             {query.isError ? (
@@ -261,161 +273,148 @@ export function SleepPage() {
             ) : null}
 
             {query.isSuccess && !hasAnySleepValue ? (
-                <EmptyState title={t("sleep.empty.title")} description={t("sleep.empty.desc")} />
+                <AppEmptyState title={t("sleep.empty.title")} description={t("sleep.empty.desc")} />
             ) : null}
 
-            <div className="rounded-xl border bg-card p-3 sm:p-4 space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="space-y-1">
-                        <label className="text-sm font-medium">{t("sleep.fields.timeAsleepMinutes")}</label>
-                        <input
-                            inputMode="numeric"
-                            placeholder="e.g. 420"
-                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                            value={numOrEmpty(form.timeAsleepMinutes)}
-                            onChange={(e) =>
-                                setForm((p) => ({
-                                    ...p,
-                                    timeAsleepMinutes: parseNullableInt(e.target.value),
-                                }))
-                            }
-                        />
-                        <div className="text-xs text-muted-foreground">{t("sleep.hints.timeAsleepMinutes")}</div>
-                    </div>
+            <AppCard title={t("sleep.title")} subtitle={t("sleep.subtitle")}>
+                <AppFormGrid columns={{ xs: 1, sm: 2, lg: 4 }}>
+                    <NumericSleepField
+                        label={t("sleep.fields.timeAsleepMinutes")}
+                        helper={t("sleep.hints.timeAsleepMinutes")}
+                        placeholder="e.g. 420"
+                        value={form.timeAsleepMinutes}
+                        onChange={(next) =>
+                            setForm((previous) => ({
+                                ...previous,
+                                timeAsleepMinutes: parseNullableInt(next),
+                            }))
+                        }
+                    />
 
-                    <div className="space-y-1">
-                        <label className="text-sm font-medium">{t("sleep.fields.timeInBedMinutes")}</label>
-                        <input
-                            inputMode="numeric"
-                            placeholder="e.g. 480"
-                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                            value={numOrEmpty(form.timeInBedMinutes)}
-                            onChange={(e) =>
-                                setForm((p) => ({
-                                    ...p,
-                                    timeInBedMinutes: parseNullableInt(e.target.value),
-                                }))
-                            }
-                        />
-                        <div className="text-xs text-muted-foreground">{t("sleep.hints.timeInBedMinutes")}</div>
-                    </div>
+                    <NumericSleepField
+                        label={t("sleep.fields.timeInBedMinutes")}
+                        helper={t("sleep.hints.timeInBedMinutes")}
+                        placeholder="e.g. 480"
+                        value={form.timeInBedMinutes}
+                        onChange={(next) =>
+                            setForm((previous) => ({
+                                ...previous,
+                                timeInBedMinutes: parseNullableInt(next),
+                            }))
+                        }
+                    />
 
-                    <div className="space-y-1">
-                        <label className="text-sm font-medium">{t("sleep.fields.score")}</label>
-                        <input
-                            inputMode="numeric"
-                            placeholder="0-100"
-                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                            value={numOrEmpty(form.score)}
-                            onChange={(e) =>
-                                setForm((p) => ({
-                                    ...p,
-                                    score: parseNullableScore(e.target.value),
-                                }))
-                            }
-                        />
-                        <div className="text-xs text-muted-foreground">{t("sleep.hints.score")}</div>
-                    </div>
+                    <NumericSleepField
+                        label={t("sleep.fields.score")}
+                        helper={t("sleep.hints.score")}
+                        placeholder="0-100"
+                        value={form.score}
+                        onChange={(next) =>
+                            setForm((previous) => ({
+                                ...previous,
+                                score: parseNullableScore(next),
+                            }))
+                        }
+                    />
 
-                    <div className="space-y-1">
-                        <label className="text-sm font-medium">{t("sleep.fields.awakeMinutes")}</label>
-                        <input
-                            inputMode="numeric"
-                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                            value={numOrEmpty(form.awakeMinutes)}
-                            onChange={(e) =>
-                                setForm((p) => ({
-                                    ...p,
-                                    awakeMinutes: parseNullableInt(e.target.value),
-                                }))
-                            }
-                        />
-                    </div>
+                    <NumericSleepField
+                        label={t("sleep.fields.awakeMinutes")}
+                        value={form.awakeMinutes}
+                        onChange={(next) =>
+                            setForm((previous) => ({
+                                ...previous,
+                                awakeMinutes: parseNullableInt(next),
+                            }))
+                        }
+                    />
 
-                    <div className="space-y-1">
-                        <label className="text-sm font-medium">{t("sleep.fields.remMinutes")}</label>
-                        <input
-                            inputMode="numeric"
-                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                            value={numOrEmpty(form.remMinutes)}
-                            onChange={(e) =>
-                                setForm((p) => ({
-                                    ...p,
-                                    remMinutes: parseNullableInt(e.target.value),
-                                }))
-                            }
-                        />
-                    </div>
+                    <NumericSleepField
+                        label={t("sleep.fields.remMinutes")}
+                        value={form.remMinutes}
+                        onChange={(next) =>
+                            setForm((previous) => ({
+                                ...previous,
+                                remMinutes: parseNullableInt(next),
+                            }))
+                        }
+                    />
 
-                    <div className="space-y-1">
-                        <label className="text-sm font-medium">{t("sleep.fields.coreMinutes")}</label>
-                        <input
-                            inputMode="numeric"
-                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                            value={numOrEmpty(form.coreMinutes)}
-                            onChange={(e) =>
-                                setForm((p) => ({
-                                    ...p,
-                                    coreMinutes: parseNullableInt(e.target.value),
-                                }))
-                            }
-                        />
-                    </div>
+                    <NumericSleepField
+                        label={t("sleep.fields.coreMinutes")}
+                        value={form.coreMinutes}
+                        onChange={(next) =>
+                            setForm((previous) => ({
+                                ...previous,
+                                coreMinutes: parseNullableInt(next),
+                            }))
+                        }
+                    />
 
-                    <div className="space-y-1">
-                        <label className="text-sm font-medium">{t("sleep.fields.deepMinutes")}</label>
-                        <input
-                            inputMode="numeric"
-                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                            value={numOrEmpty(form.deepMinutes)}
-                            onChange={(e) =>
-                                setForm((p) => ({
-                                    ...p,
-                                    deepMinutes: parseNullableInt(e.target.value),
-                                }))
-                            }
-                        />
-                    </div>
+                    <NumericSleepField
+                        label={t("sleep.fields.deepMinutes")}
+                        value={form.deepMinutes}
+                        onChange={(next) =>
+                            setForm((previous) => ({
+                                ...previous,
+                                deepMinutes: parseNullableInt(next),
+                            }))
+                        }
+                    />
 
-                    <div className="space-y-1">
-                        <label className="text-sm font-medium">{t("sleep.fields.source")}</label>
-                        <select
-                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                            value={form.source ?? ""}
-                            onChange={(e) =>
-                                setForm((p) => ({
-                                    ...p,
-                                    source: normalizeWorkoutDataSource(
-                                        e.target.value ? e.target.value : null
-                                    ),
-                                }))
-                            }
-                        >
-                            <option value="">{t("sleep.placeholders.source")}</option>
-                            <option value="manual">manual</option>
-                            <option value="healthkit">healthkit</option>
-                            <option value="health-connect">health-connect</option>
-                        </select>
-                    </div>
+                    <TextField
+                        select
+                        fullWidth
+                        label={t("sleep.fields.source")}
+                        value={form.source ?? ""}
+                        onChange={(event) =>
+                            setForm((previous) => ({
+                                ...previous,
+                                source: normalizeWorkoutDataSource(event.target.value || null),
+                            }))
+                        }
+                    >
+                        <MenuItem value="">{t("sleep.placeholders.source")}</MenuItem>
+                        <MenuItem value="manual">manual</MenuItem>
+                        <MenuItem value="healthkit">healthkit</MenuItem>
+                        <MenuItem value="health-connect">health-connect</MenuItem>
+                    </TextField>
 
-                    <div className="space-y-1 sm:col-span-2 lg:col-span-2">
+                    <Box sx={{ gridColumn: { xs: "auto", sm: "span 2", lg: "span 2" } }}>
                         <DeviceSelect
                             t={t}
                             value={form.sourceDevice}
-                            onChange={(v) =>
-                                setForm((p) => ({
-                                    ...p,
-                                    sourceDevice: (v ?? null) as WorkoutSourceDevice | null,
+                            onChange={(value) =>
+                                setForm((previous) => ({
+                                    ...previous,
+                                    sourceDevice: (value ?? null) as WorkoutSourceDevice | null,
                                 }))
                             }
                         />
-                    </div>
-                </div>
-            </div>
+                    </Box>
+                </AppFormGrid>
+
+                <AppActionRow sx={{ mt: 2 }} dense>
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={onClear}
+                        disabled={query.isFetching || isSaving}
+                    >
+                        {t("sleep.clear")}
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={onSave}
+                        disabled={query.isFetching || isSaving}
+                    >
+                        {isSaving ? t("common.saving") : t("common.save")}
+                    </Button>
+                </AppActionRow>
+            </AppCard>
 
             {query.isSuccess ? (
                 <JsonDetails title={t("sleep.debugJsonTitle")} data={query.data} />
             ) : null}
-        </div>
+        </AppPage>
     );
 }

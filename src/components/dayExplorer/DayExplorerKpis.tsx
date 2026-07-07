@@ -1,7 +1,10 @@
-import React from "react";
-import { StatCard } from "@/components/StatCard";
+// src/components/dayExplorer/DayExplorerKpis.tsx
+// MUI KPI cards for the Day Explorer summary view.
+
 import type { I18nKey } from "@/i18n/keys";
 import type { DayExplorerKpis } from "@/utils/dayExplorer";
+import { AppMetricCard } from "@/components/mui";
+import Box from "@mui/material/Box";
 
 function formatMaybeNumber(value: number | null): string {
     if (typeof value !== "number") return "—";
@@ -17,13 +20,20 @@ export function DayExplorerKpisPanel({
 }) {
     if (!kpis) return null;
 
-    const segsToMins = kpis.trainingSeconds ? kpis.trainingSeconds / 60 : 0;
+    const secondsToMinutes = kpis.trainingSeconds ? kpis.trainingSeconds / 60 : 0;
 
     return (
-        <div className="w-full min-w-0 grid gap-3 sm:gap-4 grid-cols-1 xs:grid-cols-2 sm:grid-cols-3">
-            <StatCard label={t("days.kpi.trainingSeconds")} value={formatMaybeNumber(segsToMins)} />
-            <StatCard label={t("days.kpi.activeKcal")} value={formatMaybeNumber(kpis.activeKcal)} />
-            <StatCard label={t("days.kpi.sleepMinutes")} value={formatMaybeNumber(kpis.sleepMinutes)} />
-        </div>
+        <Box
+            sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
+                gap: { xs: 1, md: 1.25 },
+                minWidth: 0,
+            }}
+        >
+            <AppMetricCard compact label={t("days.kpi.trainingSeconds")} value={formatMaybeNumber(secondsToMinutes)} />
+            <AppMetricCard compact label={t("days.kpi.activeKcal")} value={formatMaybeNumber(kpis.activeKcal)} />
+            <AppMetricCard compact label={t("days.kpi.sleepMinutes")} value={formatMaybeNumber(kpis.sleepMinutes)} />
+        </Box>
     );
 }

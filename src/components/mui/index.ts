@@ -11,7 +11,7 @@ export { AppConfirmDialog } from "./AppConfirmDialog";
 export type { AppConfirmDialogProps, AppConfirmTone } from "./AppConfirmDialog";
 
 export { AppEmptyState } from "./AppEmptyState";
-export type { AppEmptyStateProps } from "./AppEmptyState";
+export type { AppEmptyStateProps, AppEmptyStateVariant } from "./AppEmptyState";
 
 export { AppFormGrid } from "./AppFormGrid";
 export type { AppFormGridProps } from "./AppFormGrid";

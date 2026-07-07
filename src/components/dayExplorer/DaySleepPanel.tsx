@@ -1,14 +1,14 @@
 // src/components/dayExplorer/DaySleepPanel.tsx
+// MUI sleep and recovery summary panel for the Day Explorer detail view.
 
-import React from "react";
+import type { I18nKey } from "@/i18n/translations";
 import type { WorkoutDay, WorkoutSession } from "@/types/workoutDay.types";
 import { BadgePill } from "@/components/dayExplorer/BadgePill";
 import { calcSleepEfficiencyPct } from "@/utils/dayExplorer";
-import { themedPanelCard } from "@/theme/cardHierarchy";
-import { cn } from "@/lib/utils";
+import { AppCard, AppEmptyState } from "@/components/mui";
+import Box from "@mui/material/Box";
 
-type TFn = (key: any, vars?: any) => string;
-
+type TFn = (key: I18nKey, vars?: Record<string, string | number>) => string;
 type AnyRecord = Record<string, unknown>;
 
 function isRecord(v: unknown): v is AnyRecord {
@@ -53,8 +53,8 @@ function clamp(n: number, min: number, max: number): number {
 
 function computeAvgRpeFromSessions(sessions: WorkoutSession[]): number | null {
     const vals = sessions
-        .map((s) => s.effortRpe)
-        .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+        .map((session) => session.effortRpe)
+        .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
 
     if (!vals.length) return null;
 
@@ -62,12 +62,6 @@ function computeAvgRpeFromSessions(sessions: WorkoutSession[]): number | null {
     return Math.round(avg * 10) / 10;
 }
 
-/**
- * Recovery readiness heuristic (0-100):
- * - Base: Sleep score (0..100)
- * - Penalty: RPE above 6 penalizes more
- * - Bonus: RPE <= 5 slightly boosts (good recovery day)
- */
 function computeReadiness(sleepScore: number | null, rpe: number | null): number | null {
     if (!isFiniteNumber(sleepScore)) return null;
 
@@ -154,29 +148,23 @@ export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
     const lastSyncedAt = formatIsoDateTime(sleep?.lastSyncedAt ?? null);
 
     return (
-        <div className={cn("w-full min-w-0 rounded-2xl border p-4 space-y-3", themedPanelCard)}>
-            <div className="min-w-0 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                <div className="text-sm font-semibold">{t("days.sleep.title")}</div>
+        <AppCard title={t("days.sleep.title")}>
+            {!sleep ? (
+                <AppEmptyState title={t("days.sleep.empty")} variant="inline" />
+            ) : null}
 
-                {!sleep ? (
-                    <div className="text-xs text-muted-foreground">{t("days.sleep.empty")}</div>
-                ) : null}
-            </div>
-
-            <div className="w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Box
+                sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+                    gap: 1,
+                }}
+            >
                 <BadgePill emoji="🛌" label={t("days.sleep.total")} value={total} />
                 <BadgePill emoji="🏆" label={t("days.sleep.score")} value={scoreText} />
 
-                <BadgePill
-                    emoji="💤"
-                    label={t("days.sleep.efficiency")}
-                    value={formatPercent(efficiencyPct)}
-                />
-                <BadgePill
-                    emoji="🔁"
-                    label={t("days.sleep.readiness")}
-                    value={isFiniteNumber(readiness) ? `${readiness}` : null}
-                />
+                <BadgePill emoji="💤" label={t("days.sleep.efficiency")} value={formatPercent(efficiencyPct)} />
+                <BadgePill emoji="🔁" label={t("days.sleep.readiness")} value={isFiniteNumber(readiness) ? `${readiness}` : null} />
 
                 <BadgePill emoji="🧠" label={t("days.sleep.remPct")} value={formatPercent(remPct)} />
                 <BadgePill emoji="🌙" label={t("days.sleep.deepPct")} value={formatPercent(deepPct)} />
@@ -189,7 +177,7 @@ export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
 
                 <BadgePill emoji="⬇️" label={t("days.sleep.importedAt")} value={importedAt} />
                 <BadgePill emoji="🔄" label={t("days.sleep.lastSyncedAt")} value={lastSyncedAt} />
-            </div>
-        </div>
+            </Box>
+        </AppCard>
     );
 }

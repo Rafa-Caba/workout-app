@@ -8,12 +8,15 @@ import type { SxProps, Theme } from "@mui/material/styles";
 
 import { AppCard } from "./AppCard";
 
+type AppEmptyStateVariant = "card" | "inline";
+
 type AppEmptyStateProps = {
     title: ReactNode;
     description?: ReactNode;
     icon?: ReactNode;
     action?: ReactNode;
     compact?: boolean;
+    variant?: AppEmptyStateVariant;
     sx?: SxProps<Theme>;
 };
 
@@ -23,21 +26,11 @@ export function AppEmptyState({
     icon,
     action,
     compact = false,
+    variant = "card",
     sx,
 }: AppEmptyStateProps) {
-    return (
-        <AppCard
-            padding={compact ? "sm" : "md"}
-            tone="soft"
-            sx={sx}
-            contentSx={{
-                textAlign: "center",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: compact ? 1 : 1.5,
-            }}
-        >
+    const content = (
+        <>
             {icon ? (
                 <Box
                     sx={{
@@ -55,7 +48,7 @@ export function AppEmptyState({
             ) : null}
 
             <Box sx={{ maxWidth: 560 }}>
-                <Typography variant={compact ? "subtitle1" : "h6"} sx={{ fontWeight: 850 }}>
+                <Typography variant={compact ? "subtitle1" : "h6"} sx={{ fontWeight: 800 }}>
                     {title}
                 </Typography>
                 {description ? (
@@ -66,8 +59,46 @@ export function AppEmptyState({
             </Box>
 
             {action ? <Box sx={{ mt: compact ? 0.5 : 1 }}>{action}</Box> : null}
+        </>
+    );
+
+    if (variant === "inline") {
+        return (
+            <Box
+                sx={[
+                    {
+                        textAlign: "center",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: compact ? 1 : 1.25,
+                        py: compact ? 1 : 1.5,
+                        color: "text.secondary",
+                    },
+                    ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+                ]}
+            >
+                {content}
+            </Box>
+        );
+    }
+
+    return (
+        <AppCard
+            padding={compact ? "sm" : "md"}
+            tone="soft"
+            sx={sx}
+            contentSx={{
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: compact ? 1 : 1.5,
+            }}
+        >
+            {content}
         </AppCard>
     );
 }
 
-export type { AppEmptyStateProps };
+export type { AppEmptyStateProps, AppEmptyStateVariant };

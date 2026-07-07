@@ -1,7 +1,7 @@
 // src/components/mui/AppResponsiveTabs.tsx
 // Shared responsive MUI tabs helper for section switching.
 
-import type { ReactNode } from "react";
+import type { ReactNode, SyntheticEvent } from "react";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Tab from "@mui/material/Tab";
@@ -67,7 +67,7 @@ export function AppResponsiveTabs({
     variant = "scrollable",
     sx,
 }: AppResponsiveTabsProps) {
-    const handleChange = (_event: React.SyntheticEvent, nextValue: string) => {
+    const handleChange = (_event: SyntheticEvent, nextValue: string) => {
         onChange(nextValue);
     };
 

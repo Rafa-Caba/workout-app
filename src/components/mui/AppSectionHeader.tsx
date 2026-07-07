@@ -44,7 +44,7 @@ export function AppSectionHeader({
                     <Typography
                         variant="overline"
                         color="primary"
-                        sx={{ fontWeight: 900, letterSpacing: 0.8 }}
+                        sx={{ fontWeight: 800, letterSpacing: 0.75 }}
                     >
                         {eyebrow}
                     </Typography>
@@ -62,7 +62,7 @@ export function AppSectionHeader({
                     <Typography
                         variant={dense ? "h6" : "h5"}
                         component="h2"
-                        sx={{ fontWeight: 950, letterSpacing: "-0.03em" }}
+                        sx={{ fontWeight: 850, letterSpacing: "-0.025em" }}
                     >
                         {title}
                     </Typography>

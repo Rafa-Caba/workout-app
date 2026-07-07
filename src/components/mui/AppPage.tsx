@@ -51,8 +51,8 @@ export function AppPage({
                     width: "100%",
                     maxWidth: PAGE_MAX_WIDTH[maxWidth],
                     mx: "auto",
-                    px: disableGutters ? 0 : { xs: 2, sm: 3, lg: 4 },
-                    py: { xs: 3, md: 4 },
+                    px: disableGutters ? 0 : { xs: 0.2, sm: 2.25, lg: 3.5 },
+                    py: { xs: 0, md: 3.5 },
                 },
                 ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
             ]}
@@ -66,7 +66,7 @@ export function AppPage({
                             alignItems: { xs: "stretch", md: "flex-start" },
                             justifyContent: "space-between",
                             gap: 2,
-                            mb: { xs: 2.5, md: 3 },
+                            mb: { xs: 2, md: 3 },
                             minWidth: 0,
                         },
                         ...(Array.isArray(headerSx) ? headerSx : headerSx ? [headerSx] : []),
@@ -77,7 +77,7 @@ export function AppPage({
                             <Typography
                                 variant="overline"
                                 color="primary"
-                                sx={{ fontWeight: 900, letterSpacing: 0.9 }}
+                                sx={{ fontWeight: 800, letterSpacing: 0.8 }}
                             >
                                 {eyebrow}
                             </Typography>
@@ -88,8 +88,8 @@ export function AppPage({
                                 variant="h4"
                                 component="h1"
                                 sx={{
-                                    fontWeight: 950,
-                                    letterSpacing: "-0.04em",
+                                    fontWeight: 850,
+                                    letterSpacing: "-0.035em",
                                     lineHeight: 1.08,
                                 }}
                             >
@@ -130,7 +130,7 @@ export function AppPage({
                     {
                         display: "flex",
                         flexDirection: "column",
-                        gap: { xs: 2, md: 2.5 },
+                        gap: { xs: 1.5, md: 2.25 },
                         minWidth: 0,
                     },
                     ...(Array.isArray(contentSx) ? contentSx : contentSx ? [contentSx] : []),

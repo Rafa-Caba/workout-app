@@ -149,8 +149,8 @@ function buildComponentOverrides(accent: AccentScale, neutrals: NeutralScale): C
             },
             styleOverrides: {
                 root: {
-                    borderRadius: 14,
-                    fontWeight: 800,
+                    borderRadius: 10,
+                    fontWeight: 750,
                     textTransform: "none",
                     minHeight: 42,
                     boxShadow: "none",
@@ -180,7 +180,7 @@ function buildComponentOverrides(accent: AccentScale, neutrals: NeutralScale): C
         MuiIconButton: {
             styleOverrides: {
                 root: {
-                    borderRadius: 14,
+                    borderRadius: 10,
                     border: `1px solid ${neutrals.border}`,
                     backgroundColor: alpha(neutrals.paper, 0.78),
                     boxShadow: `0 8px 18px ${alpha("#000000", 0.08)}`,
@@ -197,7 +197,7 @@ function buildComponentOverrides(accent: AccentScale, neutrals: NeutralScale): C
         MuiCard: {
             styleOverrides: {
                 root: {
-                    borderRadius: 22,
+                    borderRadius: 16,
                     border: `1px solid ${neutrals.border}`,
                     backgroundImage: "none",
                     boxShadow: `0 12px 30px ${alpha("#000000", 0.06)}`,
@@ -207,7 +207,7 @@ function buildComponentOverrides(accent: AccentScale, neutrals: NeutralScale): C
         MuiPaper: {
             styleOverrides: {
                 rounded: {
-                    borderRadius: 18,
+                    borderRadius: 12,
                 },
                 elevation1: {
                     boxShadow: `0 12px 30px ${alpha("#000000", 0.08)}`,
@@ -243,7 +243,7 @@ function buildComponentOverrides(accent: AccentScale, neutrals: NeutralScale): C
         MuiOutlinedInput: {
             styleOverrides: {
                 root: {
-                    borderRadius: 14,
+                    borderRadius: 10,
                     backgroundColor: alpha(neutrals.paper, 0.76),
                     "& .MuiOutlinedInput-notchedOutline": {
                         borderColor: neutrals.border,
@@ -281,7 +281,7 @@ function buildComponentOverrides(accent: AccentScale, neutrals: NeutralScale): C
         MuiDialog: {
             styleOverrides: {
                 paper: {
-                    borderRadius: 24,
+                    borderRadius: 16,
                     border: `1px solid ${neutrals.border}`,
                     backgroundImage: "none",
                 },
@@ -290,7 +290,7 @@ function buildComponentOverrides(accent: AccentScale, neutrals: NeutralScale): C
         MuiMenu: {
             styleOverrides: {
                 paper: {
-                    borderRadius: 18,
+                    borderRadius: 12,
                     border: `1px solid ${neutrals.border}`,
                     boxShadow: `0 20px 45px ${alpha("#000000", 0.14)}`,
                 },
@@ -306,7 +306,7 @@ function buildComponentOverrides(accent: AccentScale, neutrals: NeutralScale): C
         MuiTableCell: {
             styleOverrides: {
                 head: {
-                    fontWeight: 900,
+                    fontWeight: 800,
                     backgroundColor: alpha(accent.main, 0.10),
                 },
             },
@@ -359,18 +359,18 @@ export function buildWorkoutMuiTheme(args: AppMuiThemeArgs): Theme {
         typography: {
             fontFamily:
                 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-            h1: { fontWeight: 900, letterSpacing: -0.8 },
-            h2: { fontWeight: 900, letterSpacing: -0.7 },
-            h3: { fontWeight: 900, letterSpacing: -0.6 },
-            h4: { fontWeight: 900, letterSpacing: -0.4 },
-            h5: { fontWeight: 900, letterSpacing: -0.25 },
-            h6: { fontWeight: 900, letterSpacing: -0.1 },
-            button: { fontWeight: 800 },
+            h1: { fontWeight: 850, letterSpacing: -0.75 },
+            h2: { fontWeight: 850, letterSpacing: -0.65 },
+            h3: { fontWeight: 850, letterSpacing: -0.55 },
+            h4: { fontWeight: 850, letterSpacing: -0.35 },
+            h5: { fontWeight: 850, letterSpacing: -0.22 },
+            h6: { fontWeight: 850, letterSpacing: -0.1 },
+            button: { fontWeight: 750 },
             subtitle1: { color: neutrals.textSecondary },
             subtitle2: { color: neutrals.textMuted },
         },
         shape: {
-            borderRadius: 16,
+            borderRadius: 12,
         },
         shadows: [
             "none",

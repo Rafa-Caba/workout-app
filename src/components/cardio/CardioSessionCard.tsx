@@ -117,23 +117,23 @@ export function CardioSessionCard({ session, onEdit, onDelete }: Props) {
 
     return (
         <AppCard
-            padding="lg"
+            padding="md"
             sx={{
                 overflow: "visible",
             }}
         >
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, minWidth: 0 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.75, md: 2.25 }, minWidth: 0 }}>
                 <Box
                     sx={{
                         display: "flex",
                         flexDirection: { xs: "column", md: "row" },
                         justifyContent: "space-between",
-                        gap: 2,
+                        gap: { xs: 1.5, md: 2 },
                         minWidth: 0,
                     }}
                 >
                     <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="h6" component="h3" sx={{ fontWeight: 950 }}>
+                        <Typography variant="h6" component="h3" sx={{ fontWeight: 850 }}>
                             {getSessionTitle(session)}
                         </Typography>
 
@@ -142,7 +142,7 @@ export function CardioSessionCard({ session, onEdit, onDelete }: Props) {
                                 display: "flex",
                                 flexWrap: "wrap",
                                 gap: 0.75,
-                                mt: 1.25,
+                                mt: 1,
                                 minWidth: 0,
                             }}
                         >
@@ -171,12 +171,12 @@ export function CardioSessionCard({ session, onEdit, onDelete }: Props) {
                             xs: "1fr",
                             lg: hasRouteMap ? "minmax(0, 0.92fr) minmax(420px, 1.08fr)" : "1fr",
                         },
-                        gap: { xs: 2, lg: 2.5 },
+                        gap: { xs: 1.5, lg: 2.25 },
                         alignItems: "stretch",
                         minWidth: 0,
                     }}
                 >
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, minWidth: 0 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25, minWidth: 0 }}>
                         <Box
                             sx={{
                                 display: "grid",
@@ -187,7 +187,7 @@ export function CardioSessionCard({ session, onEdit, onDelete }: Props) {
                                         ? "repeat(3, minmax(0, 1fr))"
                                         : "repeat(4, minmax(0, 1fr))",
                                 },
-                                gap: 1.25,
+                                gap: { xs: 1, md: 1.25 },
                             }}
                         >
                             <AppMetricCard compact label="Inicio" value={formatDateTime(session.startAt)} />
@@ -218,7 +218,7 @@ export function CardioSessionCard({ session, onEdit, onDelete }: Props) {
                             <CardioRouteMap
                                 session={session}
                                 height={{
-                                    xs: 320,
+                                    xs: 300,
                                     sm: 360,
                                     md: 420,
                                     lg: 520,

@@ -27,7 +27,7 @@ export function AppEmptyState({
 }: AppEmptyStateProps) {
     return (
         <AppCard
-            padding={compact ? "md" : "lg"}
+            padding={compact ? "sm" : "md"}
             tone="soft"
             sx={sx}
             contentSx={{
@@ -41,8 +41,8 @@ export function AppEmptyState({
             {icon ? (
                 <Box
                     sx={{
-                        width: compact ? 44 : 56,
-                        height: compact ? 44 : 56,
+                        width: compact ? 40 : 52,
+                        height: compact ? 40 : 52,
                         display: "grid",
                         placeItems: "center",
                         borderRadius: 999,
@@ -55,7 +55,7 @@ export function AppEmptyState({
             ) : null}
 
             <Box sx={{ maxWidth: 560 }}>
-                <Typography variant={compact ? "subtitle1" : "h6"} sx={{ fontWeight: 900 }}>
+                <Typography variant={compact ? "subtitle1" : "h6"} sx={{ fontWeight: 850 }}>
                     {title}
                 </Typography>
                 {description ? (

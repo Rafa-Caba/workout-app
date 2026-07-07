@@ -41,13 +41,13 @@ export function AppConfirmDialog({
 
     return (
         <Dialog open={open} onClose={loading ? undefined : onCancel} fullWidth maxWidth="xs">
-            <DialogTitle sx={{ fontWeight: 950 }}>{title}</DialogTitle>
+            <DialogTitle sx={{ fontWeight: 850 }}>{title}</DialogTitle>
             {description ? (
                 <DialogContent sx={contentSx}>
                     <DialogContentText>{description}</DialogContentText>
                 </DialogContent>
             ) : null}
-            <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexWrap: "wrap" }}>
+            <DialogActions sx={{ px: { xs: 2, md: 3 }, pb: { xs: 2, md: 3 }, gap: 1, flexWrap: "wrap" }}>
                 <Button variant="outlined" onClick={onCancel} disabled={loading}>
                     {cancelLabel}
                 </Button>

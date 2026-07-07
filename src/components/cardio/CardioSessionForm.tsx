@@ -37,7 +37,7 @@ function fieldGridSx() {
     return {
         display: "grid",
         gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
-        gap: { xs: 2, md: 2.25 },
+        gap: { xs: 1.5, md: 2.25 },
     };
 }
 
@@ -68,7 +68,7 @@ function NumberField(props: {
 
 function FormBlock(props: { title: string; subtitle?: string; children: ReactNode }) {
     return (
-        <AppCard padding="md" tone="soft" title={props.title} subtitle={props.subtitle}>
+        <AppCard padding="sm" tone="soft" title={props.title} subtitle={props.subtitle}>
             {props.children}
         </AppCard>
     );
@@ -87,9 +87,9 @@ export function CardioSessionForm({
     const isIndoor = values.cardioEnvironment === "indoor";
 
     return (
-        <Box component="form" onSubmit={onSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+        <Box component="form" onSubmit={onSubmit} sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.75, md: 2.5 } }}>
             <Box sx={{ minWidth: 0 }}>
-                <Typography variant="h6" component="h3" sx={{ fontWeight: 950 }}>
+                <Typography variant="h6" component="h3" sx={{ fontWeight: 850 }}>
                     {mode === "create" ? "Nueva sesión Cardio" : "Editar sesión Cardio"}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>

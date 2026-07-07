@@ -27,7 +27,7 @@ export function CardioSessionModal({ open, title, onClose, children }: Props) {
             slotProps={{
                 paper: {
                     sx: {
-                        borderRadius: 3,
+                        borderRadius: 2,
                         overflow: "hidden",
                     },
                 },
@@ -47,11 +47,11 @@ export function CardioSessionModal({ open, title, onClose, children }: Props) {
                         alignItems: "center",
                         justifyContent: "space-between",
                         gap: 2,
-                        px: { xs: 2, md: 2.5 },
-                        py: 1.5,
+                        px: { xs: 1.5, md: 2.5 },
+                        py: { xs: 1.25, md: 1.5 },
                     }}
                 >
-                    <Typography variant="h6" component="h2" sx={{ fontWeight: 950 }}>
+                    <Typography variant="h6" component="h2" sx={{ fontWeight: 850 }}>
                         {title}
                     </Typography>
 
@@ -63,7 +63,7 @@ export function CardioSessionModal({ open, title, onClose, children }: Props) {
 
             <DialogContent
                 sx={{
-                    p: { xs: 2, md: 2.5 },
+                    p: { xs: 1.5, md: 2.5 },
                     overflowY: "auto",
                     scrollbarWidth: "none",
                     msOverflowStyle: "none",

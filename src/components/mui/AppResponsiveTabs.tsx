@@ -40,7 +40,7 @@ function buildTabLabel(tab: AppResponsiveTab) {
             }}
         >
             {tab.icon ? <Box sx={{ display: "inline-flex", flexShrink: 0 }}>{tab.icon}</Box> : null}
-            <Typography component="span" variant="button" sx={{ fontWeight: 850, textTransform: "none" }}>
+            <Typography component="span" variant="button" sx={{ fontWeight: 800, textTransform: "none" }}>
                 {tab.label}
             </Typography>
             {hasBadge ? (
@@ -51,7 +51,7 @@ function buildTabLabel(tab: AppResponsiveTab) {
                         height: 20,
                         minWidth: 20,
                         fontSize: 11,
-                        fontWeight: 900,
+                        fontWeight: 800,
                     }}
                 />
             ) : null}

@@ -28,9 +28,9 @@ type AppCardProps = {
 
 const CONTENT_PADDING: Record<AppCardPadding, SxProps<Theme>> = {
     none: { p: 0, "&:last-child": { pb: 0 } },
-    sm: { p: { xs: 1.5, md: 2 }, "&:last-child": { pb: { xs: 1.5, md: 2 } } },
-    md: { p: { xs: 2, md: 2.5 }, "&:last-child": { pb: { xs: 2, md: 2.5 } } },
-    lg: { p: { xs: 2.5, md: 3 }, "&:last-child": { pb: { xs: 2.5, md: 3 } } },
+    sm: { p: { xs: 1.25, md: 2 }, "&:last-child": { pb: { xs: 1.25, md: 2 } } },
+    md: { p: { xs: 1.5, md: 2.25 }, "&:last-child": { pb: { xs: 1.5, md: 2.25 } } },
+    lg: { p: { xs: 1.75, md: 2.75 }, "&:last-child": { pb: { xs: 1.75, md: 2.75 } } },
 };
 
 function buildToneSx(tone: AppCardTone): SxProps<Theme> {
@@ -77,15 +77,15 @@ export function AppCard({
                     overflow: "hidden",
                     ...(interactive || onClick
                         ? {
-                              cursor: "pointer",
-                              transition:
-                                  "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
-                              "&:hover": {
-                                  borderColor: "primary.main",
-                                  boxShadow: "0 12px 30px rgba(0, 0, 0, 0.12)",
-                                  transform: "translateY(-1px)",
-                              },
-                          }
+                            cursor: "pointer",
+                            transition:
+                                "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
+                            "&:hover": {
+                                borderColor: "primary.main",
+                                boxShadow: "0 12px 30px rgba(0, 0, 0, 0.12)",
+                                transform: "translateY(-1px)",
+                            },
+                        }
                         : {}),
                 },
                 buildToneSx(tone),
@@ -106,8 +106,8 @@ export function AppCard({
                                 alignItems: { xs: "flex-start", sm: "center" },
                                 justifyContent: "space-between",
                                 flexDirection: { xs: "column", sm: "row" },
-                                gap: 1.5,
-                                mb: 2,
+                                gap: { xs: 1.25, md: 1.5 },
+                                mb: { xs: 1.5, md: 2 },
                                 minWidth: 0,
                             },
                             ...(Array.isArray(headerSx) ? headerSx : headerSx ? [headerSx] : []),
@@ -118,13 +118,13 @@ export function AppCard({
                                 <Typography
                                     variant="overline"
                                     color="primary"
-                                    sx={{ fontWeight: 900, letterSpacing: 0.8 }}
+                                    sx={{ fontWeight: 800, letterSpacing: 0.75 }}
                                 >
                                     {eyebrow}
                                 </Typography>
                             ) : null}
                             {title ? (
-                                <Typography variant="h6" component="h2" sx={{ fontWeight: 900 }}>
+                                <Typography variant="h6" component="h2" sx={{ fontWeight: 850 }}>
                                     {title}
                                 </Typography>
                             ) : null}

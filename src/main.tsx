@@ -5,8 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import "./index.css";
 import { ThemeProvider } from "./theme/ThemeProvider";
-import { MuiThemeProvider } from "./theme/MuiThemeProvider";
 import { I18nProvider } from "./i18n/I18nProvider";
+import { MuiThemeProvider } from "./theme/MuiThemeProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -143,14 +143,14 @@ function RouteSummaryFallback({ session }: Pick<Props, "session">) {
             sx={(theme) => ({
                 border: 1,
                 borderColor: "divider",
-                borderRadius: 3,
+                borderRadius: 2,
                 bgcolor: "background.default",
-                p: 2,
+                p: { xs: 1.5, md: 2 },
                 color: "text.secondary",
                 boxShadow: `inset 0 1px 0 ${alpha(theme.palette.common.white, 0.04)}`,
             })}
         >
-            <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "text.primary" }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "text.primary" }}>
                 Ruta disponible
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -225,12 +225,12 @@ export function CardioRouteMap({
                         gap: 1,
                         borderBottom: 1,
                         borderColor: "divider",
-                        px: { xs: 1.75, md: 2 },
-                        py: dense ? 1 : 1.25,
+                        px: { xs: 1.5, md: 2 },
+                        py: dense ? 0.875 : 1.125,
                     }}
                 >
                     <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 950 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 850 }}>
                             Mapa de ruta
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -244,7 +244,7 @@ export function CardioRouteMap({
                 sx={[
                     {
                         height: {
-                            xs: dense ? 280 : 320,
+                            xs: dense ? 260 : 300,
                             sm: dense ? 320 : 360,
                             lg: dense ? 360 : 460,
                         },

@@ -94,7 +94,7 @@ export function AppMetricCard({
                     display: "flex",
                     alignItems: "flex-start",
                     justifyContent: "space-between",
-                    gap: 1.5,
+                    gap: 1.25,
                     height: "100%",
                     minWidth: 0,
                 }}
@@ -103,7 +103,7 @@ export function AppMetricCard({
                     <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{ fontWeight: 700, mb: 0.75 }}
+                        sx={{ fontWeight: 650, mb: 0.5 }}
                     >
                         {label}
                     </Typography>
@@ -111,8 +111,8 @@ export function AppMetricCard({
                         variant={compact ? "h6" : "h5"}
                         component="p"
                         sx={{
-                            fontWeight: 800,
-                            letterSpacing: "-0.03em",
+                            fontWeight: 750,
+                            letterSpacing: "-0.025em",
                             overflowWrap: "anywhere",
                         }}
                     >
@@ -130,8 +130,8 @@ export function AppMetricCard({
                         sx={(theme) => {
                             const colors = resolveTone(theme, tone);
                             return {
-                                width: compact ? 34 : 40,
-                                height: compact ? 34 : 40,
+                                width: compact ? 32 : 38,
+                                height: compact ? 32 : 38,
                                 borderRadius: 999,
                                 display: "grid",
                                 placeItems: "center",

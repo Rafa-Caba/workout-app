@@ -30,7 +30,7 @@ export function AppToolbar({
 }: AppToolbarProps) {
     return (
         <AppCard
-            padding={dense ? "sm" : "md"}
+            padding={dense ? "sm" : "sm"}
             sx={sx}
             contentSx={[
                 {
@@ -38,7 +38,7 @@ export function AppToolbar({
                     alignItems: "center",
                     justifyContent: "space-between",
                     flexDirection: { xs: "column", lg: "row" },
-                    gap: dense ? 1 : 1.5,
+                    gap: dense ? 1 : 1.25,
                     minWidth: 0,
                 },
                 ...(Array.isArray(contentSx) ? contentSx : contentSx ? [contentSx] : []),
@@ -50,7 +50,7 @@ export function AppToolbar({
                         display: "flex",
                         alignItems: "center",
                         flexWrap: wrap ? "wrap" : "nowrap",
-                        gap: dense ? 1 : 1.5,
+                        gap: dense ? 1 : 1.25,
                         width: "100%",
                         minWidth: 0,
                     }}
@@ -64,7 +64,7 @@ export function AppToolbar({
                             display: "flex",
                             alignItems: "center",
                             flexWrap: wrap ? "wrap" : "nowrap",
-                            gap: dense ? 1 : 1.5,
+                            gap: dense ? 1 : 1.25,
                             width: { xs: "100%", lg: "auto" },
                             minWidth: 0,
                         }}
@@ -79,7 +79,7 @@ export function AppToolbar({
                                 justifyContent: "center",
                                 alignItems: "center",
                                 flexWrap: wrap ? "wrap" : "nowrap",
-                                gap: dense ? 1 : 1.5,
+                                gap: dense ? 1 : 1.25,
                                 width: { xs: "100%", lg: "auto" },
                                 minWidth: 0,
                             }}
@@ -94,7 +94,7 @@ export function AppToolbar({
                             justifyContent: { xs: "flex-start", lg: "flex-end" },
                             alignItems: "center",
                             flexWrap: wrap ? "wrap" : "nowrap",
-                            gap: dense ? 1 : 1.5,
+                            gap: dense ? 1 : 1.25,
                             width: { xs: "100%", lg: "auto" },
                             minWidth: 0,
                         }}

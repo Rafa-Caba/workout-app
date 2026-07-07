@@ -1,32 +1,72 @@
-import React from "react";
+// src/components/PageHeader.tsx
+// Shared page heading component backed by Material UI.
+// Keeps the previous API: title, subtitle, and optional right-side actions.
+
+import type { ReactNode } from "react";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 
 export function PageHeader({
     title,
     subtitle,
     right,
 }: {
-    title: React.ReactNode;
-    subtitle?: React.ReactNode;
-    right?: React.ReactNode;
+    title: ReactNode;
+    subtitle?: ReactNode;
+    right?: ReactNode;
 }) {
     return (
-        <div className="w-full min-w-0 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 space-y-1">
-                <h1 className="min-w-0 wrap-break-words text-2xl font-semibold tracking-tight sm:text-3xl">
+        <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={2}
+            sx={{
+                width: "100%",
+                minWidth: 0,
+                alignItems: { xs: "stretch", md: "flex-start" },
+                justifyContent: "space-between"
+            }}
+        >
+            <Box sx={{ minWidth: 0 }}>
+                <Typography
+                    component="h1"
+                    variant="h4"
+                    sx={{
+                        fontWeight: 900,
+                        letterSpacing: -0.5,
+                        overflowWrap: "anywhere",
+                    }}
+                >
                     {title}
-                </h1>
+                </Typography>
+
                 {subtitle ? (
-                    <p className="min-w-0 wrap-break-words text-sm text-muted-foreground sm:text-base">
+                    <Typography
+                        component="p"
+                        variant="body1"
+                        color="text.secondary"
+                        sx={{ mt: 0.5, overflowWrap: "anywhere" }}
+                    >
                         {subtitle}
-                    </p>
+                    </Typography>
                 ) : null}
-            </div>
+            </Box>
 
             {right ? (
-                <div className="flex w-full min-w-0 flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    useFlexGap
+                    sx={{
+                        minWidth: 0,
+                        flexWrap: "wrap",
+                        alignItems: "center",
+                        justifyContent: { xs: "flex-start", md: "flex-end" }
+                    }}
+                >
                     {right}
-                </div>
+                </Stack>
             ) : null}
-        </div>
+        </Stack>
     );
 }

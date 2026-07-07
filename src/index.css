@@ -275,3 +275,56 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ===============================
+   MUI migration base polish
+   =============================== */
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+.leaflet-container {
+  font-family: inherit;
+}
+
+.MuiDialog-root,
+.MuiPopover-root,
+.MuiMenu-root {
+  font-family: inherit;
+}

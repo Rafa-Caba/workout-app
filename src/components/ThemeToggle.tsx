@@ -1,80 +1,153 @@
-import { Check, Languages, Moon, Settings, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { PALETTES } from "@/theme/presets";
-import { useTheme } from "@/theme/ThemeProvider";
+// src/components/ThemeToggle.tsx
+// Material UI preferences menu for theme mode, language, and app accent palette.
+
+import * as React from "react";
+import CheckIcon from "@mui/icons-material/Check";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import LanguageIcon from "@mui/icons-material/Language";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import PaletteIcon from "@mui/icons-material/Palette";
+import SettingsIcon from "@mui/icons-material/Settings";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+
 import { useI18n } from "@/i18n/I18nProvider";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { PALETTES, type Mode, type Palette } from "@/theme/presets";
+import { useTheme } from "@/theme/ThemeProvider";
+
+function getModeLabel(mode: Mode): string {
+    if (mode === "system") return "System";
+    if (mode === "dark") return "Dark";
+    return "Light";
+}
+
+function getNextMode(mode: Mode): Mode {
+    if (mode === "system") return "dark";
+    if (mode === "dark") return "light";
+    return "system";
+}
 
 export function ThemeToggle() {
     const { mode, palette, setMode, setPalette } = useTheme();
     const { lang, setLang, t } = useI18n();
+    const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
+
+    const isOpen = Boolean(anchorEl);
+
+    function handleOpen(event: React.MouseEvent<HTMLButtonElement>): void {
+        setAnchorEl(event.currentTarget);
+    }
+
+    function handleClose(): void {
+        setAnchorEl(null);
+    }
+
+    function handleModeToggle(): void {
+        setMode(getNextMode(mode));
+    }
+
+    function handleLangToggle(): void {
+        setLang(lang === "es" ? "en" : "es");
+    }
+
+    function handlePaletteSelect(nextPalette: Palette): void {
+        setPalette(nextPalette);
+    }
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant="outline"
-                    size="icon"
-                    title="Preferencias"
-                    className="touch-manipulation"
+        <>
+            <Tooltip title="Preferencias">
+                <IconButton
+                    aria-label="Preferencias"
+                    aria-controls={isOpen ? "workout-preferences-menu" : undefined}
+                    aria-haspopup="menu"
+                    aria-expanded={isOpen ? "true" : undefined}
+                    onClick={handleOpen}
+                    size="large"
                 >
-                    <Settings className="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
+                    <SettingsIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
 
-            <DropdownMenuContent
-                align="end"
-                className="w-72 max-w-[calc(100vw-1.5rem)]"
+            <Menu
+                id="workout-preferences-menu"
+                anchorEl={anchorEl}
+                open={isOpen}
+                onClose={handleClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                slotProps={{
+                    paper: {
+                        sx: {
+                            width: 320,
+                            maxWidth: "calc(100vw - 24px)",
+                            mt: 1,
+                        },
+                    },
+                }}
             >
-                <DropdownMenuLabel>Preferencias</DropdownMenuLabel>
-                <DropdownMenuSeparator />
+                <Box sx={{ px: 2, py: 1.25 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 900 }}>
+                        Preferencias
+                    </Typography>
+                </Box>
 
-                <DropdownMenuItem
-                    onClick={() => setMode(mode === "dark" ? "light" : "dark")}
-                    className="flex items-center justify-between touch-manipulation"
-                >
-                    <span className="flex items-center gap-2">
-                        {mode === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                        {t("theme.toggle")}
-                    </span>
-                    <span className="text-xs text-muted-foreground capitalize">{mode}</span>
-                </DropdownMenuItem>
+                <Divider />
 
-                <DropdownMenuItem
-                    onClick={() => setLang(lang === "es" ? "en" : "es")}
-                    className="flex items-center justify-between touch-manipulation"
-                >
-                    <span className="flex items-center gap-2">
-                        <Languages className="h-4 w-4" />
-                        Idioma
-                    </span>
-                    <span className="text-xs text-muted-foreground">{lang === "es" ? "ES" : "EN"}</span>
-                </DropdownMenuItem>
+                <MenuItem onClick={handleModeToggle}>
+                    <ListItemIcon>
+                        {mode === "dark" ? (
+                            <DarkModeIcon fontSize="small" />
+                        ) : (
+                            <LightModeIcon fontSize="small" />
+                        )}
+                    </ListItemIcon>
+                    <ListItemText
+                        primary={t("theme.toggle")}
+                        secondary={getModeLabel(mode)}
+                    />
+                </MenuItem>
 
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Paleta</DropdownMenuLabel>
+                <MenuItem onClick={handleLangToggle}>
+                    <ListItemIcon>
+                        <LanguageIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary="Idioma" secondary={lang === "es" ? "ES" : "EN"} />
+                </MenuItem>
 
-                {PALETTES.map((p) => {
-                    const selected = palette === p.value;
+                <Divider />
+
+                <Box sx={{ px: 2, py: 1.25 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 900 }}>
+                        Paleta
+                    </Typography>
+                </Box>
+
+                {PALETTES.map((item) => {
+                    const isSelected = item.value === palette;
+
                     return (
-                        <DropdownMenuItem
-                            key={p.value}
-                            onClick={() => setPalette(p.value)}
-                            className="flex items-center justify-between touch-manipulation"
+                        <MenuItem
+                            key={item.value}
+                            selected={isSelected}
+                            onClick={() => handlePaletteSelect(item.value)}
                         >
-                            <span className="min-w-0 truncate">{p.label}</span>
-                            {selected ? <Check className="h-4 w-4 shrink-0" /> : null}
-                        </DropdownMenuItem>
+                            <ListItemIcon>
+                                <PaletteIcon fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText primary={item.label} />
+                            {isSelected ? <CheckIcon fontSize="small" /> : null}
+                        </MenuItem>
                     );
                 })}
-            </DropdownMenuContent>
-        </DropdownMenu>
+            </Menu>
+        </>
     );
 }

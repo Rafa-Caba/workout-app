@@ -328,3 +328,36 @@ svg {
 .MuiMenu-root {
   font-family: inherit;
 }
+
+/* ===============================
+   Scrollbar visibility
+   =============================== */
+
+/*
+   Keep scrolling enabled while hiding browser scrollbars by default.
+   This matches the mobile/app-like visual direction while still allowing
+   wheel, trackpad, touch and keyboard scrolling.
+*/
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* Optional opt-in utility for screens/components that intentionally need
+   visible native scrollbars while debugging dense layouts. */
+.app-scrollbar-visible {
+  scrollbar-width: thin;
+  -ms-overflow-style: auto;
+}
+
+.app-scrollbar-visible::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  display: initial;
+}

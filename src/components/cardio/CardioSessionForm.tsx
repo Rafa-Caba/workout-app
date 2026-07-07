@@ -1,16 +1,19 @@
 // src/components/cardio/CardioSessionForm.tsx
+// MUI manual form for Cardio sessions in Web.
+// Supports indoor/outdoor walking/running while keeping existing form values
+// and submit logic unchanged.
 
-/**
- * CardioSessionForm
- *
- * Manual form for Cardio sessions in Web.
- * Rendered inside a modal. Supports indoor/outdoor walking/running.
- */
-
-import React from "react";
+import type { ReactNode } from "react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 
 import { DeviceSelect } from "@/components/DeviceSelect";
-import { Button } from "@/components/ui/button";
+import { AppActionRow, AppCard } from "@/components/mui";
 import type { I18nKey } from "@/i18n/translations";
 import type { CardioFormMode, CardioFormValues } from "@/types/cardio.types";
 
@@ -30,6 +33,47 @@ type Props = {
     onCancel: () => void;
 };
 
+function fieldGridSx() {
+    return {
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+        gap: { xs: 2, md: 2.25 },
+    };
+}
+
+function NumberField(props: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    min?: number;
+    step?: number;
+}) {
+    return (
+        <TextField
+            fullWidth
+            size="small"
+            type="number"
+            label={props.label}
+            value={props.value}
+            slotProps={{
+                htmlInput: {
+                    min: props.min ?? 0,
+                    step: props.step ?? 1,
+                },
+            }}
+            onChange={(event) => props.onChange(event.target.value)}
+        />
+    );
+}
+
+function FormBlock(props: { title: string; subtitle?: string; children: ReactNode }) {
+    return (
+        <AppCard padding="md" tone="soft" title={props.title} subtitle={props.subtitle}>
+            {props.children}
+        </AppCard>
+    );
+}
+
 export function CardioSessionForm({
     t,
     mode,
@@ -43,22 +87,26 @@ export function CardioSessionForm({
     const isIndoor = values.cardioEnvironment === "indoor";
 
     return (
-        <form onSubmit={onSubmit} className="space-y-4">
-            <div className="space-y-1">
-                <h2 className="text-base font-semibold text-foreground">
+        <Box component="form" onSubmit={onSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <Box sx={{ minWidth: 0 }}>
+                <Typography variant="h6" component="h3" sx={{ fontWeight: 950 }}>
                     {mode === "create" ? "Nueva sesión Cardio" : "Editar sesión Cardio"}
-                </h2>
-
-                <p className="text-sm text-muted-foreground">
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                     Fecha seleccionada:{" "}
-                    <span className="font-medium text-foreground">{selectedDate}</span>
-                </p>
-            </div>
+                    <Box component="span" sx={{ color: "text.primary", fontWeight: 800 }}>
+                        {selectedDate}
+                    </Box>
+                </Typography>
+            </Box>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Field label="Ambiente">
-                    <select
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
+            <FormBlock title="Tipo de sesión" subtitle="Define actividad, ambiente y dispositivo origen.">
+                <Box sx={fieldGridSx()}>
+                    <TextField
+                        select
+                        fullWidth
+                        size="small"
+                        label="Ambiente"
                         value={values.cardioEnvironment}
                         onChange={(event) => {
                             const nextEnvironment = event.target.value === "indoor" ? "indoor" : "outdoor";
@@ -71,232 +119,127 @@ export function CardioSessionForm({
                             }
                         }}
                     >
-                        <option value="outdoor">Outdoor</option>
-                        <option value="indoor">Indoor / Treadmill</option>
-                    </select>
-                </Field>
+                        <MenuItem value="outdoor">Outdoor</MenuItem>
+                        <MenuItem value="indoor">Indoor / Treadmill</MenuItem>
+                    </TextField>
 
-                <Field label="Actividad">
-                    <select
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
+                    <TextField
+                        select
+                        fullWidth
+                        size="small"
+                        label="Actividad"
                         value={values.activityType}
                         onChange={(event) =>
                             onChange("activityType", event.target.value === "running" ? "running" : "walking")
                         }
                     >
-                        <option value="walking">Walking</option>
-                        <option value="running">Running</option>
-                    </select>
-                </Field>
+                        <MenuItem value="walking">Walking</MenuItem>
+                        <MenuItem value="running">Running</MenuItem>
+                    </TextField>
 
-                <div className="space-y-1.5">
-                    <DeviceSelect
-                        t={t}
-                        value={values.sourceDevice || null}
-                        onChange={(next) => onChange("sourceDevice", next ?? "")}
-                    />
-                </div>
+                    <Box sx={{ minWidth: 0 }}>
+                        <DeviceSelect
+                            t={t}
+                            value={values.sourceDevice || null}
+                            onChange={(next) => onChange("sourceDevice", next ?? "")}
+                        />
+                    </Box>
+                </Box>
+            </FormBlock>
 
-                <Field label="Hora inicio">
-                    <input
+            <FormBlock title="Tiempo y distancia" subtitle="Captura duración, horarios y distancia base.">
+                <Box sx={fieldGridSx()}>
+                    <TextField
+                        fullWidth
+                        size="small"
                         type="time"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
+                        label="Hora inicio"
                         value={values.startTime}
                         onChange={(event) => onChange("startTime", event.target.value)}
+                        slotProps={{ inputLabel: { shrink: true } }}
                     />
-                </Field>
-
-                <Field label="Hora fin">
-                    <input
+                    <TextField
+                        fullWidth
+                        size="small"
                         type="time"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
+                        label="Hora fin"
                         value={values.endTime}
                         onChange={(event) => onChange("endTime", event.target.value)}
+                        slotProps={{ inputLabel: { shrink: true } }}
                     />
-                </Field>
-
-                <Field label="Duración (seg)">
-                    <input
-                        type="number"
-                        min="0"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
+                    <NumberField
+                        label="Duración (seg)"
                         value={values.durationSeconds}
-                        onChange={(event) => onChange("durationSeconds", event.target.value)}
+                        onChange={(next) => onChange("durationSeconds", next)}
                     />
-                </Field>
-
-                <Field label={isIndoor ? "Distancia treadmill (km)" : "Distancia (km)"}>
-                    <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
+                    <NumberField
+                        label={isIndoor ? "Distancia treadmill (km)" : "Distancia (km)"}
                         value={values.distanceKm}
-                        onChange={(event) => onChange("distanceKm", event.target.value)}
+                        step={0.01}
+                        onChange={(next) => onChange("distanceKm", next)}
                     />
-                </Field>
+                </Box>
+            </FormBlock>
 
-                <Field label="Pasos">
-                    <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
-                        value={values.steps}
-                        onChange={(event) => onChange("steps", event.target.value)}
-                    />
-                </Field>
-
-                {!isIndoor ? (
-                    <Field label="Elevación (m)">
-                        <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
+            <FormBlock title="Métricas" subtitle="Datos opcionales de dispositivo o captura manual.">
+                <Box sx={fieldGridSx()}>
+                    <NumberField label="Pasos" value={values.steps} onChange={(next) => onChange("steps", next)} />
+                    {!isIndoor ? (
+                        <NumberField
+                            label="Elevación (m)"
                             value={values.elevationGainM}
-                            onChange={(event) => onChange("elevationGainM", event.target.value)}
+                            step={0.01}
+                            onChange={(next) => onChange("elevationGainM", next)}
                         />
-                    </Field>
-                ) : null}
+                    ) : null}
+                    <NumberField label="Kcal activas" value={values.activeKcal} onChange={(next) => onChange("activeKcal", next)} />
+                    <NumberField label="Kcal totales" value={values.totalKcal} onChange={(next) => onChange("totalKcal", next)} />
+                    <NumberField label="FC prom" value={values.avgHr} onChange={(next) => onChange("avgHr", next)} />
+                    <NumberField label="FC máx" value={values.maxHr} onChange={(next) => onChange("maxHr", next)} />
+                    <NumberField label="Ritmo (seg/km)" value={values.paceSecPerKm} onChange={(next) => onChange("paceSecPerKm", next)} />
+                    <NumberField label="Cadencia (rpm)" value={values.cadenceRpm} onChange={(next) => onChange("cadenceRpm", next)} />
+                    <NumberField label="Vel. prom (km/h)" value={values.avgSpeedKmh} step={0.01} onChange={(next) => onChange("avgSpeedKmh", next)} />
+                    <NumberField label="Vel. máx (km/h)" value={values.maxSpeedKmh} step={0.01} onChange={(next) => onChange("maxSpeedKmh", next)} />
+                    <NumberField label="Zancada (m)" value={values.strideLengthM} step={0.01} onChange={(next) => onChange("strideLengthM", next)} />
+                </Box>
+            </FormBlock>
 
-                <Field label="Kcal activas">
-                    <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
-                        value={values.activeKcal}
-                        onChange={(event) => onChange("activeKcal", event.target.value)}
-                    />
-                </Field>
-
-                <Field label="Kcal totales">
-                    <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
-                        value={values.totalKcal}
-                        onChange={(event) => onChange("totalKcal", event.target.value)}
-                    />
-                </Field>
-
-                <Field label="FC prom">
-                    <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
-                        value={values.avgHr}
-                        onChange={(event) => onChange("avgHr", event.target.value)}
-                    />
-                </Field>
-
-                <Field label="FC máx">
-                    <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
-                        value={values.maxHr}
-                        onChange={(event) => onChange("maxHr", event.target.value)}
-                    />
-                </Field>
-
-                <Field label="Ritmo (seg/km)">
-                    <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
-                        value={values.paceSecPerKm}
-                        onChange={(event) => onChange("paceSecPerKm", event.target.value)}
-                    />
-                </Field>
-
-                <Field label="Cadencia (rpm)">
-                    <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
-                        value={values.cadenceRpm}
-                        onChange={(event) => onChange("cadenceRpm", event.target.value)}
-                    />
-                </Field>
-
-                <Field label="Vel. prom (km/h)">
-                    <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
-                        value={values.avgSpeedKmh}
-                        onChange={(event) => onChange("avgSpeedKmh", event.target.value)}
-                    />
-                </Field>
-
-                <Field label="Vel. máx (km/h)">
-                    <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
-                        value={values.maxSpeedKmh}
-                        onChange={(event) => onChange("maxSpeedKmh", event.target.value)}
-                    />
-                </Field>
-
-                <Field label="Zancada (m)">
-                    <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
-                        value={values.strideLengthM}
-                        onChange={(event) => onChange("strideLengthM", event.target.value)}
-                    />
-                </Field>
-
-                {!isIndoor ? (
-                    <>
-                        <Field label="Puntos de ruta">
-                            <input
-                                type="number"
-                                min="0"
-                                step="1"
-                                className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
-                                value={values.routePointCount}
-                                onChange={(event) => onChange("routePointCount", event.target.value)}
-                            />
-                        </Field>
-
-                        <div className="flex items-end">
-                            <label className="inline-flex items-center gap-2 text-sm text-foreground">
-                                <input
-                                    type="checkbox"
+            {!isIndoor ? (
+                <FormBlock title="Ruta" subtitle="Aplica para sesiones outdoor con GPS.">
+                    <Box sx={fieldGridSx()}>
+                        <NumberField
+                            label="Puntos de ruta"
+                            value={values.routePointCount}
+                            onChange={(next) => onChange("routePointCount", next)}
+                        />
+                        <FormControlLabel
+                            control={
+                                <Checkbox
                                     checked={values.hasRoute}
                                     onChange={(event) => onChange("hasRoute", event.target.checked)}
                                 />
-                                Tiene ruta
-                            </label>
-                        </div>
-                    </>
-                ) : null}
-            </div>
+                            }
+                            label="Tiene ruta"
+                        />
+                    </Box>
+                </FormBlock>
+            ) : null}
 
-            <Field label="Notas">
-                <textarea
-                    className="min-h-[7rem] w-full rounded-xl border bg-background px-3 py-2 text-sm"
-                    value={values.notes}
-                    onChange={(event) => onChange("notes", event.target.value)}
-                    placeholder="Notas opcionales de la sesión…"
-                />
-            </Field>
+            <TextField
+                fullWidth
+                multiline
+                minRows={4}
+                label="Notas"
+                value={values.notes}
+                onChange={(event) => onChange("notes", event.target.value)}
+                placeholder="Notas opcionales de la sesión…"
+            />
 
-            <div className="flex flex-col gap-2 sm:flex-row">
-                <Button type="submit" disabled={isSubmitting}>
+            <AppActionRow align="right" reverseOnMobile>
+                <Button type="button" variant="outlined" onClick={onCancel} disabled={isSubmitting}>
+                    Cancelar
+                </Button>
+                <Button type="submit" variant="contained" disabled={isSubmitting}>
                     {isSubmitting
                         ? mode === "create"
                             ? "Guardando..."
@@ -305,31 +248,7 @@ export function CardioSessionForm({
                             ? "Guardar sesión"
                             : "Actualizar sesión"}
                 </Button>
-
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onCancel}
-                    disabled={isSubmitting}
-                >
-                    Cancelar
-                </Button>
-            </div>
-        </form>
-    );
-}
-
-function Field({
-    label,
-    children,
-}: {
-    label: string;
-    children: React.ReactNode;
-}) {
-    return (
-        <label className="space-y-1.5">
-            <div className="text-sm font-medium text-foreground">{label}</div>
-            {children}
-        </label>
+            </AppActionRow>
+        </Box>
     );
 }

@@ -1,27 +1,18 @@
 // src/pages/CardioPage.tsx
+// MUI Cardio page entry. Keeps existing Cardio data flow while using the
+// shared MUI page shell for consistent responsive spacing.
 
-/**
- * CardioPage
- *
- * Page entry for the Web Cardio module.
- * Manual-only flow for Web:
- * - pick date
- * - list Cardio sessions saved in WorkoutDay
- * - create / edit / delete manual sessions
- */
-
-import { PageHeader } from "@/components/PageHeader";
+import { AppPage } from "@/components/mui";
 import { CardioSection } from "@/sections/cardio/CardioSection";
 
 export function CardioPage() {
     return (
-        <div className="space-y-6">
-            <PageHeader
-                title="Cardio"
-                subtitle="Walking y Running indoor/outdoor guardados dentro del WorkoutDay."
-            />
-
+        <AppPage
+            title="Cardio"
+            subtitle="Walking y Running indoor/outdoor guardados dentro del WorkoutDay."
+            maxWidth="xl"
+        >
             <CardioSection />
-        </div>
+        </AppPage>
     );
 }

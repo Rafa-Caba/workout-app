@@ -1,38 +1,79 @@
 // src/components/cardio/CardioSessionModal.tsx
+// MUI controlled dialog for the Cardio manual session form.
 
-/**
- * CardioSessionModal
- *
- * Simple controlled modal for the Cardio form.
- */
-
-import React from "react";
-
-import { Button } from "@/components/ui/button";
+import type { ReactNode } from "react";
+import CloseIcon from "@mui/icons-material/Close";
+import Box from "@mui/material/Box";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
 
 type Props = {
     open: boolean;
     title: string;
     onClose: () => void;
-    children: React.ReactNode;
+    children: ReactNode;
 };
 
 export function CardioSessionModal({ open, title, onClose, children }: Props) {
-    if (!open) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border bg-card shadow-xl">
-                <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card p-4">
-                    <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
+            maxWidth="lg"
+            slotProps={{
+                paper: {
+                    sx: {
+                        borderRadius: 3,
+                        overflow: "hidden",
+                    },
+                },
+            }}
+        >
+            <DialogTitle
+                component="div"
+                sx={{
+                    p: 0,
+                    borderBottom: 1,
+                    borderColor: "divider",
+                }}
+            >
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 2,
+                        px: { xs: 2, md: 2.5 },
+                        py: 1.5,
+                    }}
+                >
+                    <Typography variant="h6" component="h2" sx={{ fontWeight: 950 }}>
+                        {title}
+                    </Typography>
 
-                    <Button type="button" variant="outline" onClick={onClose}>
-                        Cerrar
-                    </Button>
-                </div>
+                    <IconButton aria-label="Cerrar" onClick={onClose}>
+                        <CloseIcon />
+                    </IconButton>
+                </Box>
+            </DialogTitle>
 
-                <div className="p-4">{children}</div>
-            </div>
-        </div>
+            <DialogContent
+                sx={{
+                    p: { xs: 2, md: 2.5 },
+                    overflowY: "auto",
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                    "&::-webkit-scrollbar": {
+                        display: "none",
+                    },
+                }}
+            >
+                {children}
+            </DialogContent>
+        </Dialog>
     );
 }

@@ -1,29 +1,27 @@
 // src/sections/cardio/CardioSection.tsx
-
-/**
- * CardioSection
- *
- * Main section for the Web Cardio module.
- * Responsibilities:
- * - date selection
- * - indoor/outdoor + walking/running filtering
- * - modal open for create / edit
- * - delete
- * - listing Cardio sessions stored in Workou/Volumes/SSD_Externo/others/Downloads/workout-app-main/src/components/cardiotDay
- * - toast feedback using sonner
- * - lightweight daily dashboard summary
- */
+// MUI Cardio section.
+// Keeps existing Cardio business logic while replacing visual structure with
+// reusable MUI primitives, responsive filters, and polished session cards.
 
 import React from "react";
 import { format } from "date-fns";
+import AddIcon from "@mui/icons-material/Add";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { toast } from "sonner";
 
-import { EmptyState } from "@/components/EmptyState";
 import { CardioDaySummaryCard } from "@/components/cardio/CardioDaySummaryCard";
 import { CardioSessionCard } from "@/components/cardio/CardioSessionCard";
 import { CardioSessionForm } from "@/components/cardio/CardioSessionForm";
 import { CardioSessionModal } from "@/components/cardio/CardioSessionModal";
-import { Button } from "@/components/ui/button";
+import { AppCard, AppEmptyState, AppSectionHeader, AppToolbar } from "@/components/mui";
 import { useCardioDaySessions } from "@/hooks/useCardioDaySessions";
 import {
     useCreateWorkoutSession,
@@ -49,6 +47,14 @@ import type { WorkoutSession } from "@/types/workoutDay.types";
 
 function todayIso(): string {
     return format(new Date(), "yyyy-MM-dd");
+}
+
+function isCardioEnvironmentFilter(value: string): value is CardioEnvironmentFilter {
+    return value === "all" || value === "indoor" || value === "outdoor";
+}
+
+function isCardioActivityFilter(value: string): value is CardioActivityFilter {
+    return value === "all" || value === "walking" || value === "running";
 }
 
 export function CardioSection() {
@@ -186,120 +192,130 @@ export function CardioSection() {
 
     return (
         <>
-            <div className="space-y-6">
-                <div className="rounded-2xl border bg-card p-4">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                            <div className="space-y-1">
-                                <div className="text-sm font-medium text-foreground">Fecha</div>
-                                <input
-                                    type="date"
-                                    className="h-10 rounded-xl border bg-background px-3 text-sm"
-                                    value={selectedDate}
-                                    onChange={(event) => {
-                                        const nextDate = event.target.value;
-                                        setSelectedDate(nextDate);
-                                        closeModal();
-                                    }}
-                                />
-                            </div>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2, md: 2.5 } }}>
+                <AppToolbar
+                    start={
+                        <>
+                            <TextField
+                                size="small"
+                                type="date"
+                                label="Fecha"
+                                value={selectedDate}
+                                slotProps={{ inputLabel: { shrink: true } }}
+                                onChange={(event) => {
+                                    const nextDate = event.target.value;
+                                    setSelectedDate(nextDate);
+                                    closeModal();
+                                }}
+                                sx={{ width: { xs: "100%", sm: 180 } }}
+                            />
 
-                            <div className="space-y-1">
-                                <div className="text-sm font-medium text-foreground">Ambiente</div>
-                                <select
-                                    className="h-10 rounded-xl border bg-background px-3 text-sm"
-                                    value={environmentFilter}
-                                    onChange={(event) => {
-                                        const next = event.target.value;
-                                        setEnvironmentFilter(
-                                            next === "indoor" || next === "outdoor" ? next : "all"
-                                        );
-                                    }}
-                                >
-                                    <option value="all">Todos</option>
-                                    <option value="outdoor">Outdoor</option>
-                                    <option value="indoor">Indoor</option>
-                                </select>
-                            </div>
+                            <TextField
+                                select
+                                size="small"
+                                label="Ambiente"
+                                value={environmentFilter}
+                                onChange={(event) => {
+                                    const next = event.target.value;
+                                    setEnvironmentFilter(isCardioEnvironmentFilter(next) ? next : "all");
+                                }}
+                                sx={{ width: { xs: "100%", sm: 180 } }}
+                            >
+                                <MenuItem value="all">Todos</MenuItem>
+                                <MenuItem value="outdoor">Outdoor</MenuItem>
+                                <MenuItem value="indoor">Indoor</MenuItem>
+                            </TextField>
 
-                            <div className="space-y-1">
-                                <div className="text-sm font-medium text-foreground">Actividad</div>
-                                <select
-                                    className="h-10 rounded-xl border bg-background px-3 text-sm"
-                                    value={activityFilter}
-                                    onChange={(event) => {
-                                        const next = event.target.value;
-                                        setActivityFilter(
-                                            next === "walking" || next === "running" ? next : "all"
-                                        );
-                                    }}
-                                >
-                                    <option value="all">Todas</option>
-                                    <option value="walking">Walking</option>
-                                    <option value="running">Running</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded-full border bg-background px-3 py-1 text-xs text-muted-foreground">
-                                Cardio del día: {cardioDay.sessions.length}
-                            </span>
+                            <TextField
+                                select
+                                size="small"
+                                label="Actividad"
+                                value={activityFilter}
+                                onChange={(event) => {
+                                    const next = event.target.value;
+                                    setActivityFilter(isCardioActivityFilter(next) ? next : "all");
+                                }}
+                                sx={{ width: { xs: "100%", sm: 180 } }}
+                            >
+                                <MenuItem value="all">Todas</MenuItem>
+                                <MenuItem value="walking">Walking</MenuItem>
+                                <MenuItem value="running">Running</MenuItem>
+                            </TextField>
+                        </>
+                    }
+                    end={
+                        <>
+                            <Chip
+                                label={`Cardio del día: ${cardioDay.sessions.length}`}
+                                variant="outlined"
+                                color="primary"
+                            />
 
                             {cardioDay.isFetching ? (
-                                <span className="rounded-full border bg-background px-3 py-1 text-xs text-muted-foreground">
-                                    Actualizando...
-                                </span>
+                                <Chip
+                                    icon={<CircularProgress size={14} />}
+                                    label="Actualizando..."
+                                    variant="outlined"
+                                />
                             ) : null}
 
-                            <Button type="button" variant="outline" onClick={openCreateModal}>
+                            <Button
+                                type="button"
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={openCreateModal}
+                            >
                                 Nueva sesión
                             </Button>
-                        </div>
-                    </div>
-                </div>
+                        </>
+                    }
+                />
 
                 <CardioDaySummaryCard stats={dayStats} />
 
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                        <div>
-                            <h2 className="text-base font-semibold text-foreground">
-                                Sesiones Cardio del día
-                            </h2>
-                            <p className="text-sm text-muted-foreground">
-                                Aquí se muestran walking/running indoor y outdoor guardados en el WorkoutDay.
-                            </p>
-                        </div>
-
-                        <Button type="button" variant="outline" onClick={() => void cardioDay.refetch()}>
-                            Refetch
-                        </Button>
-                    </div>
+                <AppCard padding="lg">
+                    <AppSectionHeader
+                        title="Sesiones Cardio del día"
+                        description="Aquí se muestran walking/running indoor y outdoor guardados en el WorkoutDay."
+                        actions={
+                            <Button
+                                type="button"
+                                variant="outlined"
+                                startIcon={<RefreshIcon />}
+                                onClick={() => void cardioDay.refetch()}
+                            >
+                                Refetch
+                            </Button>
+                        }
+                        sx={{ mb: 2 }}
+                    />
 
                     {cardioDay.isLoading ? (
-                        <div className="rounded-2xl border bg-card p-4 text-sm text-muted-foreground">
+                        <Alert severity="info" icon={<CircularProgress size={18} />}>
                             Cargando sesiones Cardio...
-                        </div>
+                        </Alert>
                     ) : null}
 
                     {cardioDay.isError ? (
-                        <div className="rounded-2xl border bg-card p-4 text-sm text-destructive">
+                        <Alert severity="error">
                             {cardioDay.error?.message ?? "No se pudo cargar Cardio."}
-                        </div>
+                        </Alert>
                     ) : null}
 
-                    {!cardioDay.isLoading &&
-                        !cardioDay.isError &&
-                        filteredSessions.length === 0 ? (
-                        <EmptyState
+                    {!cardioDay.isLoading && !cardioDay.isError && filteredSessions.length === 0 ? (
+                        <AppEmptyState
                             title="Sin sesiones Cardio"
                             description="No hay walking/running indoor u outdoor para este día y filtros."
+                            action={
+                                <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateModal}>
+                                    Crear sesión
+                                </Button>
+                            }
                         />
                     ) : null}
 
                     {filteredSessions.length > 0 ? (
-                        <div className="space-y-4">
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                             {filteredSessions.map((session) => (
                                 <CardioSessionCard
                                     key={session.id}
@@ -308,18 +324,14 @@ export function CardioSection() {
                                     onDelete={handleDelete}
                                 />
                             ))}
-                        </div>
+                        </Box>
                     ) : null}
-                </div>
-            </div>
+                </AppCard>
+            </Box>
 
             <CardioSessionModal
                 open={modalOpen}
-                title={
-                    formMode === "create"
-                        ? "Nueva sesión Cardio"
-                        : "Editar sesión Cardio"
-                }
+                title={formMode === "create" ? "Nueva sesión Cardio" : "Editar sesión Cardio"}
                 onClose={closeModal}
             >
                 <CardioSessionForm

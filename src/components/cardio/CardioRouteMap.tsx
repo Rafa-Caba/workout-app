@@ -1,15 +1,12 @@
 // src/components/cardio/CardioRouteMap.tsx
-
-/**
- * CardioRouteMap
- *
- * Web route renderer for Cardio sessions with persisted routePoints.
- * Uses Leaflet/OpenStreetMap so live sessions and imported Health routes can be
- * reviewed from the web app without depending on native map components.
- */
+// Responsive MUI + Leaflet route renderer for Cardio sessions with persisted routePoints.
 
 import React from "react";
 import "leaflet/dist/leaflet.css";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
+import type { SxProps, Theme } from "@mui/material/styles";
 import type { LatLngBoundsExpression, LatLngExpression } from "leaflet";
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 
@@ -17,6 +14,9 @@ import type { WorkoutRoutePoint, WorkoutSession } from "@/types/workoutDay.types
 
 type Props = {
     session: WorkoutSession;
+    height?: SxProps<Theme>;
+    showHeader?: boolean;
+    dense?: boolean;
 };
 
 type ValidRoutePoint = WorkoutRoutePoint & {
@@ -88,12 +88,16 @@ function RouteFitBounds({ points }: { points: ValidRoutePoint[] }) {
             return;
         }
 
-        if (points.length === 1) {
-            map.setView(buildLatLng(points[0]), 16);
-            return;
-        }
+        window.setTimeout(() => {
+            map.invalidateSize();
 
-        map.fitBounds(bounds, { padding: [24, 24], maxZoom: 17 });
+            if (points.length === 1) {
+                map.setView(buildLatLng(points[0]), 16);
+                return;
+            }
+
+            map.fitBounds(bounds, { padding: [28, 28], maxZoom: 18 });
+        }, 120);
     }, [map, points]);
 
     return null;
@@ -116,7 +120,7 @@ function RoutePointMarker({ label, point }: { label: string; point: ValidRoutePo
     );
 }
 
-function RouteSummaryFallback({ session }: Props) {
+function RouteSummaryFallback({ session }: Pick<Props, "session">) {
     const summary = session.routeSummary;
 
     if (!summary || session.hasRoute !== true) {
@@ -135,28 +139,52 @@ function RouteSummaryFallback({ session }: Props) {
     }
 
     return (
-        <div className="rounded-xl border bg-background p-3 text-xs text-muted-foreground">
-            <div className="font-semibold text-foreground">Ruta disponible</div>
-            <div className="mt-1">
+        <Box
+            sx={(theme) => ({
+                border: 1,
+                borderColor: "divider",
+                borderRadius: 3,
+                bgcolor: "background.default",
+                p: 2,
+                color: "text.secondary",
+                boxShadow: `inset 0 1px 0 ${alpha(theme.palette.common.white, 0.04)}`,
+            })}
+        >
+            <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "text.primary" }}>
+                Ruta disponible
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 Esta sesión tiene resumen de ruta, pero no puntos completos para dibujar el mapa.
-            </div>
-            <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
+            </Typography>
+            <Box
+                sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+                    gap: 1,
+                    mt: 1.5,
+                }}
+            >
                 {hasStart ? (
-                    <div>
+                    <Typography variant="caption" color="text.secondary">
                         Inicio: {formatCoordinate(summary.startLatitude ?? 0)}, {formatCoordinate(summary.startLongitude ?? 0)}
-                    </div>
+                    </Typography>
                 ) : null}
                 {hasEnd ? (
-                    <div>
+                    <Typography variant="caption" color="text.secondary">
                         Fin: {formatCoordinate(summary.endLatitude ?? 0)}, {formatCoordinate(summary.endLongitude ?? 0)}
-                    </div>
+                    </Typography>
                 ) : null}
-            </div>
-        </div>
+            </Box>
+        </Box>
     );
 }
 
-export function CardioRouteMap({ session }: Props) {
+export function CardioRouteMap({
+    session,
+    height,
+    showHeader = true,
+    dense = false,
+}: Props) {
     const points = React.useMemo(() => getRoutePoints(session), [session]);
 
     if (session.cardioEnvironment !== "outdoor" || session.hasRoute !== true) {
@@ -177,21 +205,64 @@ export function CardioRouteMap({ session }: Props) {
     const positions = points.map(buildLatLng);
 
     return (
-        <div className="overflow-hidden rounded-xl border bg-background">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
-                <div>
-                    <div className="text-xs font-semibold text-foreground">Mapa de ruta</div>
-                    <div className="text-xs text-muted-foreground">
-                        {points.length.toLocaleString()} puntos GPS guardados
-                    </div>
-                </div>
-            </div>
+        <Box
+            sx={{
+                overflow: "hidden",
+                border: 1,
+                borderColor: "divider",
+                borderRadius: 2,
+                bgcolor: "background.paper",
+                minWidth: 0,
+            }}
+        >
+            {showHeader ? (
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: 1,
+                        borderBottom: 1,
+                        borderColor: "divider",
+                        px: { xs: 1.75, md: 2 },
+                        py: dense ? 1 : 1.25,
+                    }}
+                >
+                    <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 950 }}>
+                            Mapa de ruta
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            {points.length.toLocaleString()} puntos GPS guardados
+                        </Typography>
+                    </Box>
+                </Box>
+            ) : null}
 
-            <div className="h-[80] w-full">
+            <Box
+                sx={[
+                    {
+                        height: {
+                            xs: dense ? 280 : 320,
+                            sm: dense ? 320 : 360,
+                            lg: dense ? 360 : 460,
+                        },
+                        width: "100%",
+                        minWidth: 0,
+                        "& .leaflet-container": {
+                            height: "100%",
+                            width: "100%",
+                            fontFamily: "inherit",
+                        },
+                    },
+                    ...(Array.isArray(height) ? height : height ? [height] : []),
+                ]}
+            >
                 <MapContainer
                     center={center}
                     zoom={16}
-                    scrollWheelZoom={false}
+                    scrollWheelZoom
                     className="h-full w-full"
                 >
                     <TileLayer
@@ -203,7 +274,7 @@ export function CardioRouteMap({ session }: Props) {
                     <RoutePointMarker label="Inicio" point={startPoint} />
                     <RoutePointMarker label="Fin" point={endPoint} />
                 </MapContainer>
-            </div>
-        </div>
+            </Box>
+        </Box>
     );
 }

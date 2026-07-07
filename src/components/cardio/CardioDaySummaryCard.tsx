@@ -1,14 +1,9 @@
 // src/components/cardio/CardioDaySummaryCard.tsx
+// MUI daily Cardio dashboard summary for walking/running indoor and outdoor.
 
-/**
- * CardioDaySummaryCard
- *
- * Lightweight dashboard summary for the selected day.
- * Covers walking/running across indoor and outdoor sessions.
- */
+import Box from "@mui/material/Box";
 
-import React from "react";
-
+import { AppCard, AppMetricCard } from "@/components/mui";
 import type { CardioDayStats } from "@/types/cardio.types";
 
 type Props = {
@@ -44,35 +39,30 @@ function formatInt(value: number | null): string {
 
 export function CardioDaySummaryCard({ stats }: Props) {
     return (
-        <div className="space-y-4 rounded-2xl border bg-card p-4">
-            <div>
-                <h2 className="text-base font-semibold text-foreground">
-                    Dashboard Cardio del día
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                    Resumen rápido de walking/running indoor y outdoor para la fecha seleccionada.
-                </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
-                <Metric label="Sesiones" value={String(stats.sessionsCount)} />
-                <Metric label="Outdoor" value={String(stats.outdoorSessions)} />
-                <Metric label="Indoor" value={String(stats.indoorSessions)} />
-                <Metric label="Walking" value={String(stats.walkingSessions)} />
-                <Metric label="Running" value={String(stats.runningSessions)} />
-                <Metric label="Duración" value={formatDuration(stats.totalDurationSeconds)} />
-                <Metric label="Distancia" value={formatDistance(stats.totalDistanceKm)} />
-                <Metric label="Kcal activas" value={formatInt(stats.totalActiveKcal)} />
-            </div>
-        </div>
-    );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="rounded-xl border bg-background px-3 py-3">
-            <div className="text-xs font-medium text-muted-foreground">{label}</div>
-            <div className="mt-1 text-lg font-semibold text-foreground">{value}</div>
-        </div>
+        <AppCard
+            title="Dashboard Cardio del día"
+            subtitle="Resumen rápido de walking/running indoor y outdoor para la fecha seleccionada."
+        >
+            <Box
+                sx={{
+                    display: "grid",
+                    gridTemplateColumns: {
+                        xs: "repeat(2, minmax(0, 1fr))",
+                        sm: "repeat(4, minmax(0, 1fr))",
+                        xl: "repeat(8, minmax(0, 1fr))",
+                    },
+                    gap: { xs: 1.25, md: 1.5 },
+                }}
+            >
+                <AppMetricCard compact label="Sesiones" value={String(stats.sessionsCount)} />
+                <AppMetricCard compact label="Outdoor" value={String(stats.outdoorSessions)} />
+                <AppMetricCard compact label="Indoor" value={String(stats.indoorSessions)} />
+                <AppMetricCard compact label="Walking" value={String(stats.walkingSessions)} />
+                <AppMetricCard compact label="Running" value={String(stats.runningSessions)} />
+                <AppMetricCard compact label="Duración" value={formatDuration(stats.totalDurationSeconds)} />
+                <AppMetricCard compact label="Distancia" value={formatDistance(stats.totalDistanceKm)} />
+                <AppMetricCard compact label="Kcal activas" value={formatInt(stats.totalActiveKcal)} />
+            </Box>
+        </AppCard>
     );
 }

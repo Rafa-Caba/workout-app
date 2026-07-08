@@ -6,9 +6,14 @@ import type { DayExplorerKpis } from "@/utils/dayExplorer";
 import { AppMetricCard } from "@/components/mui";
 import Box from "@mui/material/Box";
 
-function formatMaybeNumber(value: number | null): string {
-    if (typeof value !== "number") return "—";
-    return String(value);
+function formatMaybeNumber(value: number | null, decimals = 2): string {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+
+    if (Number.isInteger(value)) {
+        return value.toString();
+    }
+
+    return Number(value.toFixed(decimals)).toString();
 }
 
 export function DayExplorerKpisPanel({

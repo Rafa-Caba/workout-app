@@ -52,7 +52,7 @@ export function AppPage({
                     maxWidth: PAGE_MAX_WIDTH[maxWidth],
                     mx: "auto",
                     px: disableGutters ? 0 : { xs: 0.2, sm: 2.25, lg: 3.5 },
-                    py: { xs: 0, md: 3.5 },
+                    // py: { xs: 0, md: 0 },
                 },
                 ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
             ]}

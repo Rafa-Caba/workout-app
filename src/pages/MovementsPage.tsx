@@ -212,7 +212,7 @@ function MovementFormControls({
                     </Button>
                     {imageFile ? <Chip label={imageFile.name} size="small" /> : null}
                     {imagePreview && isImageFile(imageFile) ? (
-                        <Box component="img" src={imagePreview} alt="Preview" sx={{ height: 48, width: 72, objectFit: "cover", borderRadius: 2, border: 1, borderColor: "divider" }} />
+                        <Box component="img" src={imagePreview} alt="Preview" sx={{ height: 70, width: 110, objectFit: "cover", borderRadius: 2, border: 1, borderColor: "divider" }} />
                     ) : null}
                 </Box>
 

@@ -7,7 +7,6 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 
 import { useI18n } from "@/i18n/I18nProvider";
 import { useDaySummary } from "@/hooks/useDaySummary";
@@ -20,6 +19,7 @@ import { DaySessionsPanel } from "@/components/dayExplorer/DaySessionsPanel";
 import { DaySleepPanel } from "@/components/dayExplorer/DaySleepPanel";
 import { DayTrainingMetaPanel } from "@/components/dayExplorer/DayTrainingMetaPanel";
 import { JsonDetails } from "@/components/JsonDetails";
+import { useAppSettingsStore } from "@/state/appSettings.store";
 import { AppCard, AppEmptyState, AppPage } from "@/components/mui";
 
 type Tab = "summary" | "raw";
@@ -34,6 +34,7 @@ export function DayExplorerPage() {
     const [date, setDate] = React.useState(() => todayIso());
     const [tab, setTab] = React.useState<Tab>("summary");
     const [openMedia, setOpenMedia] = React.useState<MediaLikeItem | null>(null);
+    const showJson = useAppSettingsStore((state) => state.settings.debug?.showJson ?? false);
 
     const summary = useDaySummary(date);
     const day = useWorkoutDay(date, Boolean(date));
@@ -100,15 +101,14 @@ export function DayExplorerPage() {
                 <JsonDetails title={t("days.debug.errorJsonTitle")} data={errorForJson} defaultOpen />
             ) : null}
 
-            <AppCard padding="sm" tone="soft">
-                <Typography variant="caption" color="text.secondary">
-                    Debug JSON solo se muestra cuando la opción de depuración está activa.
-                </Typography>
-                <JsonDetails
-                    title={tab === "summary" ? t("days.debug.summaryJsonTitle") : t("days.debug.dayJsonTitle")}
-                    data={dataForJson}
-                />
-            </AppCard>
+            {showJson ? (
+                <AppCard padding="sm" tone="soft">
+                    <JsonDetails
+                        title={tab === "summary" ? t("days.debug.summaryJsonTitle") : t("days.debug.dayJsonTitle")}
+                        data={dataForJson}
+                    />
+                </AppCard>
+            ) : null}
 
             {openMedia ? <MediaViewerModal item={openMedia} onClose={() => setOpenMedia(null)} /> : null}
         </AppPage>

@@ -89,15 +89,15 @@ const LIGHT_NEUTRALS: NeutralScale = {
 };
 
 const DARK_NEUTRALS: NeutralScale = {
-    background: "#070B12",
-    paper: "#0F172A",
-    paperSoft: "#111827",
-    elevated: "#111827",
-    border: "rgba(148, 163, 184, 0.20)",
-    borderStrong: "rgba(148, 163, 184, 0.34)",
+    background: "#070708",
+    paper: "#111111",
+    paperSoft: "#151515",
+    elevated: "#181818",
+    border: "rgba(229, 231, 235, 0.16)",
+    borderStrong: "rgba(229, 231, 235, 0.28)",
     textPrimary: "#F8FAFC",
-    textSecondary: "#CBD5E1",
-    textMuted: "#94A3B8",
+    textSecondary: "#D1D5DB",
+    textMuted: "#9CA3AF",
 };
 
 export function resolveMuiPaletteMode(mode: Mode, systemPrefersDark: boolean): PaletteMode {

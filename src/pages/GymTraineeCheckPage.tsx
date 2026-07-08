@@ -2,8 +2,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { addDays, addWeeks, endOfISOWeek, format, startOfISOWeek } from "date-fns";
 
-import { PageHeader } from "@/components/PageHeader";
-import { EmptyState } from "@/components/EmptyState";
+import { AppPage, AppEmptyState } from "@/components/mui";
 
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -543,16 +542,15 @@ export function GymTraineeCheckPage() {
     const gymCheckSessionExists = hasGymCheckSession(remoteDay);
 
     return (
-        <div className="space-y-4 sm:space-y-6">
-            <PageHeader
-                title="Gym Check"
-                subtitle={
-                    lang === "es"
-                        ? "Checklist de rutina por día + métricas del dispositivo + media por ejercicio"
-                        : "Daily routine checklist + device metrics + per-exercise media"
-                }
-            />
-
+        <AppPage
+            title="Gym Check"
+            subtitle={
+                lang === "es"
+                    ? "Checklist de rutina por día + métricas del dispositivo + media por ejercicio"
+                    : "Daily routine checklist + device metrics + per-exercise media"
+            }
+            maxWidth="xl"
+        >
             <GymCheckWeekPickerCard
                 t={t}
                 lang={lang}
@@ -571,7 +569,7 @@ export function GymTraineeCheckPage() {
             />
 
             {weekLoading ? (
-                <EmptyState
+                <AppEmptyState
                     title={lang === "es" ? "Cargando semana…" : "Loading week…"}
                     description={lang === "es" ? "Buscando días con plan asignado." : "Finding days with an assigned plan."}
                 />
@@ -584,7 +582,7 @@ export function GymTraineeCheckPage() {
                     </div>
 
                     {!safeRemoteDay?.plannedRoutine ? (
-                        <EmptyState
+                        <AppEmptyState
                             title={lang === "es" ? "Sin plan asignado" : "No assigned plan"}
                             description={
                                 lang === "es"
@@ -593,7 +591,7 @@ export function GymTraineeCheckPage() {
                             }
                         />
                     ) : !hasExercises ? (
-                        <EmptyState
+                        <AppEmptyState
                             title={lang === "es" ? "Sin ejercicios" : "No exercises"}
                             description={
                                 lang === "es"
@@ -712,6 +710,6 @@ export function GymTraineeCheckPage() {
             )}
 
             {viewer ? <MediaViewerModal item={viewer} onClose={() => setViewer(null)} /> : null}
-        </div>
+        </AppPage>
     );
 }

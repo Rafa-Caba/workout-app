@@ -1,9 +1,13 @@
 // src/components/gymCheck/GymCheckWeekPickerCard.tsx
-import * as React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
+// MUI week selector card for Gym Check pages.
+
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { AppCard, AppActionRow } from "@/components/mui";
+import type { I18nKey } from "@/i18n/translations";
 
 function formatNullable(value: unknown): string {
     if (value === null || value === undefined || value === "") return "—";
@@ -11,21 +15,17 @@ function formatNullable(value: unknown): string {
 }
 
 type Props = {
-    t: (key: any) => string;
+    t: (key: I18nKey) => string;
     lang: "es" | "en";
     busy: boolean;
-
     weekDate: string;
     onWeekDateChange: (v: string) => void;
-
     onPrevWeek: () => void;
     onNextWeek: () => void;
     onUseWeek: () => void;
-
     derivedWeekKey: string;
     runWeekKey: string;
     weekRangeLabel: string;
-
     routineExists: boolean;
     routineTitle: string | null;
     routineSplit: string | null;
@@ -50,62 +50,67 @@ export function GymCheckWeekPickerCard(props: Props) {
     } = props;
 
     return (
-        <Card className={cn("w-full min-w-0", themedPanelCard)}>
-            <CardHeader className="min-w-0">
-                <CardTitle className="min-w-0 wrap-break-words">{lang === "es" ? "Semana" : "Week"}</CardTitle>
-                <CardDescription className="min-w-0 wrap-break-words">
-                    {lang === "es"
-                        ? "Elige semana. Si no existe rutina, puedes cambiar a otra."
-                        : "Pick a week. If there’s no routine, you can switch weeks."}
-                </CardDescription>
-            </CardHeader>
+        <AppCard
+            title={lang === "es" ? "Semana" : "Week"}
+            subtitle={lang === "es" ? "Elige semana para cargar el Gym Check." : "Pick a week to load Gym Check."}
+            action={routineExists ? <Chip color="success" size="small" label={lang === "es" ? "Rutina cargada" : "Routine loaded"} /> : <Chip size="small" label={lang === "es" ? "Sin rutina" : "No routine"} />}
+        >
+            <Box sx={{ display: "grid", gap: { xs: 1.5, md: 2 } }}>
+                <Box
+                    sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", md: "minmax(180px, 240px) auto" },
+                        gap: 1.25,
+                        alignItems: "center",
+                        minWidth: 0,
+                    }}
+                >
+                    <TextField
+                        fullWidth
+                        size="small"
+                        type="date"
+                        label={t("week.pickDateInWeek")}
+                        value={weekDate}
+                        onChange={(event) => onWeekDateChange(event.target.value)}
+                        disabled={busy}
+                        slotProps={{ inputLabel: { shrink: true } }}
+                    />
 
-            <CardContent className="min-w-0 space-y-3">
-                <div className="min-w-0 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
-                    <label className="text-sm text-muted-foreground">{t("week.pickDateInWeek")}</label>
-                    <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
-                        <input
-                            className="h-10 min-w-0 rounded-lg border border-primary/15 bg-background px-3 text-base sm:w-full sm:text-sm"
-                            type="date"
-                            value={weekDate}
-                            onChange={(e) => onWeekDateChange(e.target.value)}
-                            disabled={busy}
-                        />
-                    </div>
+                    <AppActionRow align="left">
+                        <Button variant="outlined" onClick={onPrevWeek} disabled={busy}>{t("week.prev")}</Button>
+                        <Button variant="outlined" onClick={onNextWeek} disabled={busy}>{t("week.next")}</Button>
+                        <Button variant="contained" onClick={onUseWeek} disabled={busy}>{lang === "es" ? "Usar semana" : "Use week"}</Button>
+                    </AppActionRow>
+                </Box>
 
-                    <div className="my-1 grid w-full grid-cols-2 gap-2 sm:my-0 sm:w-auto">
-                        <Button className="w-full sm:w-auto" variant="outline" onClick={onPrevWeek} disabled={busy}>
-                            {t("week.prev")}
-                        </Button>
-                        <Button className="w-full sm:w-auto" variant="outline" onClick={onNextWeek} disabled={busy}>
-                            {t("week.next")}
-                        </Button>
-                    </div>
-
-                    <Button className="w-full sm:w-auto" onClick={onUseWeek} disabled={busy}>
-                        {lang === "es" ? "Usar semana" : "Use week"}
-                    </Button>
-                </div>
-
-                <div className={cn("min-w-0 flex flex-col sm:flex-row rounded-xl border p-3 text-xs text-muted-foreground wrap-break-words", themedNestedCard)}>
-                    <span className="break-all font-mono"> {lang === "es" ? "Seleccionado" : "Selected"}:{" "}{derivedWeekKey}{" "}•{" "}</span>
-                    <span className="break-all font-mono">{lang === "es" ? "Cargado" : "Loaded"}: {runWeekKey}{" "}•{" "}</span>{" "}
-                    <span className="break-all font-mono">{weekRangeLabel}</span>
-                </div>
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 1,
+                        border: 1,
+                        borderColor: "divider",
+                        borderRadius: 2,
+                        p: 1.25,
+                        bgcolor: "background.default",
+                    }}
+                >
+                    <Chip size="small" label={`${lang === "es" ? "Seleccionado" : "Selected"}: ${derivedWeekKey}`} />
+                    <Chip size="small" label={`${lang === "es" ? "Cargado" : "Loaded"}: ${runWeekKey}`} />
+                    <Chip size="small" label={weekRangeLabel} />
+                </Box>
 
                 {routineExists ? (
-                    <div className={cn("min-w-0 rounded-xl border p-3 text-sm wrap-break-words", themedNestedCard)}>
-                        <span className="font-semibold">{formatNullable(routineTitle)}</span>{" "}
-                        <span className="text-muted-foreground">• {formatNullable(routineSplit)}</span>
-                    </div>
+                    <Box sx={{ border: 1, borderColor: "divider", borderRadius: 2, p: 1.25, bgcolor: "background.default" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 800 }}>{formatNullable(routineTitle)}</Typography>
+                        <Typography variant="body2" color="text.secondary">{formatNullable(routineSplit)}</Typography>
+                    </Box>
                 ) : (
-                    <div className={cn("rounded-xl border p-3 text-sm text-muted-foreground", themedNestedCard)}>
-                        {lang === "es"
-                            ? "No hay rutina para esta semana. Selecciona otra semana o crea la rutina en “Rutinas”."
-                            : "No routine for this week. Pick another week or create it in “Routines”."}
-                    </div>
+                    <Typography variant="body2" color="text.secondary" sx={{ border: 1, borderColor: "divider", borderRadius: 2, p: 1.25 }}>
+                        {lang === "es" ? "No hay rutina para esta semana. Selecciona otra semana o crea la rutina en Rutinas." : "No routine for this week. Pick another week or create it in Routines."}
+                    </Typography>
                 )}
-            </CardContent>
-        </Card>
+            </Box>
+        </AppCard>
     );
 }

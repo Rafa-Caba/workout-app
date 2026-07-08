@@ -4,8 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { addWeeks, endOfISOWeek, format, startOfISOWeek } from "date-fns";
 
-import { PageHeader } from "@/components/PageHeader";
-import { EmptyState } from "@/components/EmptyState";
+import { AppPage, AppEmptyState } from "@/components/mui";
 
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -596,16 +595,15 @@ export function RoutineGymCheckPage() {
     }
 
     return (
-        <div className="space-y-4 sm:space-y-6">
-            <PageHeader
-                title="Gym Check"
-                subtitle={
-                    lang === "es"
-                        ? "Checklist de rutina por día + métricas del dispositivo + media por ejercicio"
-                        : "Daily routine checklist + device metrics + per-exercise media"
-                }
-            />
-
+        <AppPage
+            title="Gym Check"
+            subtitle={
+                lang === "es"
+                    ? "Checklist de rutina por día + métricas del dispositivo + media por ejercicio"
+                    : "Daily routine checklist + device metrics + per-exercise media"
+            }
+            maxWidth="xl"
+        >
             <GymCheckWeekPickerCard
                 t={t}
                 lang={lang}
@@ -624,7 +622,7 @@ export function RoutineGymCheckPage() {
             />
 
             {!routine && !routineQuery.isFetching ? (
-                <EmptyState title={t("routines.noRoutineTitle")} description={t("routines.noRoutineDesc")} />
+                <AppEmptyState title={t("routines.noRoutineTitle")} description={t("routines.noRoutineDesc")} variant="inline" />
             ) : null}
 
             {routine ? (
@@ -637,9 +635,10 @@ export function RoutineGymCheckPage() {
                     </div>
 
                     {!hasExercises ? (
-                        <EmptyState
+                        <AppEmptyState
                             title={lang === "es" ? "Sin ejercicios" : "No exercises"}
                             description={lang === "es" ? "Este día no tiene ejercicios planeados." : "This day has no planned exercises."}
+                            variant="inline"
                         />
                     ) : (
                         <>
@@ -741,6 +740,6 @@ export function RoutineGymCheckPage() {
             ) : null}
 
             {viewer ? <MediaViewerModal item={viewer} onClose={() => setViewer(null)} /> : null}
-        </div>
+        </AppPage>
     );
 }

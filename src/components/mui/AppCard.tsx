@@ -1,12 +1,13 @@
 // src/components/mui/AppCard.tsx
 // Shared MUI card primitive for page panels, nested sections, and form blocks.
+// The accent tone reads from the active MUI theme palette instead of using hardcoded colors.
 
 import type { ReactNode } from "react";
+import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import type { SxProps, Theme } from "@mui/material/styles";
+import { alpha, type SxProps, type Theme } from "@mui/material/styles";
 
 type AppCardTone = "default" | "soft" | "accent";
 type AppCardPadding = "none" | "sm" | "md" | "lg";
@@ -27,18 +28,49 @@ type AppCardProps = {
 };
 
 const CONTENT_PADDING: Record<AppCardPadding, SxProps<Theme>> = {
-    none: { p: 0, "&:last-child": { pb: 0 } },
-    sm: { p: { xs: 1.25, md: 2 }, "&:last-child": { pb: { xs: 1.25, md: 2 } } },
-    md: { p: { xs: 1.5, md: 2.25 }, "&:last-child": { pb: { xs: 1.5, md: 2.25 } } },
-    lg: { p: { xs: 1.75, md: 2.75 }, "&:last-child": { pb: { xs: 1.75, md: 2.75 } } },
+    none: {
+        p: 0,
+        "&:last-child": { pb: 0 },
+    },
+    sm: {
+        p: { xs: 1.25, md: 2 },
+        "&:last-child": { pb: { xs: 1.25, md: 2 } },
+    },
+    md: {
+        p: { xs: 1.5, md: 2.25 },
+        "&:last-child": { pb: { xs: 1.5, md: 2.25 } },
+    },
+    lg: {
+        p: { xs: 1.75, md: 2.75 },
+        "&:last-child": { pb: { xs: 1.75, md: 2.75 } },
+    },
 };
 
+/**
+ * Builds visual styles for AppCard tone variants.
+ * Accent uses the active theme primary color so palette changes like Red,
+ * Blue, Violet, Emerald and Mint are reflected automatically.
+ */
 function buildToneSx(tone: AppCardTone): SxProps<Theme> {
     if (tone === "accent") {
-        return {
-            borderColor: "primary.light",
-            background:
-                "linear-gradient(135deg, rgba(168, 85, 247, 0.10), rgba(255, 255, 255, 0.02))",
+        return (theme) => {
+            const primarySoft =
+                theme.palette.mode === "dark"
+                    ? alpha(theme.palette.primary.main, 0.16)
+                    : alpha(theme.palette.primary.main, 0.08);
+
+            const primaryFaint =
+                theme.palette.mode === "dark"
+                    ? alpha(theme.palette.primary.main, 0.05)
+                    : alpha(theme.palette.primary.main, 0.025);
+
+            return {
+                borderColor:
+                    theme.palette.mode === "dark"
+                        ? alpha(theme.palette.primary.main, 0.46)
+                        : alpha(theme.palette.primary.main, 0.38),
+                background: `linear-gradient(135deg, ${primarySoft}, ${primaryFaint})`,
+            };
         };
     }
 
@@ -123,11 +155,13 @@ export function AppCard({
                                     {eyebrow}
                                 </Typography>
                             ) : null}
+
                             {title ? (
-                                <Typography variant="h6" component="h2" sx={{ fontWeight: 850 }}>
+                                <Typography variant="h6" component="h2" sx={{ fontWeight: 800 }}>
                                     {title}
                                 </Typography>
                             ) : null}
+
                             {subtitle ? (
                                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
                                     {subtitle}

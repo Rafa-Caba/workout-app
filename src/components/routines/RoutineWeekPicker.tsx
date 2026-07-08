@@ -1,79 +1,131 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { toWeekKey, weekKeyToStartDate } from "@/utils/weekKey";
-import { startOfISOWeek, endOfISOWeek, addWeeks, format } from "date-fns";
-import { useI18n } from "@/i18n/I18nProvider";
+// src/components/routines/RoutinesWeekPickerCard.tsx
+// MUI week picker and routine management panel.
 
-export function RoutineWeekPicker(props: {
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { AppActionRow, AppCard } from "@/components/mui";
+import { RoutinesAdvancedActions } from "@/components/routines/RoutinesAdvancedActions";
+import type { WorkoutRoutineStatus } from "@/types/workoutRoutine.types";
+import type { I18nKey } from "@/i18n/translations";
+
+type TFn = (key: I18nKey) => string;
+
+type Props = {
+    t: TFn;
+    lang: string;
     busy: boolean;
     weekDate: string;
-    setWeekDate: (v: string) => void;
-    derivedWeekKey: string;
-    runWeekKey: string;
+    onWeekDateChange: (next: string) => void;
+    onPrevWeek: () => void;
+    onNextWeek: () => void;
     onLoadWeek: () => void;
+    derivedWeekKey: string;
+    weekRangeLabel: string;
+    runWeekKey: string;
     onSyncToLoadedWeek: () => void;
-}) {
-    const { t } = useI18n();
+    initOpenDefault: boolean;
+    initTitle: string;
+    setInitTitle: (v: string) => void;
+    initSplit: string;
+    setInitSplit: (v: string) => void;
+    unarchive: boolean;
+    setUnarchive: (v: boolean) => void;
+    onInitRoutine: () => void;
+    isInitializing: boolean;
+    onSetArchived: (archived: boolean) => void;
+    hasRoutine: boolean;
+    routineStatus?: WorkoutRoutineStatus;
+};
 
-    const weekRangeLabel = React.useMemo(() => {
-        const d = new Date(`${props.weekDate}T00:00:00`);
-        const start = startOfISOWeek(d);
-        const end = endOfISOWeek(d);
-        return `${format(start, "MMM d, yyyy")} → ${format(end, "MMM d, yyyy")}`;
-    }, [props.weekDate]);
-
-    function goPrevWeek() {
-        const d = new Date(`${props.weekDate}T00:00:00`);
-        props.setWeekDate(format(addWeeks(d, -1), "yyyy-MM-dd"));
-    }
-
-    function goNextWeek() {
-        const d = new Date(`${props.weekDate}T00:00:00`);
-        props.setWeekDate(format(addWeeks(d, 1), "yyyy-MM-dd"));
-    }
+export function RoutinesWeekPickerCard(props: Props) {
+    const {
+        t,
+        lang,
+        busy,
+        weekDate,
+        onWeekDateChange,
+        onPrevWeek,
+        onNextWeek,
+        onLoadWeek,
+        derivedWeekKey,
+        weekRangeLabel,
+        runWeekKey,
+        onSyncToLoadedWeek,
+        initOpenDefault,
+        initTitle,
+        setInitTitle,
+        initSplit,
+        setInitSplit,
+        unarchive,
+        setUnarchive,
+        onInitRoutine,
+        isInitializing,
+        onSetArchived,
+        hasRoutine,
+        routineStatus,
+    } = props;
 
     return (
-        <div className="w-full min-w-0 rounded-xl border bg-card p-4 space-y-3">
-            <div className="min-w-0 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
-                <label className="min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center text-sm">
-                    <span className="shrink-0">{t("week.pickDateInWeek")}</span>
-                    <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
-                        <input
-                            type="date"
-                            className="sm:w-full rounded-md border bg-background px-3 py-2 text-base sm:text-sm"
-                            value={props.weekDate}
-                            onChange={(e) => props.setWeekDate(e.target.value)}
-                        />
-                    </div>
-                </label>
+        <AppCard
+            title={lang === "es" ? "Semana de rutina" : "Routine week"}
+            subtitle={lang === "es" ? "Selecciona, carga e inicializa semanas de rutina." : "Select, load, and initialize routine weeks."}
+            action={<Chip size="small" color={hasRoutine ? "success" : "default"} label={hasRoutine ? (routineStatus ?? "active") : (lang === "es" ? "Sin rutina" : "No routine")} />}
+        >
+            <Box sx={{ display: "grid", gap: 1.5 }}>
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "minmax(180px, 240px) auto" }, gap: 1.25, alignItems: "center" }}>
+                    <TextField
+                        fullWidth
+                        size="small"
+                        type="date"
+                        label={t("week.pickDateInWeek")}
+                        value={weekDate}
+                        onChange={(event) => onWeekDateChange(event.target.value)}
+                        disabled={busy}
+                        slotProps={{ inputLabel: { shrink: true } }}
+                    />
+                    <AppActionRow align="left">
+                        <Button variant="outlined" onClick={onPrevWeek} disabled={busy}>{t("week.prev")}</Button>
+                        <Button variant="outlined" onClick={onNextWeek} disabled={busy}>{t("week.next")}</Button>
+                        <Button variant="contained" onClick={onLoadWeek} disabled={busy}>{t("routines.useWeek")}</Button>
+                    </AppActionRow>
+                </Box>
 
-                <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
-                    <Button variant="outline" onClick={goPrevWeek} disabled={props.busy} className="w-full sm:w-auto">
-                        {t("week.prev")}
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center", border: 1, borderColor: "divider", borderRadius: 2, p: 1.25, bgcolor: "background.default" }}>
+                    <Chip size="small" label={`${t("routines.selected")}: ${derivedWeekKey}`} />
+                    <Chip size="small" label={`${t("week.loaded")}: ${runWeekKey}`} />
+                    <Chip size="small" label={weekRangeLabel} />
+                    <Button variant="text" size="small" onClick={onSyncToLoadedWeek} disabled={busy}>
+                        sync
                     </Button>
-                    <Button variant="outline" onClick={goNextWeek} disabled={props.busy} className="w-full sm:w-auto">
-                        {t("week.next")}
-                    </Button>
-                </div>
+                </Box>
 
-                <Button onClick={props.onLoadWeek} disabled={props.busy} className="w-full sm:w-auto">
-                    {t("routines.useWeek")}
-                </Button>
+                <RoutinesAdvancedActions
+                    openDefault={initOpenDefault}
+                    busy={busy}
+                    t={t}
+                    lang={lang}
+                    initTitle={initTitle}
+                    setInitTitle={setInitTitle}
+                    initSplit={initSplit}
+                    setInitSplit={setInitSplit}
+                    unarchive={unarchive}
+                    setUnarchive={setUnarchive}
+                    onInitRoutine={onInitRoutine}
+                    isInitializing={isInitializing}
+                    onSetArchived={onSetArchived}
+                    hasRoutine={hasRoutine}
+                    routineStatus={routineStatus}
+                />
 
-                <div className="min-w-0 text-xs text-muted-foreground wrap-break-words">
-                    {t("routines.selected")}: <span className="font-mono">{props.derivedWeekKey}</span> •{" "}
-                    <span className="font-mono">{weekRangeLabel}</span> • {t("week.loaded")}:{" "}
-                    <span className="font-mono">{props.runWeekKey}</span>{" "}
-                    <Button
-                        variant="ghost"
-                        className="h-8 px-2"
-                        onClick={props.onSyncToLoadedWeek}
-                        disabled={props.busy}
-                    >
-                        (sync)
-                    </Button>
-                </div>
-            </div>
-        </div>
+                {!hasRoutine ? (
+                    <Typography variant="body2" color="text.secondary">
+                        {lang === "es" ? "Inicializa una rutina para comenzar a editar la semana." : "Initialize a routine to start editing this week."}
+                    </Typography>
+                ) : null}
+            </Box>
+        </AppCard>
     );
 }

@@ -1,4 +1,10 @@
-import * as React from "react";
+// src/components/gymCheck/GymCheckExerciseMediaStrip.tsx
+// MUI media preview strip for Gym Check exercise attachments.
+
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
 import type { AttachmentOption } from "@/utils/routines/attachments";
 
 type Props = {
@@ -9,60 +15,31 @@ type Props = {
     onRemoveAt: (index: number) => void;
 };
 
-export function GymCheckExerciseMediaStrip(props: Props) {
-    const { lang, mediaPublicIds, attachmentByPublicId, onOpenViewer, onRemoveAt } = props;
+export function GymCheckExerciseMediaStrip({ lang, mediaPublicIds, attachmentByPublicId, onOpenViewer, onRemoveAt }: Props) {
+    const items = mediaPublicIds
+        .map((publicId, index) => ({ publicId, index, option: attachmentByPublicId.get(publicId) ?? null }))
+        .filter((item): item is { publicId: string; index: number; option: AttachmentOption } => Boolean(item.option));
 
-    if (!Array.isArray(mediaPublicIds) || mediaPublicIds.length === 0) {
+    if (items.length === 0) {
         return (
-            <div className="text-xs text-muted-foreground font-bold italic wrap-break-words">
-                {lang === "es"
-                    ? "Sin media aún. Puedes subir foto/video si quieres."
-                    : "No media yet. You can upload a photo/video if you want."}
-            </div>
+            <Box sx={{ border: 1, borderColor: "divider", borderRadius: 2, p: 1.5, bgcolor: "background.default" }}>
+                <Typography variant="body2" color="text.secondary">
+                    {lang === "es" ? "Sin media agregada." : "No media added."}
+                </Typography>
+            </Box>
         );
     }
 
     return (
-        <div className="w-full min-w-0 space-y-2">
-            <div className="text-xs font-extrabold text-muted-foreground">
-                {lang === "es" ? "Media (subida en gym)" : "Gym media"}
-            </div>
-
-            <div className="min-w-0 flex flex-nowrap gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {mediaPublicIds.map((pid, i) => {
-                    const opt = attachmentByPublicId.get(pid) ?? null;
-                    const thumbUrl = typeof opt?.url === "string" ? opt.url : null;
-
-                    return (
-                        <div key={`${pid}-${i}`} className="relative shrink-0">
-                            <button
-                                type="button"
-                                className="h-16 w-16 sm:h-20 sm:w-20 rounded-lg overflow-hidden border bg-background grid place-items-center hover:bg-muted/60 transition"
-                                onClick={() => {
-                                    if (!opt) return;
-                                    onOpenViewer(opt);
-                                }}
-                                title={pid}
-                            >
-                                {thumbUrl ? (
-                                    <img src={thumbUrl} alt={pid} className="h-full w-full object-cover" />
-                                ) : (
-                                    <span className="px-1 text-[11px] text-muted-foreground">media</span>
-                                )}
-                            </button>
-
-                            <button
-                                type="button"
-                                className="absolute -top-2 -right-2 h-7 w-7 sm:h-6 sm:w-6 rounded-full border bg-background text-xs hover:bg-muted/60 flex items-center justify-center"
-                                onClick={() => onRemoveAt(i)}
-                                title={lang === "es" ? "Quitar" : "Remove"}
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+            {items.map((item) => (
+                <Box key={`${item.publicId}-${item.index}`} sx={{ display: "inline-flex", alignItems: "center", gap: 0.75, border: 1, borderColor: "divider", borderRadius: 2, p: 0.75, maxWidth: "100%" }}>
+                    <Chip size="small" label={item.option.label || item.publicId} onClick={() => onOpenViewer(item.option)} sx={{ maxWidth: 220 }} />
+                    <Button size="small" variant="text" color="error" onClick={() => onRemoveAt(item.index)}>
+                        {lang === "es" ? "Quitar" : "Remove"}
+                    </Button>
+                </Box>
+            ))}
+        </Box>
     );
 }

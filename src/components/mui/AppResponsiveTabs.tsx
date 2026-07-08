@@ -1,5 +1,6 @@
 // src/components/mui/AppResponsiveTabs.tsx
 // Shared responsive MUI tabs helper for section switching.
+// Keeps MUI Tabs safe when the current value is temporarily outside available tabs.
 
 import type { ReactNode, SyntheticEvent } from "react";
 import Box from "@mui/material/Box";
@@ -59,6 +60,22 @@ function buildTabLabel(tab: AppResponsiveTab) {
     );
 }
 
+function getSafeTabsValue(value: string, tabs: AppResponsiveTab[]): string | false {
+    const hasMatchingTab = tabs.some((tab) => tab.value === value);
+
+    if (hasMatchingTab) {
+        return value;
+    }
+
+    /**
+     * MUI Tabs warns when value is not represented by a rendered Tab.
+     * During data transitions this can happen before page-level effects normalize
+     * selected day/week state. Using false avoids noisy console errors without
+     * mutating the caller state from this presentational helper.
+     */
+    return false;
+}
+
 export function AppResponsiveTabs({
     value,
     tabs,
@@ -67,6 +84,8 @@ export function AppResponsiveTabs({
     variant = "scrollable",
     sx,
 }: AppResponsiveTabsProps) {
+    const safeValue = getSafeTabsValue(value, tabs);
+
     const handleChange = (_event: SyntheticEvent, nextValue: string) => {
         onChange(nextValue);
     };
@@ -83,7 +102,7 @@ export function AppResponsiveTabs({
             ]}
         >
             <Tabs
-                value={value}
+                value={safeValue}
                 onChange={handleChange}
                 aria-label={ariaLabel}
                 variant={variant}

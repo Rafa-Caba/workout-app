@@ -1,13 +1,19 @@
 // src/components/routines/RoutinesExerciseCard.tsx
-import React from "react";
-import { Button } from "@/components/ui/button";
+// MUI exercise editor card for routine builder.
+
+import MenuItem from "@mui/material/MenuItem";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { ExerciseAttachmentPicker } from "@/components/routines/ExerciseAttachmentPicker";
 import type { AttachmentOption } from "@/utils/routines/attachments";
 import type { ExerciseItem, DayKey } from "@/utils/routines/plan";
 import type { I18nKey } from "@/i18n/translations";
-import { cn } from "@/lib/utils";
 import { useSettingsStore } from "@/state/settings.store";
 import { normalizeDefaultRpe } from "@/utils/defaults";
+import { AppCard, AppActionRow, AppFormGrid } from "@/components/mui";
 
 type TFn = (key: I18nKey) => string;
 
@@ -28,26 +34,18 @@ export type MovementOption = {
 type Props = {
     dayKey: DayKey;
     idx: number;
-
     exercise: ExerciseItem;
-
     movementOptions?: MovementOption[];
-
     attachmentOptions: AttachmentOption[];
     selectedIds: string[];
-
     pendingFiles: File[];
     onPickFiles: (files: File[]) => void;
     onRemovePending: (fileIndex?: number) => void;
-
     busy: boolean;
     isThisUploading: boolean;
-
     t: TFn;
     lang: string;
-
     ph: Placeholders;
-
     onRemove: () => void;
     onChangeName: (next: string) => void;
     onChangeMovement: (args: { movementId?: string; movementName?: string }) => void;
@@ -56,7 +54,6 @@ type Props = {
     onChangeReps: (next: string) => void;
     onChangeRpe: (next: string) => void;
     onChangeLoad: (next: string) => void;
-
     onToggleAttachment: (publicId: string) => void;
 };
 
@@ -86,222 +83,119 @@ export function RoutinesExerciseCard({
     onToggleAttachment,
 }: Props) {
     const hasMovements = Array.isArray(movementOptions) && movementOptions.length > 0;
-    const hasMovementMapping = !!exercise.movementId;
-
+    const hasMovementMapping = Boolean(exercise.movementId);
     const defaults = useSettingsStore((s) => s.settings.defaults);
     const defaultRpeNorm = normalizeDefaultRpe(defaults?.defaultRpe ?? null);
 
-    const plannedRpeSelectValue =
-        exercise.rpe != null
-            ? String(exercise.rpe)
-            : defaultRpeNorm != null
-                ? `__default__:${defaultRpeNorm}`
-                : "";
+    const plannedRpeSelectValue = exercise.rpe != null
+        ? String(exercise.rpe)
+        : defaultRpeNorm != null
+            ? `__default__:${defaultRpeNorm}`
+            : "";
 
     return (
-        <div
-            className={cn(
-                "w-full min-w-0 rounded-xl border p-4 space-y-4 transition-colors shadow-sm",
-                hasMovementMapping ? "border-primary/30 bg-primary/5" : "border-border bg-card"
-            )}
-        >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0 flex flex-wrap items-center gap-2">
-                    <div className="text-sm font-medium">
+        <AppCard
+            title={
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                    <Typography component="span" variant="subtitle1" sx={{ fontWeight: 850 }}>
                         {t("routines.exercise")} #{idx + 1}
-                    </div>
+                    </Typography>
+                    <Chip size="small" color="primary" label={String(dayKey)} />
+                    {hasMovementMapping && exercise.movementName ? <Chip size="small" label={`${lang === "es" ? "Catálogo" : "Catalog"} · ${exercise.movementName}`} /> : null}
+                </Box>
+            }
+            action={<Button type="button" variant="outlined" color="error" size="small" onClick={onRemove} disabled={busy}>{t("routines.remove")}</Button>}
+            sx={{ borderColor: hasMovementMapping ? "primary.light" : undefined }}
+            padding="sm"
+        >
+            <AppFormGrid columns={{ xs: 1, md: 2 }} gap={1.5}>
+                <TextField
+                    fullWidth
+                    select
+                    size="small"
+                    label={lang === "es" ? "Movimiento" : "Movement"}
+                    value={exercise.movementId ?? ""}
+                    disabled={busy || !hasMovements}
+                    onChange={(event) => {
+                        const nextId = event.target.value || "";
+                        if (!nextId) {
+                            onChangeMovement({ movementId: undefined, movementName: undefined });
+                            return;
+                        }
+                        const movement = movementOptions?.find((item) => item.id === nextId);
+                        const snapshot = movement?.name ?? "";
+                        onChangeMovement({ movementId: nextId, movementName: snapshot || undefined });
+                        if (snapshot) onChangeName(snapshot);
+                    }}
+                    sx={{ gridColumn: { md: "1 / -1" } }}
+                >
+                    <MenuItem value="">
+                        {hasMovements
+                            ? lang === "es" ? "Seleccionar movimiento…" : "Select movement…"
+                            : lang === "es" ? "No hay movimientos" : "No movements available"}
+                    </MenuItem>
+                    {movementOptions?.map((movement) => (
+                        <MenuItem key={movement.id} value={movement.id}>{movement.name}</MenuItem>
+                    )) ?? null}
+                </TextField>
 
-                    <span className="inline-flex items-center rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[11px] font-mono text-primary">
-                        {String(dayKey)}
-                    </span>
-
-                    {hasMovementMapping && exercise.movementName ? (
-                        <span className="inline-flex max-w-full items-center rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[11px] text-accent-foreground">
-                            <span className="truncate">
-                                {lang === "es" ? "Catálogo" : "Catalog"} · {exercise.movementName}
-                            </span>
-                        </span>
-                    ) : null}
-                </div>
-
-                <Button
-                    type="button"
-                    variant="outline"
-                    className="h-9 w-full sm:w-auto px-3 text-xs whitespace-nowrap"
-                    onClick={onRemove}
+                <TextField fullWidth size="small" label={t("routines.exName")} value={exercise.name} onChange={(event) => onChangeName(event.target.value)} disabled={busy} placeholder={t("routines.exNamePh")} />
+                <TextField fullWidth size="small" label={t("routines.exNotes")} value={exercise.notes ?? ""} onChange={(event) => onChangeNotes(event.target.value)} disabled={busy} placeholder={ph.exNotes} />
+                <TextField fullWidth size="small" label={t("routines.sets")} value={exercise.sets ?? ""} onChange={(event) => onChangeSets(event.target.value)} disabled={busy} placeholder={ph.sets} inputMode="numeric" />
+                <TextField fullWidth size="small" label={t("routines.reps")} value={exercise.reps ?? ""} onChange={(event) => onChangeReps(event.target.value)} disabled={busy} placeholder={ph.reps} />
+                <TextField
+                    fullWidth
+                    select
+                    size="small"
+                    label="RPE"
+                    value={plannedRpeSelectValue}
+                    onChange={(event) => {
+                        const raw = event.target.value;
+                        if (raw.startsWith("__default__:")) {
+                            onChangeRpe("");
+                            return;
+                        }
+                        onChangeRpe(raw);
+                    }}
                     disabled={busy}
                 >
+                    <MenuItem value="">{lang === "es" ? "Sin RPE" : "No RPE"}</MenuItem>
+                    {defaultRpeNorm != null ? <MenuItem value={`__default__:${defaultRpeNorm}`}>{lang === "es" ? `Default (${defaultRpeNorm})` : `Default (${defaultRpeNorm})`}</MenuItem> : null}
+                    {[6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10].map((value) => (
+                        <MenuItem key={value} value={String(value)}>{value}</MenuItem>
+                    ))}
+                </TextField>
+                <TextField fullWidth size="small" label={t("routines.load")} value={exercise.load ?? ""} onChange={(event) => onChangeLoad(event.target.value)} disabled={busy} placeholder={ph.load} />
+            </AppFormGrid>
+
+            {exercise.movementName ? (
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+                    Snapshot: <Box component="span" sx={{ fontFamily: "monospace" }}>{exercise.movementName}</Box>
+                </Typography>
+            ) : null}
+
+            <Box sx={{ mt: 1.5 }}>
+                <ExerciseAttachmentPicker
+                    title={lang === "es" ? "Media del ejercicio" : "Exercise media"}
+                    hint={lang === "es" ? "Selecciona media ya subida o agrega archivos pendientes antes de guardar." : "Select uploaded media or add pending files before saving."}
+                    emptyText={lang === "es" ? "Sin adjuntos enlazados." : "No linked attachments."}
+                    uploadAndAttachLabel={isThisUploading ? (lang === "es" ? "Subiendo…" : "Uploading…") : (lang === "es" ? "Agregar" : "Add")}
+                    attachmentOptions={attachmentOptions}
+                    selectedIds={selectedIds}
+                    pendingFiles={pendingFiles}
+                    disabled={busy}
+                    busy={isThisUploading}
+                    onToggle={onToggleAttachment}
+                    onPickFiles={onPickFiles}
+                    onRemovePending={onRemovePending}
+                />
+            </Box>
+
+            <AppActionRow align="right" sx={{ mt: 1.5 }}>
+                <Button type="button" variant="outlined" color="error" size="small" onClick={onRemove} disabled={busy}>
                     {t("routines.remove")}
                 </Button>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-                <div className="space-y-1 md:col-span-2 min-w-0">
-                    <label className="text-xs font-medium">{lang === "es" ? "Movimiento" : "Movement"}</label>
-
-                    <select
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={exercise.movementId ?? ""}
-                        disabled={busy || !hasMovements}
-                        onChange={(ev) => {
-                            const nextId = ev.target.value || "";
-                            if (!nextId) {
-                                onChangeMovement({ movementId: undefined, movementName: undefined });
-                                return;
-                            }
-                            const m = movementOptions!.find((x) => x.id === nextId);
-                            const snap = m?.name ?? "";
-                            onChangeMovement({ movementId: nextId, movementName: snap || undefined });
-                            if (snap) onChangeName(snap);
-                        }}
-                    >
-                        <option value="">
-                            {hasMovements
-                                ? lang === "es"
-                                    ? "Seleccionar movimiento…"
-                                    : "Select movement…"
-                                : lang === "es"
-                                    ? "No hay movimientos"
-                                    : "No movements available"}
-                        </option>
-
-                        {hasMovements
-                            ? movementOptions!.map((m) => (
-                                <option key={m.id} value={m.id}>
-                                    {m.name}
-                                </option>
-                            ))
-                            : null}
-                    </select>
-
-                    {exercise.movementName ? (
-                        <div className="text-[11px] text-muted-foreground wrap-break-words">
-                            {lang === "es" ? "Snapshot:" : "Snapshot:"}{" "}
-                            <span className="font-mono">{exercise.movementName}</span>
-                        </div>
-                    ) : null}
-                </div>
-
-                <div className="space-y-1 min-w-0">
-                    <label className="text-xs font-medium">{t("routines.exName")}</label>
-                    <input
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={exercise.name}
-                        onChange={(ev) => onChangeName(ev.target.value)}
-                        disabled={busy}
-                        placeholder={t("routines.exNamePh")}
-                    />
-                </div>
-
-                <div className="space-y-1 min-w-0">
-                    <label className="text-xs font-medium">{t("routines.exNotes")}</label>
-                    <input
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={exercise.notes ?? ""}
-                        onChange={(ev) => onChangeNotes(ev.target.value)}
-                        disabled={busy}
-                        placeholder={ph.exNotes}
-                    />
-                </div>
-
-                <div className="space-y-1 min-w-0">
-                    <label className="text-xs font-medium">{t("routines.sets")}</label>
-                    <input
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={exercise.sets ?? ""}
-                        onChange={(ev) => onChangeSets(ev.target.value)}
-                        disabled={busy}
-                        placeholder={ph.sets}
-                        inputMode="numeric"
-                    />
-                </div>
-
-                <div className="space-y-1 min-w-0">
-                    <label className="text-xs font-medium">{t("routines.reps")}</label>
-                    <input
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={exercise.reps ?? ""}
-                        onChange={(ev) => onChangeReps(ev.target.value)}
-                        disabled={busy}
-                        placeholder={ph.reps}
-                    />
-                </div>
-
-                <div className="space-y-1 min-w-0">
-                    <label className="text-xs font-medium">
-                        {lang === "es" ? "RPE (planeado)" : "Planned RPE"}
-                    </label>
-
-                    <select
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={plannedRpeSelectValue}
-                        disabled={busy}
-                        onChange={(ev) => {
-                            const v = ev.target.value;
-
-                            if (!v) {
-                                onChangeRpe("");
-                                return;
-                            }
-
-                            if (v.startsWith("__default__:")) {
-                                onChangeRpe("");
-                                return;
-                            }
-
-                            onChangeRpe(v);
-                        }}
-                    >
-                        <option value="">{lang === "es" ? "— (sin RPE)" : "— (no RPE)"}</option>
-
-                        {defaultRpeNorm != null ? (
-                            <option value={defaultRpeNorm}>
-                                {lang === "es"
-                                    ? `Por defecto (${defaultRpeNorm})`
-                                    : `Default (${defaultRpeNorm})`}
-                            </option>
-                        ) : null}
-
-                        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                            <option key={n} value={String(n)}>
-                                {n}
-                            </option>
-                        ))}
-                    </select>
-
-                    <div className="text-[11px] text-muted-foreground">
-                        {lang === "es"
-                            ? "Si eliges “Por defecto”, se usa el valor de Ajustes sin guardarlo en la rutina."
-                            : "If you pick “Default”, it uses your Settings value without saving it into the routine."}
-                    </div>
-                </div>
-
-                <div className="space-y-1 min-w-0">
-                    <label className="text-xs font-medium">{t("routines.load")}</label>
-                    <input
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={exercise.load ?? ""}
-                        onChange={(ev) => onChangeLoad(ev.target.value)}
-                        disabled={busy}
-                        placeholder={ph.load}
-                    />
-                </div>
-            </div>
-
-            <ExerciseAttachmentPicker
-                title={t("routines.exerciseAttachments")}
-                emptyText={t("routines.noAttachmentsToLink")}
-                hint={t("routines.attachmentsHint")}
-                uploadAndAttachLabel={lang === "es" ? "Seleccionar archivo(s)" : "Select file(s)"}
-                attachmentOptions={attachmentOptions}
-                selectedIds={selectedIds}
-                pendingFiles={pendingFiles}
-                onPickFiles={(files) => onPickFiles(Array.isArray(files) ? files : [])}
-                onRemovePending={onRemovePending}
-                busy={isThisUploading}
-                disabled={busy}
-                onToggle={onToggleAttachment}
-            />
-        </div>
+            </AppActionRow>
+        </AppCard>
     );
 }

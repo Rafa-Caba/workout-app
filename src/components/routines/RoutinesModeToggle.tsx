@@ -1,5 +1,8 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
+// src/components/routines/RoutinesModeToggle.tsx
+// MUI mode switch for routine form / JSON editing.
+
+import Button from "@mui/material/Button";
+import ButtonGroup from "@mui/material/ButtonGroup";
 import type { I18nKey } from "@/i18n/translations";
 
 type TFn = (key: I18nKey) => string;
@@ -13,26 +16,13 @@ type Props = {
 
 export function RoutinesModeToggle({ mode, busy, t, onModeChange }: Props) {
     return (
-        <div className="w-full min-w-0 flex flex-col sm:flex-row sm:items-center gap-2">
-            <Button
-                type="button"
-                className="w-full sm:w-auto whitespace-nowrap"
-                variant={mode === "form" ? "default" : "outline"}
-                onClick={() => onModeChange("form")}
-                disabled={busy}
-            >
+        <ButtonGroup variant="outlined" size="small" fullWidth sx={{ maxWidth: { sm: 320 } }}>
+            <Button sx={{ px: 2.5 }} variant={mode === "form" ? "contained" : "outlined"} onClick={() => onModeChange("form")} disabled={busy}>
                 {t("routines.modeForm")}
             </Button>
-
-            <Button
-                type="button"
-                className="w-full sm:w-auto whitespace-nowrap"
-                variant={mode === "json" ? "default" : "outline"}
-                onClick={() => onModeChange("json")}
-                disabled={busy}
-            >
+            <Button variant={mode === "json" ? "contained" : "outlined"} onClick={() => onModeChange("json")} disabled={busy}>
                 {t("routines.modeJson")}
             </Button>
-        </div>
+        </ButtonGroup>
     );
 }

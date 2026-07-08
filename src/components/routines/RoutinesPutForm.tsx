@@ -1,13 +1,21 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
+// src/components/routines/RoutinesPutForm.tsx
+// MUI routine form editor wrapper. Business logic stays in page/hooks/utils.
+
+import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 import type { I18nKey } from "@/i18n/translations";
 import type { AttachmentOption } from "@/utils/routines/attachments";
 import type { DayKey, DayPlan, ExerciseItem } from "@/utils/routines/plan";
 import type { RoutineUpsertBody } from "@/utils/routines/putBody";
 import { RoutinesDayEditor } from "@/components/routines/RoutinesDayEditor";
 import { useSettingsStore } from "@/state/settings.store";
-import { MovementOption } from "./RoutinesExerciseCard";
-import { cn } from "@/lib/utils";
+import { type MovementOption } from "./RoutinesExerciseCard";
+import { AppActionRow, AppCard, AppFormGrid, AppResponsiveTabs } from "@/components/mui";
 
 type TFn = (key: I18nKey) => string;
 
@@ -30,53 +38,38 @@ type Props = {
     lang: string;
     busy: boolean;
     isSaving: boolean;
-
     onSave: () => void;
-
     putBody: RoutineUpsertBody;
     onChangeTitle: (next: string) => void;
-
     splitPreset: string;
     splitCustom: string;
     splitPresets: SplitPreset[];
     onChangeSplitPreset: (next: string) => void;
     onChangeSplitCustom: (next: string) => void;
-
     dayKeys: readonly DayKey[];
     onTogglePlannedDay: (dayKey: string) => void;
-
     planBuilderTitle: string;
     planBuilderHint: string;
-
     dayTabItems: DayTabItem[];
     activeDay: DayKey;
     onSelectDay: (dayKey: DayKey) => void;
-
     activePlan: DayPlan;
     attachmentOptions: AttachmentOption[];
-
     exerciseUploadBusy: boolean;
     uploadingExercise: { dayKey: DayKey; exerciseId: string } | null;
-
     getPendingExerciseFiles: (exerciseId: string) => File[];
     onAddPendingExerciseFiles: (exerciseId: string, files: File[]) => void;
     onClearPendingExerciseFiles: (exerciseId: string, fileIndex?: number) => void;
-
     onAddExercise: (dayKey: DayKey) => void;
     onRemoveExercise: (dayKey: DayKey, idx: number) => void;
     onUpdatePlan: (dayKey: DayKey, patch: Partial<DayPlan>) => void;
     onUpdateExercise: (dayKey: DayKey, idx: number, patch: Partial<ExerciseItem>) => void;
-
     movementOptions?: MovementOption[];
-
     ph: Placeholders;
-
     debugPutBodyTitle: string;
     debugPutBodyData: unknown;
-
     debugPlansTitle: string;
     plans: DayPlan[];
-
     scrollRootEl?: HTMLElement | null;
 };
 
@@ -122,114 +115,78 @@ export function RoutinesPutForm({
     const planned = (putBody.plannedDays ?? []) as string[];
 
     return (
-        <div className="w-full min-w-0 space-y-4">
-            <div className="w-full min-w-0 rounded-xl border bg-primary/5 border-primary/10 p-4 space-y-4">
-                <div className="min-w-0 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                        <div className="text-sm font-semibold wrap-break-words">
-                            {lang === "es" ? "Editor de rutina" : "Routine editor"}
-                        </div>
-                        <div className="text-xs text-muted-foreground wrap-break-words">
-                            {lang === "es" ? "Edita el plan por día y guarda con PUT." : "Edit day plan and save with PUT."}
-                        </div>
-                    </div>
-
-                    <div className="w-full sm:w-auto">
-                        <Button
-                            onClick={onSave}
-                            disabled={busy || isSaving}
-                            className="h-9 w-full sm:w-auto whitespace-nowrap"
-                        >
-                            {lang === "es" ? "Guardar (PUT)" : "Save (PUT)"}
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                    <div className="space-y-1 min-w-0">
-                        <label className="text-xs font-medium">{t("routines.titleField")}</label>
-                        <input
-                            className="w-full rounded-md border bg-background px-3 py-2 text-base sm:text-sm"
-                            value={putBody.title ?? ""}
-                            onChange={(e) => onChangeTitle(e.target.value)}
+        <Box sx={{ display: "grid", gap: { xs: 1.5, md: 2.25 } }}>
+            <AppCard
+                title={lang === "es" ? "Editor de rutina" : "Routine editor"}
+                subtitle={lang === "es" ? "Edita el plan por día y guarda con PUT." : "Edit day plan and save with PUT."}
+                tone="accent"
+                action={<Button onClick={onSave} disabled={busy || isSaving} variant="contained">{lang === "es" ? "Guardar" : "Save"}</Button>}
+            >
+                <AppFormGrid columns={{ xs: 1, md: 2 }} gap={1.5}>
+                    <TextField
+                        fullWidth
+                        size="small"
+                        label={t("routines.titleField")}
+                        value={putBody.title ?? ""}
+                        onChange={(event) => onChangeTitle(event.target.value)}
+                        disabled={busy}
+                        placeholder={lang === "es" ? "Título" : "Title"}
+                    />
+                    <Box sx={{ display: "grid", gap: 1 }}>
+                        <TextField
+                            fullWidth
+                            select
+                            size="small"
+                            label={t("routines.splitField")}
+                            value={splitPreset}
+                            onChange={(event) => onChangeSplitPreset(event.target.value)}
                             disabled={busy}
-                            placeholder={lang === "es" ? "Título" : "Title"}
+                        >
+                            {splitPresets.map((preset) => (
+                                <MenuItem key={preset.value} value={preset.value}>
+                                    {t(preset.labelKey)}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            value={splitCustom}
+                            onChange={(event) => onChangeSplitCustom(event.target.value)}
+                            disabled={busy}
+                            placeholder={lang === "es" ? "Split personalizado (opcional)" : "Custom split (optional)"}
                         />
-                    </div>
+                    </Box>
+                </AppFormGrid>
 
-                    <div className="grid gap-2 min-w-0">
-                        <div className="space-y-1 min-w-0">
-                            <label className="text-xs font-medium">{t("routines.splitField")}</label>
-                            <select
-                                className="w-full rounded-md border bg-background px-3 py-2 text-base sm:text-sm"
-                                value={splitPreset}
-                                onChange={(e) => onChangeSplitPreset(e.target.value)}
-                                disabled={busy}
-                            >
-                                {splitPresets.map((p) => (
-                                    <option key={p.value} value={p.value}>
-                                        {t(p.labelKey)}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="space-y-1 min-w-0">
-                            <input
-                                className="w-full rounded-md border bg-background px-3 py-2 text-base sm:text-sm"
-                                value={splitCustom}
-                                onChange={(e) => onChangeSplitCustom(e.target.value)}
-                                disabled={busy}
-                                placeholder={lang === "es" ? "Split personalizado (opcional)" : "Custom split (optional)"}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="space-y-2 min-w-0">
-                    <div className="text-xs font-medium">{t("routines.plannedDays")}</div>
-                    <div className="flex flex-wrap gap-2">
-                        {dayKeys.map((d) => {
-                            const checked = planned.includes(d);
+                <Box sx={{ mt: 1.5 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.75, fontWeight: 800 }}>
+                        {t("routines.plannedDays")}
+                    </Typography>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                        {dayKeys.map((dayKey) => {
+                            const checked = planned.includes(dayKey);
                             return (
-                                <label
-                                    key={d}
-                                    className={cn(
-                                        "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm bg-background transition-colors",
-                                        checked && "border-primary/40 bg-primary/8 text-primary"
-                                    )}
-                                >
-                                    <input type="checkbox" checked={checked} onChange={() => onTogglePlannedDay(d)} disabled={busy} />
-                                    <span className="font-mono">{d}</span>
-                                </label>
+                                <FormControlLabel
+                                    key={dayKey}
+                                    control={<Checkbox checked={checked} onChange={() => onTogglePlannedDay(dayKey)} disabled={busy} size="small" />}
+                                    label={<Typography component="span" variant="body2" sx={{ fontFamily: "monospace", fontWeight: 800 }}>{dayKey}</Typography>}
+                                    sx={{ border: 1, borderColor: checked ? "primary.main" : "divider", borderRadius: 2, px: 1, m: 0, bgcolor: checked ? "action.selected" : "background.paper" }}
+                                />
                             );
                         })}
-                    </div>
-                </div>
-            </div>
+                    </Box>
+                </Box>
+            </AppCard>
 
-            <div className="w-full min-w-0 rounded-xl border bg-accent/10 border-accent/50 p-4 space-y-3">
-                <div className="min-w-0">
-                    <div className="text-sm font-semibold wrap-break-words">{planBuilderTitle}</div>
-                    <div className="text-xs text-muted-foreground wrap-break-words">{planBuilderHint}</div>
-                </div>
-
-                <div className="-mx-1 px-1 overflow-x-auto">
-                    <div className="flex items-center gap-2 w-max">
-                        {dayTabItems.map((d) => (
-                            <Button
-                                key={d.dayKey}
-                                type="button"
-                                variant={d.dayKey === activeDay ? "default" : "outline"}
-                                className="h-8 whitespace-nowrap"
-                                onClick={() => onSelectDay(d.dayKey)}
-                                disabled={busy}
-                            >
-                                {d.label}
-                            </Button>
-                        ))}
-                    </div>
-                </div>
+            <AppCard title={planBuilderTitle} subtitle={planBuilderHint} tone="soft">
+                <AppResponsiveTabs
+                    ariaLabel="Routine editor day tabs"
+                    value={activeDay}
+                    onChange={(value) => onSelectDay(value as DayKey)}
+                    tabs={dayTabItems.map((item) => ({ value: item.dayKey, label: item.label, disabled: busy }))}
+                    sx={{ borderBottom: 0, mb: 1.5 }}
+                />
 
                 <RoutinesDayEditor
                     activePlan={activePlan}
@@ -250,37 +207,27 @@ export function RoutinesPutForm({
                     movementOptions={movementOptions}
                 />
 
-                <div className="pt-1 flex justify-end">
-                    <Button
-                        type="button"
-                        onClick={onSave}
-                        disabled={busy || isSaving}
-                        className="h-9 w-full sm:w-auto whitespace-nowrap"
-                    >
-                        {lang === "es" ? "Guardar (PUT)" : "Save (PUT)"}
+                <AppActionRow align="right" sx={{ mt: 1.5 }}>
+                    <Button type="button" onClick={onSave} disabled={busy || isSaving} variant="contained">
+                        {lang === "es" ? "Guardar" : "Save"}
                     </Button>
-                </div>
-            </div>
+                </AppActionRow>
+            </AppCard>
 
-            {showJson && (
+            {showJson ? (
                 <>
-                    <details className="w-full min-w-0 rounded-xl border bg-card p-4">
-                        <summary className="cursor-pointer select-none text-sm font-semibold">{debugPutBodyTitle}</summary>
-                        <pre className="mt-3 whitespace-pre-wrap wrap-break-words text-xs text-muted-foreground">
-                            {typeof debugPutBodyData === "string"
-                                ? debugPutBodyData
-                                : JSON.stringify(debugPutBodyData, null, 2)}
-                        </pre>
-                    </details>
-
-                    <details className="w-full min-w-0 rounded-xl border bg-card p-4">
-                        <summary className="cursor-pointer select-none text-sm font-semibold">{debugPlansTitle}</summary>
-                        <pre className="mt-3 whitespace-pre-wrap wrap-break-words text-xs text-muted-foreground">
+                    <AppCard title={debugPutBodyTitle} padding="sm">
+                        <Box component="pre" sx={{ m: 0, whiteSpace: "pre-wrap", overflow: "auto", color: "text.secondary", fontSize: 12 }}>
+                            {typeof debugPutBodyData === "string" ? debugPutBodyData : JSON.stringify(debugPutBodyData, null, 2)}
+                        </Box>
+                    </AppCard>
+                    <AppCard title={debugPlansTitle} padding="sm">
+                        <Box component="pre" sx={{ m: 0, whiteSpace: "pre-wrap", overflow: "auto", color: "text.secondary", fontSize: 12 }}>
                             {JSON.stringify(plans, null, 2)}
-                        </pre>
-                    </details>
+                        </Box>
+                    </AppCard>
                 </>
-            )}
-        </div>
+            ) : null}
+        </Box>
     );
 }

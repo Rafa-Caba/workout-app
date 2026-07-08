@@ -1,6 +1,8 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
+// src/components/routines/RoutinesDayTabs.tsx
+// MUI day selector for routine editor days.
+
 import type { DayKey } from "@/utils/routines/plan";
+import { AppResponsiveTabs } from "@/components/mui";
 
 type Props = {
     items: Array<{ dayKey: DayKey; label: string }>;
@@ -11,25 +13,12 @@ type Props = {
 
 export function RoutinesDayTabs({ items, activeDay, busy, onSelectDay }: Props) {
     return (
-        <div className="w-full min-w-0 -mx-1 px-1 overflow-x-auto">
-            <div className="flex items-center gap-2 w-max min-w-full flex-nowrap sm:flex-wrap sm:min-w-0 sm:w-full">
-                {items.map((it) => {
-                    const active = it.dayKey === activeDay;
-
-                    return (
-                        <Button
-                            key={it.dayKey}
-                            type="button"
-                            variant={active ? "default" : "outline"}
-                            className="h-9 whitespace-nowrap shrink-0"
-                            onClick={() => onSelectDay(it.dayKey)}
-                            disabled={busy}
-                        >
-                            {it.label}
-                        </Button>
-                    );
-                })}
-            </div>
-        </div>
+        <AppResponsiveTabs
+            ariaLabel="Routine day tabs"
+            value={activeDay}
+            onChange={(value) => onSelectDay(value as DayKey)}
+            tabs={items.map((item) => ({ value: item.dayKey, label: item.label, disabled: busy }))}
+            sx={{ borderBottom: 0 }}
+        />
     );
 }

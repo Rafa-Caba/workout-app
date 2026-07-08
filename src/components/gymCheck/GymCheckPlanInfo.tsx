@@ -1,70 +1,68 @@
 // src/components/gymCheck/GymCheckPlanInfo.tsx
-import * as React from "react";
+// MUI summary card for the active Gym Check day plan.
+
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
+import { AppCard } from "@/components/mui";
 import type { DayKey, DayPlan } from "@/utils/routines/plan";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
+
+type Props = {
+    lang: "es" | "en";
+    activeDay: DayKey;
+    dayLabels: Record<DayKey, { es: string; en: string }>;
+    activePlan: DayPlan;
+};
 
 function formatNullable(value: unknown): string {
     if (value === null || value === undefined || value === "") return "—";
     return String(value);
 }
 
-function getTagsText(plan: DayPlan): string {
-    const p: any = plan as any;
-
-    if (typeof p.tagsCsv === "string") return p.tagsCsv.trim() || "—";
-
-    if (Array.isArray(p.tags)) {
-        const joined = p.tags.filter((x: any) => typeof x === "string" && x.trim()).join(", ");
-        return joined || "—";
-    }
-
-    if (typeof p.tags === "string") return p.tags.trim() || "—";
-
-    return "—";
+function InfoRow(props: { label: string; value: string }) {
+    return (
+        <Box
+            sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 1.5,
+                py: 0.7,
+                borderBottom: 1,
+                borderColor: "divider",
+                flexWrap: "wrap",
+            }}
+        >
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 750 }}>
+                {props.label}
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 800, textAlign: "right", minWidth: 0 }}>
+                {props.value}
+            </Typography>
+        </Box>
+    );
 }
 
-type Props = {
-    lang: "es" | "en";
-    activeDay: DayKey;
-    dayLabels: Record<string, { es: string; en: string }>;
-    activePlan: DayPlan;
-};
-
-export function GymCheckPlanInfo(props: Props) {
-    const { lang, activeDay, dayLabels, activePlan } = props;
+export function GymCheckPlanInfo({ lang, activeDay, dayLabels, activePlan }: Props) {
+    const exerciseCount = activePlan.exercises?.length ?? 0;
+    const title = lang === "es" ? "Plan del día" : "Day plan";
+    const dayLabel = lang === "es" ? dayLabels[activeDay].es : dayLabels[activeDay].en;
 
     return (
-        <Card className={cn("w-full min-w-0", themedPanelCard)}>
-            <CardHeader className="min-w-0">
-                <CardTitle className="min-w-0 wrap-break-words">{lang === "es" ? "Plan (info)" : "Plan (info)"}</CardTitle>
-            </CardHeader>
-
-            <CardContent className="min-w-0 space-y-2">
-                <div className="min-w-0 text-sm font-semibold wrap-break-words">
-                    {lang === "es" ? `Día ${dayLabels[activeDay].es}` : `Day ${dayLabels[activeDay].en}`}
-                </div>
-
-                <div className={cn("min-w-0 rounded-xl border p-3 text-xs text-muted-foreground space-y-1", themedNestedCard)}>
-                    <div className="min-w-0 wrap-break-words">
-                        <span className="font-semibold">{lang === "es" ? "Tipo" : "Type"}:</span>{" "}
-                        {formatNullable((activePlan as any).sessionType)}
-                    </div>
-                    <div className="min-w-0 wrap-break-words">
-                        <span className="font-semibold">{lang === "es" ? "Enfoque" : "Focus"}:</span>{" "}
-                        {formatNullable((activePlan as any).focus)}
-                    </div>
-                    <div className="min-w-0 wrap-break-words">
-                        <span className="font-semibold">Tags:</span>{" "}
-                        <span className="wrap-break-words">{getTagsText(activePlan)}</span>
-                    </div>
-                    <div className="min-w-0 wrap-break-words">
-                        <span className="font-semibold">{lang === "es" ? "Notas" : "Notes"}:</span>{" "}
-                        <span className="wrap-break-words">{formatNullable((activePlan as any).notes)}</span>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+        <AppCard
+            title={title}
+            subtitle={lang === "es" ? "Resumen del plan asignado." : "Assigned plan summary."}
+            action={<Chip size="small" color="primary" label={dayLabel} />}
+            padding="md"
+        >
+            <Box sx={{ display: "grid", gap: 0.2 }}>
+                <InfoRow label={lang === "es" ? "Tipo" : "Type"} value={formatNullable(activePlan.sessionType)} />
+                <InfoRow label={lang === "es" ? "Focus" : "Focus"} value={formatNullable(activePlan.focus)} />
+                <InfoRow label={lang === "es" ? "Ejercicios" : "Exercises"} value={String(exerciseCount)} />
+                <InfoRow
+                    label={lang === "es" ? "Tags" : "Tags"}
+                    value={Array.isArray(activePlan.tags) && activePlan.tags.length > 0 ? activePlan.tags.join(", ") : "—"}
+                />
+            </Box>
+        </AppCard>
     );
 }

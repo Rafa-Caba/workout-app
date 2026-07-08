@@ -1,8 +1,12 @@
 import React from "react";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/PageHeader";
-import { EmptyState } from "@/components/EmptyState";
-import { cn } from "@/lib/utils";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { AppCard, AppEmptyState, AppPage, AppResponsiveTabs } from "@/components/mui";
 
 import { toWeekKey, weekKeyToStartDate } from "@/utils/weekKey";
 import { startOfISOWeek, endOfISOWeek, addWeeks, format, parseISO, isValid } from "date-fns";
@@ -195,17 +199,21 @@ export function RoutinesPage() {
     const { t, lang } = useI18n();
 
     const user = useAuthStore((s) => s.user);
-    if (user?.coachMode === "TRAINEE") return (
-        <div className="flex align-middle items-center flex-col gap-3">
-            <h1 className="font-extrabold text-3xl">{lang == 'es' ? "- Página no permitida -" : "- Restricted page -"}</h1>
-            <p>
-                {lang == 'es'
-                    ? "Tu entrenador te asignara tu rutina y pronto lo veras en Gym Check"
-                    : "Your trainer will assign you your session rutine shortly and will be visible on the Gym Check."
-                }
-            </p>
-        </div>
-    );
+    if (user?.coachMode === "TRAINEE") {
+        return (
+            <AppPage maxWidth="md">
+                <AppEmptyState
+                    title={lang === "es" ? "Página no permitida" : "Restricted page"}
+                    description={
+                        lang === "es"
+                            ? "Tu entrenador te asignará tu rutina y pronto la verás en Gym Check."
+                            : "Your trainer will assign your routine shortly and it will be visible in Gym Check."
+                    }
+                    variant="inline"
+                />
+            </AppPage>
+        );
+    }
 
     const today = React.useMemo(() => new Date(), []);
     const [weekDate, setWeekDate] = React.useState(() => format(today, "yyyy-MM-dd"));
@@ -445,20 +453,6 @@ export function RoutinesPage() {
     const [statusFilter, setStatusFilter] = React.useState<WorkoutRoutineStatus>("active");
     const listQuery = useRoutineWeeksList(statusFilter);
     const weeksList = listQuery.data ?? [];
-
-    React.useEffect(() => {
-        if (weeksList.length === 0) return;
-
-        setRunWeekKey((prev) => {
-            const exists = weeksList.some((w) => w.weekKey === prev);
-            if (exists) return prev;
-
-            const first = weeksList[0].weekKey;
-            const start = weekKeyToStartDate(first);
-            if (start) setWeekDate(format(start, "yyyy-MM-dd"));
-            return first;
-        });
-    }, [weeksList, setWeekDate]);
 
     const movementsQuery = useMovements();
     const movementOptions = React.useMemo(
@@ -820,105 +814,83 @@ export function RoutinesPage() {
     const isActiveTab = statusFilter === "active";
     const isArchivedTab = statusFilter === "archived";
 
-    const statusTabClass = (active: boolean) =>
-        cn(
-            "h-9 px-3 rounded-md border text-sm inline-flex items-center gap-2 transition-colors",
-            active
-                ? "border-primary bg-primary/10 text-primary shadow-sm"
-                : "border-border text-muted-foreground hover:bg-muted/60"
-        );
+    const runWeekExistsInList = weeksList.some((week) => week.weekKey === runWeekKey);
+    const showCurrentWeekInJumpSelect = !listQuery.isFetching && !runWeekExistsInList;
 
     return (
-        <div className="space-y-5 sm:space-y-6">
-            <PageHeader
-                title={t("routines.title")}
+        <AppPage
+            title={t("routines.title")}
+            subtitle={
+                routine
+                    ? `${t("routines.subtitle")} • ${toStatusLabel(status, lang)} • ${weekRangeLabel}`
+                    : t("routines.subtitle")
+            }
+            actions={<RoutinesModeToggle mode={mode} busy={busy} t={t} onModeChange={setMode} />}
+            maxWidth="xl"
+        >
+            <AppCard
+                title={lang === "es" ? "Rutinas" : "Routines"}
                 subtitle={
-                    routine
-                        ? `${t("routines.subtitle")} • ${toStatusLabel(status as any, lang)} • ${weekRangeLabel}`
-                        : t("routines.subtitle")
+                    listQuery.isFetching
+                        ? lang === "es" ? "Cargando semanas..." : "Loading weeks..."
+                        : lang === "es"
+                            ? `Mostrando ${weeksList.length} semana(s) ${statusFilter === "active" ? "activas" : "archivadas"}`
+                            : `Showing ${weeksList.length} ${statusFilter} week(s)`
                 }
-                right={
-                    <div className="w-full sm:w-auto">
-                        <RoutinesModeToggle mode={mode} busy={busy} t={t} onModeChange={setMode} />
-                    </div>
-                }
-            />
+                action={<Chip size="small" label={statusFilter === "active" ? (lang === "es" ? "Activas" : "Active") : (lang === "es" ? "Archivadas" : "Archived")} />}
+            >
+                <Box sx={{ display: "grid", gap: 1.5 }}>
+                    <AppResponsiveTabs
+                        ariaLabel="Routine status tabs"
+                        value={statusFilter}
+                        onChange={(value) => setStatusFilter(value === "archived" ? "archived" : "active")}
+                        tabs={[
+                            { value: "active", label: lang === "es" ? "Activas" : "Active", disabled: busy },
+                            { value: "archived", label: lang === "es" ? "Archivadas" : "Archived", disabled: busy },
+                        ]}
+                        sx={{ borderBottom: 0 }}
+                    />
 
-            {/* Status tabs (Activas/Archivadas) */}
-            <div className="rounded-xl border bg-card p-3 sm:p-4 flex flex-col gap-3">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                    <div className="text-sm font-medium">
-                        {lang === "es" ? "Rutinas" : "Routines"}
-                    </div>
-
-                    {/* Mobile: allow wrap/scroll if needed */}
-                    <div className="-mx-1 px-1 overflow-x-auto">
-                        <div className="flex w-max sm:w-auto gap-2">
-                            <button
-                                type="button"
-                                className={statusTabClass(isActiveTab)}
-                                disabled={busy}
-                                onClick={() => setStatusFilter("active")}
-                            >
-                                {lang === "es" ? "Activas" : "Active"}
-                            </button>
-
-                            <button
-                                type="button"
-                                className={statusTabClass(isArchivedTab)}
-                                disabled={busy}
-                                onClick={() => setStatusFilter("archived")}
-                            >
-                                {lang === "es" ? "Archivadas" : "Archived"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div className="text-xs text-muted-foreground">
-                        {listQuery.isFetching
-                            ? lang === "es"
-                                ? "Cargando semanas..."
-                                : "Loading weeks..."
-                            : lang === "es"
-                                ? `Mostrando ${weeksList.length} semana(s) ${statusFilter === "active" ? "activas" : "archivadas"}`
-                                : `Showing ${weeksList.length} ${statusFilter} week(s)`}
-                    </div>
-
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
-                        <div className="text-xs font-medium">
-                            {lang === "es" ? "Saltar a semana:" : "Jump to week:"}
-                        </div>
-
-                        <select
-                            className="h-9 w-full sm:w-auto rounded-md border bg-background px-3 text-sm"
+                    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "auto minmax(240px, 420px)" }, gap: 1.25, alignItems: "center" }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 750 }}>
+                            {lang === "es" ? "Saltar a semana" : "Jump to week"}
+                        </Typography>
+                        <TextField
+                            fullWidth
+                            select
+                            size="small"
                             value={runWeekKey}
-                            disabled={busy || listQuery.isFetching || weeksList.length === 0}
-                            onChange={(e) => {
-                                const wk = e.target.value;
+                            disabled={busy || listQuery.isFetching}
+                            onChange={(event) => {
+                                const wk = event.target.value;
                                 setRunWeekKey(wk);
-
                                 const start = weekKeyToStartDate(wk);
                                 if (start) setWeekDate(format(start, "yyyy-MM-dd"));
                             }}
                         >
+                            {showCurrentWeekInJumpSelect ? (
+                                <MenuItem value={runWeekKey}>
+                                    {lang === "es"
+                                        ? `${runWeekKey} • Semana seleccionada sin rutina`
+                                        : `${runWeekKey} • Selected week has no routine`}
+                                </MenuItem>
+                            ) : null}
+
                             {weeksList.length === 0 ? (
-                                <option value={runWeekKey}>
-                                    {lang === "es" ? "Sin semanas" : "No weeks"}
-                                </option>
+                                <MenuItem value={runWeekKey}>
+                                    {lang === "es" ? `${runWeekKey} • Sin semanas guardadas` : `${runWeekKey} • No saved weeks`}
+                                </MenuItem>
                             ) : (
-                                weeksList.map((w) => (
-                                    <option key={w.weekKey} value={w.weekKey}>
-                                        {w.weekKey} • {w.range.from} → {w.range.to}
-                                        {w.title ? ` • ${w.title}` : ""}
-                                    </option>
+                                weeksList.map((week) => (
+                                    <MenuItem key={week.weekKey} value={week.weekKey}>
+                                        {week.weekKey} • {week.range.from} → {week.range.to}{week.title ? ` • ${week.title}` : ""}
+                                    </MenuItem>
                                 ))
                             )}
-                        </select>
-                    </div>
-                </div>
-            </div>
+                        </TextField>
+                    </Box>
+                </Box>
+            </AppCard>
 
             {showEditorArea ? (
                 <>
@@ -1000,9 +972,10 @@ export function RoutinesPage() {
                     ) : null}
 
                     {showNoRoutine ? (
-                        <EmptyState
+                        <AppEmptyState
                             title={t("routines.noRoutineTitle")}
                             description={t("routines.noRoutineDesc")}
+                            variant="inline"
                         />
                     ) : null}
 
@@ -1041,7 +1014,7 @@ export function RoutinesPage() {
             ) : null}
 
             {!showEditorArea && listEmpty ? (
-                <EmptyState
+                <AppEmptyState
                     title={
                         lang === "es"
                             ? statusFilter === "archived"
@@ -1056,8 +1029,9 @@ export function RoutinesPage() {
                             ? "Crea una rutina o cambia el filtro."
                             : "Create a routine or switch the filter."
                     }
+                    variant="inline"
                 />
             ) : null}
-        </div>
+        </AppPage>
     );
 }

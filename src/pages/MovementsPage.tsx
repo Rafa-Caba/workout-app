@@ -411,7 +411,7 @@ export function MovementsPage() {
                                             <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1, alignItems: "flex-start" }}>
                                                 <Box sx={{ minWidth: 0 }}>
                                                     <Typography variant="subtitle1" sx={{ fontWeight: 800 }} noWrap>{movement.name}</Typography>
-                                                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", overflowWrap: "anywhere" }}>id: {movement.id}</Typography>
+                                                    {/* <Typography variant="caption" color="text.secondary" sx={{ display: "block", overflowWrap: "anywhere" }}>id: {movement.id}</Typography> */}
                                                 </Box>
                                                 <Chip size="small" color={movement.isActive ? "success" : "default"} label={movement.isActive ? "Activo" : "Inactivo"} />
                                             </Box>

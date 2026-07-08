@@ -46,6 +46,7 @@ export function MediaCard({
     const isVideo = type === "video";
 
     const title = item.originalName?.trim() || item.publicId || t("media.itemFallback");
+    const showFooter = showTitle || showMetaInfo;
 
     return (
         <ButtonBase
@@ -114,42 +115,44 @@ export function MediaCard({
                 )}
             </Box>
 
-            <Box sx={{ minWidth: 0, flex: 1, p: { xs: 1.25, md: 1.5 } }}>
-                {showTitle ? (
-                    <Typography
-                        variant="body2"
-                        sx={{
-                            fontWeight: 750,
-                            lineHeight: 1.25,
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                            overflowWrap: "anywhere",
-                        }}
-                    >
-                        {title}
-                    </Typography>
-                ) : null}
+            {showFooter ? (
+                <Box sx={{ minWidth: 0, flex: 1, p: { xs: 1.25, md: 1.5 } }}>
+                    {showTitle ? (
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                fontWeight: 750,
+                                lineHeight: 1.25,
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                overflowWrap: "anywhere",
+                            }}
+                        >
+                            {title}
+                        </Typography>
+                    ) : null}
 
-                {showMetaInfo ? (
-                    <Box
-                        sx={{
-                            mt: showTitle ? 1 : 0,
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: 0.5,
-                            minWidth: 0,
-                        }}
-                    >
-                        <Chip label={type} size="small" />
-                        {item.format ? <Chip label={item.format} size="small" /> : null}
-                        {item.date ? <Chip label={item.date} size="small" /> : null}
-                        {item.sessionType ? <Chip label={item.sessionType} size="small" /> : null}
-                        {item.source ? <Chip label={`src:${item.source}`} size="small" /> : null}
-                    </Box>
-                ) : null}
-            </Box>
+                    {showMetaInfo ? (
+                        <Box
+                            sx={{
+                                mt: showTitle ? 1 : 0,
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 0.5,
+                                minWidth: 0,
+                            }}
+                        >
+                            <Chip label={type} size="small" />
+                            {item.format ? <Chip label={item.format} size="small" /> : null}
+                            {item.date ? <Chip label={item.date} size="small" /> : null}
+                            {item.sessionType ? <Chip label={item.sessionType} size="small" /> : null}
+                            {item.source ? <Chip label={`src:${item.source}`} size="small" /> : null}
+                        </Box>
+                    ) : null}
+                </Box>
+            ) : null}
         </ButtonBase>
     );
 }

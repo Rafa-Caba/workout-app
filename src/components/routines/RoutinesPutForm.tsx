@@ -179,7 +179,7 @@ export function RoutinesPutForm({
                 </Box>
             </AppCard>
 
-            <AppCard title={planBuilderTitle} subtitle={planBuilderHint} tone="soft">
+            <AppCard title={planBuilderTitle} subtitle={planBuilderHint}>
                 <AppResponsiveTabs
                     ariaLabel="Routine editor day tabs"
                     value={activeDay}

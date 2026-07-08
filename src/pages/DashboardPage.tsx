@@ -123,7 +123,6 @@ export function DashboardPage() {
                         {t("dashboard.last7.range")} {d.range.from} → {d.range.to}
                     </>
                 }
-                tone="soft"
             >
                 <Box
                     sx={{

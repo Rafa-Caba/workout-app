@@ -1,28 +1,27 @@
+// src/pages/PlanVsActualPage.tsx
+// MUI Plan vs Real page. Keeps usePlanVsActual and backend contract unchanged.
+
 import * as React from "react";
-import { format, startOfISOWeek, endOfISOWeek, addWeeks } from "date-fns";
+import { addWeeks, endOfISOWeek, format, startOfISOWeek } from "date-fns";
 import { toast } from "sonner";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 
-import { Button } from "@/components/ui/button";
-import { toWeekKey, weekKeyToStartDate } from "@/utils/weekKey";
-import { usePlanVsActual } from "@/hooks/usePlanVsActual";
 import type { ApiError } from "@/api/httpErrors";
-
-import { PageHeader } from "@/components/PageHeader";
 import { JsonDetails } from "@/components/JsonDetails";
-import { EmptyState } from "@/components/EmptyState";
-import { StatCard } from "@/components/StatCard";
+import { AppCard, AppEmptyState, AppMetricCard, AppPage, AppToolbar } from "@/components/mui";
+import { usePlanVsActual } from "@/hooks/usePlanVsActual";
 import { useI18n } from "@/i18n/I18nProvider";
-
-function isRecord(v: unknown): v is Record<string, unknown> {
-    return typeof v === "object" && v !== null;
-}
-
-function toastApiError(e: unknown, fallback: string) {
-    const err = e as Partial<ApiError> | undefined;
-    const msg = err?.message ?? fallback;
-    const details = err?.details ? JSON.stringify(err.details, null, 2) : undefined;
-    toast.error(msg, { description: details });
-}
+import { toWeekKey, weekKeyToStartDate } from "@/utils/weekKey";
 
 type GymCheckSummary = {
     durationMin: number | null;
@@ -44,8 +43,6 @@ type PvaDay = {
         sessions: Array<{ id: string; type: string }>;
     } | null;
     status: string;
-
-    // added by mergePlanVsActualPlanned
     gymCheck?: GymCheckSummary;
 };
 
@@ -56,19 +53,95 @@ type PlanVsActualResponse = {
     days: PvaDay[];
 };
 
-function isPlanVsActualResponse(v: unknown): v is PlanVsActualResponse {
-    if (!isRecord(v)) return false;
-    if (typeof (v as any).weekKey !== "string") return false;
-    if (!isRecord((v as any).range)) return false;
-    if (typeof (v as any).range.from !== "string" || typeof (v as any).range.to !== "string") return false;
-    if (typeof (v as any).hasRoutineTemplate !== "boolean") return false;
-    if (!Array.isArray((v as any).days)) return false;
-    return true;
+type PvaStatusKey =
+    | "pva.status.done"
+    | "pva.status.rest"
+    | "pva.status.missed"
+    | "pva.status.extra"
+    | "pva.status.unknown";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null;
 }
 
-function statusKey(
-    status: string
-): "pva.status.done" | "pva.status.rest" | "pva.status.missed" | "pva.status.extra" | "pva.status.unknown" {
+function isStringArray(value: unknown): value is string[] {
+    return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isGymCheckSummary(value: unknown): value is GymCheckSummary {
+    if (!isRecord(value)) return false;
+
+    const durationMin = value.durationMin;
+    const notes = value.notes;
+    const totalPlannedExercises = value.totalPlannedExercises;
+    const doneExercises = value.doneExercises;
+    const hasAnyCheck = value.hasAnyCheck;
+
+    return (
+        (durationMin === null || typeof durationMin === "number") &&
+        (notes === null || typeof notes === "string") &&
+        typeof totalPlannedExercises === "number" &&
+        typeof doneExercises === "number" &&
+        typeof hasAnyCheck === "boolean"
+    );
+}
+
+function isPvaDay(value: unknown): value is PvaDay {
+    if (!isRecord(value)) return false;
+
+    const planned = value.planned;
+    const actual = value.actual;
+    const gymCheck = value.gymCheck;
+
+    const plannedOk =
+        planned === null ||
+        (isRecord(planned) &&
+            (planned.sessionType === null || typeof planned.sessionType === "string") &&
+            (planned.focus === null || typeof planned.focus === "string") &&
+            (planned.tags === null || isStringArray(planned.tags)));
+
+    const actualOk =
+        actual === null ||
+        (isRecord(actual) &&
+            Array.isArray(actual.sessions) &&
+            actual.sessions.every(
+                (session) =>
+                    isRecord(session) &&
+                    typeof session.id === "string" &&
+                    typeof session.type === "string"
+            ));
+
+    const gymCheckOk = gymCheck === undefined || isGymCheckSummary(gymCheck);
+
+    return (
+        typeof value.date === "string" &&
+        typeof value.dayKey === "string" &&
+        plannedOk &&
+        actualOk &&
+        typeof value.status === "string" &&
+        gymCheckOk
+    );
+}
+
+function isPlanVsActualResponse(value: unknown): value is PlanVsActualResponse {
+    if (!isRecord(value)) return false;
+    if (typeof value.weekKey !== "string") return false;
+    if (!isRecord(value.range)) return false;
+    if (typeof value.range.from !== "string" || typeof value.range.to !== "string") return false;
+    if (typeof value.hasRoutineTemplate !== "boolean") return false;
+    if (!Array.isArray(value.days)) return false;
+
+    return value.days.every(isPvaDay);
+}
+
+function toastApiError(error: unknown, fallback: string) {
+    const maybeApiError = error as Partial<ApiError> | undefined;
+    const message = maybeApiError?.message ?? fallback;
+    const details = maybeApiError?.details ? JSON.stringify(maybeApiError.details, null, 2) : undefined;
+    toast.error(message, { description: details });
+}
+
+function statusKey(status: string): PvaStatusKey {
     switch (status) {
         case "done":
             return "pva.status.done";
@@ -81,6 +154,13 @@ function statusKey(
         default:
             return "pva.status.unknown";
     }
+}
+
+function statusColor(status: string): "success" | "default" | "warning" | "primary" {
+    if (status === "done") return "success";
+    if (status === "missed") return "warning";
+    if (status === "extra") return "primary";
+    return "default";
 }
 
 function formatGymSummary(gym: GymCheckSummary | undefined, lang: string) {
@@ -99,10 +179,15 @@ function formatGymSummary(gym: GymCheckSummary | undefined, lang: string) {
     }
 
     const notes = gym.notes?.trim() ? gym.notes.trim() : null;
+
     return {
         headline: pieces.length ? pieces.join(" • ") : lang === "es" ? "Registrado" : "Recorded",
         notes,
     };
+}
+
+function formatNumber(value: number): string {
+    return Number(value.toFixed(2)).toString();
 }
 
 export function PlanVsActualPage() {
@@ -111,37 +196,29 @@ export function PlanVsActualPage() {
 
     const [weekDate, setWeekDate] = React.useState(() => format(today, "yyyy-MM-dd"));
     const derivedWeekKey = React.useMemo(() => {
-        const d = new Date(`${weekDate}T00:00:00`);
-        return toWeekKey(d);
+        const date = new Date(`${weekDate}T00:00:00`);
+        return toWeekKey(date);
     }, [weekDate]);
 
-    // auto-load when picker changes (debounced)
     const [runWeekKey, setRunWeekKey] = React.useState(() => toWeekKey(today));
     const query = usePlanVsActual(runWeekKey);
-
-    // Toast control: only when user-triggered
     const lastRunRef = React.useRef<string>("");
     const didMountRef = React.useRef(false);
 
-    // Errors
     React.useEffect(() => {
         if (query.isError) toastApiError(query.error, t("pva.toast.loadFail"));
     }, [query.isError, query.error, t]);
 
-    // Success toast only if it was a user-triggered load/refetch
     React.useEffect(() => {
         if (!query.isSuccess) return;
         if (lastRunRef.current === `week:${runWeekKey}`) toast.success(t("pva.toast.loaded"));
     }, [query.isSuccess, runWeekKey, t]);
 
-    // Debounced auto-run on weekDate change (like Day/Weeks)
     React.useEffect(() => {
-        // avoid double-run on initial mount
         if (!didMountRef.current) {
             didMountRef.current = true;
-            // ensure initial runWeekKey matches initial derivedWeekKey without extra toast
             setRunWeekKey(derivedWeekKey);
-            lastRunRef.current = ""; // silent
+            lastRunRef.current = "";
             return;
         }
 
@@ -154,241 +231,213 @@ export function PlanVsActualPage() {
     }, [derivedWeekKey]);
 
     const weekRangeLabel = React.useMemo(() => {
-        const d = new Date(`${weekDate}T00:00:00`);
-        const start = startOfISOWeek(d);
-        const end = endOfISOWeek(d);
-        return `${format(start, "MMM d, yyyy")} → ${format(end, "MMM d, yyyy")}`;
+        const date = new Date(`${weekDate}T00:00:00`);
+        return `${format(startOfISOWeek(date), "MMM d, yyyy")} → ${format(endOfISOWeek(date), "MMM d, yyyy")}`;
     }, [weekDate]);
 
     function goPrevWeek() {
-        const d = new Date(`${weekDate}T00:00:00`);
-        setWeekDate(format(addWeeks(d, -1), "yyyy-MM-dd"));
-        // auto-run will happen via effect
+        const date = new Date(`${weekDate}T00:00:00`);
+        setWeekDate(format(addWeeks(date, -1), "yyyy-MM-dd"));
     }
 
     function goNextWeek() {
-        const d = new Date(`${weekDate}T00:00:00`);
-        setWeekDate(format(addWeeks(d, 1), "yyyy-MM-dd"));
-        // auto-run will happen via effect
+        const date = new Date(`${weekDate}T00:00:00`);
+        setWeekDate(format(addWeeks(date, 1), "yyyy-MM-dd"));
     }
 
     function syncToLoadedWeek() {
         const start = weekKeyToStartDate(runWeekKey);
         if (!start) return;
         setWeekDate(format(start, "yyyy-MM-dd"));
-        // auto-run will happen via effect
     }
 
     function refetch() {
         lastRunRef.current = `week:${runWeekKey}`;
-        query.refetch();
+        void query.refetch();
     }
 
-    const pva: PlanVsActualResponse | null = React.useMemo(() => {
-        return isPlanVsActualResponse(query.data) ? (query.data as PlanVsActualResponse) : null;
+    const pva = React.useMemo<PlanVsActualResponse | null>(() => {
+        return isPlanVsActualResponse(query.data) ? query.data : null;
     }, [query.data]);
 
     const summary = React.useMemo(() => {
         if (!pva) return null;
 
         const total = pva.days.length;
-        const done = pva.days.filter((d) => d.status === "done").length;
-        const rest = pva.days.filter((d) => d.status === "rest").length;
-        const extra = pva.days.filter((d) => d.status === "extra").length;
-
+        const done = pva.days.filter((day) => day.status === "done").length;
+        const rest = pva.days.filter((day) => day.status === "rest").length;
+        const extra = pva.days.filter((day) => day.status === "extra").length;
         const plannedCount = pva.days.filter(
-            (d) => d.planned?.sessionType || d.planned?.focus || (d.planned?.tags?.length ?? 0) > 0
+            (day) => day.planned?.sessionType || day.planned?.focus || (day.planned?.tags?.length ?? 0) > 0
         ).length;
-
-        const actualSessions = pva.days.reduce((acc, d) => acc + (d.actual?.sessions?.length ?? 0), 0);
-
-        const gymCheckedDays = pva.days.filter((d) => d.gymCheck?.hasAnyCheck).length;
+        const actualSessions = pva.days.reduce((acc, day) => acc + (day.actual?.sessions.length ?? 0), 0);
+        const gymCheckedDays = pva.days.filter((day) => day.gymCheck?.hasAnyCheck).length;
 
         return { total, done, rest, extra, plannedCount, actualSessions, gymCheckedDays };
     }, [pva]);
 
     const shouldShowEmpty =
-        Boolean(pva) &&
-        query.isSuccess &&
-        !query.isFetching &&
-        isPlanVsActualResponse(query.data) &&
-        (pva?.days?.length ?? 0) === 0;
+        Boolean(pva) && query.isSuccess && !query.isFetching && isPlanVsActualResponse(query.data) && (pva?.days.length ?? 0) === 0;
 
     return (
-        <div className="space-y-5 sm:space-y-6">
-            <PageHeader
-                title={t("pages.pva.title")}
-                subtitle={`Aquí se ve lo planeado en Rutinas vs lo Real en Gym`}
-                right={
-                    <div className="w-full sm:w-auto">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
-                            <Button className="w-full sm:w-auto" variant="outline" onClick={refetch} disabled={query.isFetching}>
-                                {t("common.refetch")}
-                            </Button>
-                        </div>
-                    </div>
-                }
-            />
-
-            <div className="rounded-xl border p-4 space-y-3 border-primary/40 bg-primary/5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
-                    <label className="text-sm flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
-                        <span className="whitespace-nowrap">{t("pva.pickDateInWeek")}</span>
-                        <div className="my-1 w-auto columns-1 sm:my-0 sm:w-auto">
-                            <input
-                                type="date"
-                                className="sm:w-full rounded-md border bg-background px-3 py-2 text-sm"
-                                value={weekDate}
-                                onChange={(e) => setWeekDate(e.target.value)}
-                            />
-                        </div>
-                    </label>
-
-                    <div className="my-1 grid w-full grid-cols-2 gap-2 sm:my-0 sm:w-auto">
-                        <Button className="w-full sm:w-auto" variant="outline" onClick={goPrevWeek} disabled={query.isFetching}>
-                            ← {t("pva.prevWeek")}
-                        </Button>
-                        <Button className="w-full sm:w-auto" variant="outline" onClick={goNextWeek} disabled={query.isFetching}>
-                            {t("pva.nextWeek")} →
-                        </Button>
-                    </div>
-
-                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1">
-                        <span className="text-xs text-muted-foreground wrap-break-words">
-                            {t("pva.selected")}: <span className="font-mono">{derivedWeekKey}</span> • {weekRangeLabel} • {t("pva.loaded")}:{" "}
-                            <span className="font-mono">{runWeekKey}</span>{" "}
-                            <Button
-                                variant="ghost"
-                                className="h-8 px-2 py-0 align-middle"
-                                onClick={syncToLoadedWeek}
-                                disabled={query.isFetching}
-                            >
-                                ({t("pva.sync")})
-                            </Button>
-                        </span>
-
-                        {/* <span className="text-xs text-muted-foreground wrap-break-words">
-                            {t("pva.queryKeyLabel")}: <span className="font-mono">["planVsActual","{runWeekKey}"]</span>
-                        </span> */}
-                    </div>
-                </div>
-            </div>
+        <AppPage
+            title={t("pages.pva.title")}
+            subtitle="Aquí se ve lo planeado en Rutinas vs lo Real en Gym"
+            maxWidth="xl"
+            actions={
+                <Button variant="outlined" onClick={refetch} disabled={query.isFetching}>
+                    {t("common.refetch")}
+                </Button>
+            }
+        >
+            <AppToolbar>
+                <TextField
+                    label={t("pva.pickDateInWeek")}
+                    type="date"
+                    size="small"
+                    value={weekDate}
+                    onChange={(event) => setWeekDate(event.target.value)}
+                    sx={{ width: { xs: "100%", sm: 190 } }}
+                />
+                <Button sx={{ fontSize: { xs: "0.8rem", md: "1rem" } }} variant="outlined" onClick={goPrevWeek} disabled={query.isFetching}>
+                    ← {t("pva.prevWeek")}
+                </Button>
+                <Button sx={{ fontSize: { xs: "0.8rem", md: "1rem" } }} variant="outlined" onClick={goNextWeek} disabled={query.isFetching}>
+                    {t("pva.nextWeek")} →
+                </Button>
+                <Chip sx={{ fontSize: { xs: "0.63rem", md: "1rem" } }} label={`${t("pva.selected")}: ${derivedWeekKey}`} variant="outlined" />
+                <Chip sx={{ fontSize: { xs: "0.63rem", md: "1rem" } }} label={weekRangeLabel} variant="outlined" />
+                <Chip sx={{ fontSize: { xs: "0.63rem", md: "1rem" } }} label={`${t("pva.loaded")}: ${runWeekKey}`} color="primary" variant="outlined" />
+                <Button variant="text" onClick={syncToLoadedWeek} disabled={query.isFetching}>
+                    {t("pva.sync")}
+                </Button>
+            </AppToolbar>
 
             {query.isFetching ? (
-                <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">{t("common.fetching")}</div>
+                <AppCard>
+                    <Typography variant="body2" color="text.secondary">
+                        {t("common.fetching")}
+                    </Typography>
+                </AppCard>
             ) : null}
 
             {query.isError ? <JsonDetails title={t("pva.error.jsonTitle")} data={query.error} defaultOpen /> : null}
 
             {!query.isFetching && query.isSuccess && !pva ? (
-                <EmptyState
+                <AppEmptyState
                     title={lang === "es" ? "No se pudo interpretar la respuesta" : "Could not interpret response"}
                     description={lang === "es" ? "Mostrando JSON de depuración." : "Showing debug JSON."}
                 />
             ) : null}
 
-            {shouldShowEmpty ? <EmptyState title={t("pva.empty.title")} description={t("pva.empty.desc")} /> : null}
+            {shouldShowEmpty ? <AppEmptyState title={t("pva.empty.title")} description={t("pva.empty.desc")} /> : null}
 
             {pva && summary && !shouldShowEmpty ? (
-                <div className="space-y-4">
-                    <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-7">
-                        <StatCard label={t("pva.stats.days")} value={summary.total} />
-                        <StatCard label={t("pva.stats.planned")} value={summary.plannedCount} />
-                        <StatCard label={t("pva.stats.actualSessions")} value={summary.actualSessions} />
-                        <StatCard label={"Gym Check"} value={summary.gymCheckedDays} />
-                        <StatCard label={t("pva.stats.done")} value={summary.done} />
-                        <StatCard label={t("pva.stats.rest")} value={summary.rest} />
-                        <StatCard label={t("pva.stats.extra")} value={summary.extra} />
-                    </div>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2 } }}>
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: {
+                                xs: "repeat(2, minmax(0, 1fr))",
+                                md: "repeat(4, minmax(0, 1fr))",
+                                lg: "repeat(7, minmax(0, 1fr))",
+                            },
+                            gap: { xs: 1, md: 1.5 },
+                        }}
+                    >
+                        <AppMetricCard label={t("pva.stats.days")} value={formatNumber(summary.total)} compact />
+                        <AppMetricCard label={t("pva.stats.planned")} value={formatNumber(summary.plannedCount)} compact />
+                        <AppMetricCard label={t("pva.stats.actualSessions")} value={formatNumber(summary.actualSessions)} compact />
+                        <AppMetricCard label="Gym Check" value={formatNumber(summary.gymCheckedDays)} compact />
+                        <AppMetricCard label={t("pva.stats.done")} value={formatNumber(summary.done)} compact />
+                        <AppMetricCard label={t("pva.stats.rest")} value={formatNumber(summary.rest)} compact />
+                        <AppMetricCard label={t("pva.stats.extra")} value={formatNumber(summary.extra)} compact />
+                    </Box>
 
-                    <div className="rounded-xl border bg-card overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-[215] text-sm border-primary/40 bg-primary/5">
-                                <thead className="border-b text-left">
-                                    <tr>
-                                        <th className="p-3">{t("pva.table.day")}</th>
-                                        <th className="p-3">{t("pva.table.date")}</th>
-                                        <th className="p-3">{t("pva.table.plan")}</th>
-                                        <th className="p-3">Gym Check</th>
-                                        <th className="p-3">{t("pva.table.actual")}</th>
-                                        <th className="p-3">{t("pva.table.status")}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {pva.days.map((d) => {
-                                        const planned = d.planned;
-
+                    <AppCard padding="none">
+                        <TableContainer sx={{ overflowX: "auto" }}>
+                            <Table size="small" sx={{ minWidth: 920 }}>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>{t("pva.table.day")}</TableCell>
+                                        <TableCell>{t("pva.table.date")}</TableCell>
+                                        <TableCell>{t("pva.table.plan")}</TableCell>
+                                        <TableCell>Gym Check</TableCell>
+                                        <TableCell>{t("pva.table.actual")}</TableCell>
+                                        <TableCell align="right">{t("pva.table.status")}</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {pva.days.map((day) => {
+                                        const planned = day.planned;
                                         const plannedText = planned
                                             ? [
                                                 planned.sessionType ? `${t("pva.plan.type")}: ${planned.sessionType}` : null,
                                                 planned.focus ? `${t("pva.plan.focus")}: ${planned.focus}` : null,
                                                 planned.tags?.length ? `${t("pva.plan.tags")}: ${planned.tags.join(", ")}` : null,
                                             ]
-                                                .filter(Boolean)
+                                                .filter((piece): piece is string => typeof piece === "string")
                                                 .join(" • ")
                                             : "";
 
-                                        const gymText = formatGymSummary(d.gymCheck, lang);
-
-                                        const actualCount = d.actual?.sessions?.length ?? 0;
+                                        const gymText = formatGymSummary(day.gymCheck, lang);
+                                        const actualCount = day.actual?.sessions.length ?? 0;
                                         const actualText =
                                             actualCount === 0
                                                 ? t("common.noDataDash")
-                                                : d.actual!.sessions.map((s) => s.type).join(", ");
+                                                : day.actual?.sessions.map((session) => session.type).join(", ") ?? t("common.noDataDash");
 
                                         return (
-                                            <tr key={d.date} className="border-b last:border-b-0">
-                                                <td className="p-3 font-medium whitespace-nowrap">{d.dayKey}</td>
-                                                <td className="p-3 font-mono whitespace-nowrap">{d.date}</td>
-
-                                                <td className="p-3 wrap-break-words">
-                                                    {plannedText ? (
-                                                        plannedText
-                                                    ) : (
-                                                        <span className="text-muted-foreground">{t("common.noDataDash")}</span>
-                                                    )}
-                                                </td>
-
-                                                <td className="p-3">
+                                            <TableRow key={day.date}>
+                                                <TableCell sx={{ fontWeight: 750, whiteSpace: "nowrap" }}>{day.dayKey}</TableCell>
+                                                <TableCell sx={{ fontFamily: "monospace", whiteSpace: "nowrap" }}>{day.date}</TableCell>
+                                                <TableCell sx={{ minWidth: 230 }}>
+                                                    {plannedText || <Typography color="text.secondary">{t("common.noDataDash")}</Typography>}
+                                                </TableCell>
+                                                <TableCell sx={{ minWidth: 180 }}>
                                                     {gymText ? (
-                                                        <div className="space-y-1">
-                                                            <div className="font-mono wrap-break-words">{gymText.headline}</div>
+                                                        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                                                            <Typography variant="body2" sx={{ fontFamily: "monospace", fontWeight: 700 }}>
+                                                                {gymText.headline}
+                                                            </Typography>
                                                             {gymText.notes ? (
-                                                                <div
-                                                                    className="text-xs text-muted-foreground truncate max-w-[320px]"
-                                                                    title={gymText.notes}
-                                                                >
+                                                                <Typography variant="caption" color="text.secondary" title={gymText.notes} noWrap>
                                                                     {gymText.notes}
-                                                                </div>
+                                                                </Typography>
                                                             ) : null}
-                                                        </div>
+                                                        </Box>
                                                     ) : (
-                                                        <span className="text-muted-foreground">{t("common.noDataDash")}</span>
+                                                        <Typography color="text.secondary">{t("common.noDataDash")}</Typography>
                                                     )}
-                                                </td>
-
-                                                <td className="p-3 wrap-break-words">
+                                                </TableCell>
+                                                <TableCell sx={{ minWidth: 240 }}>
                                                     {actualCount > 0 ? (
-                                                        <span>
+                                                        <Typography>
                                                             {actualCount} {t("pva.actual.sessionSuffix")} • {actualText}
-                                                        </span>
+                                                        </Typography>
                                                     ) : (
-                                                        <span className="text-muted-foreground">{t("common.noDataDash")}</span>
+                                                        <Typography color="text.secondary">{t("common.noDataDash")}</Typography>
                                                     )}
-                                                </td>
-
-                                                <td className="p-3 font-mono whitespace-nowrap">{t(statusKey(d.status))}</td>
-                                            </tr>
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    <Chip
+                                                        size="small"
+                                                        color={statusColor(day.status)}
+                                                        variant="outlined"
+                                                        label={t(statusKey(day.status))}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
                                         );
                                     })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </AppCard>
 
                     <JsonDetails title={t("pva.debug.responseTitle")} data={query.data} />
-                </div>
+                </Box>
             ) : null}
-        </div>
+        </AppPage>
     );
 }

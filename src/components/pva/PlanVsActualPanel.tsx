@@ -1,13 +1,17 @@
+// src/components/pva/PlanVsActualPanel.tsx
+// MUI embedded Plan vs Real summary panel used inside routines / related pages.
+
 import React from "react";
-import { Button } from "@/components/ui/button";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+
 import { JsonDetails } from "@/components/JsonDetails";
-import { EmptyState } from "@/components/EmptyState";
-import { StatCard } from "@/components/StatCard";
+import { AppCard, AppEmptyState, AppMetricCard, AppSectionHeader } from "@/components/mui";
 import { usePlanVsActual } from "@/hooks/usePlanVsActual";
 import { useI18n } from "@/i18n/I18nProvider";
 
-function isRecord(v: unknown): v is Record<string, unknown> {
-    return typeof v === "object" && v !== null;
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null;
 }
 
 type PvaDay = {
@@ -25,24 +29,26 @@ type PlanVsActualResponse = {
     days: PvaDay[];
 };
 
-function looksLikePva(resp: unknown): resp is PlanVsActualResponse {
-    if (!isRecord(resp)) return false;
-    if (typeof resp.weekKey !== "string") return false;
-    if (!isRecord(resp.range)) return false;
-    if (!Array.isArray(resp.days)) return false;
+function looksLikePva(response: unknown): response is PlanVsActualResponse {
+    if (!isRecord(response)) return false;
+    if (typeof response.weekKey !== "string") return false;
+    if (!isRecord(response.range)) return false;
+    if (!Array.isArray(response.days)) return false;
     return true;
 }
 
-function isPlannedNonEmpty(p: PvaDay["planned"]): boolean {
-    if (!p) return false;
-    const hasType = typeof p.sessionType === "string" && p.sessionType.trim().length > 0;
-    const hasFocus = typeof p.focus === "string" && p.focus.trim().length > 0;
-    const hasTags = Array.isArray(p.tags) && p.tags.length > 0;
+function isPlannedNonEmpty(planned: PvaDay["planned"]): boolean {
+    if (!planned) return false;
+
+    const hasType = typeof planned.sessionType === "string" && planned.sessionType.trim().length > 0;
+    const hasFocus = typeof planned.focus === "string" && planned.focus.trim().length > 0;
+    const hasTags = Array.isArray(planned.tags) && planned.tags.length > 0;
+
     return hasType || hasFocus || hasTags;
 }
 
-function normalizePva(resp: unknown) {
-    if (!looksLikePva(resp)) {
+function normalizePva(response: unknown) {
+    if (!looksLikePva(response)) {
         return {
             planned: null as number | null,
             actual: null as number | null,
@@ -51,59 +57,67 @@ function normalizePva(resp: unknown) {
         };
     }
 
-    const plannedDays = resp.days.filter((d) => isPlannedNonEmpty(d.planned));
+    const plannedDays = response.days.filter((day) => isPlannedNonEmpty(day.planned));
     const planned = plannedDays.length;
-
-    const actual = resp.days.reduce((acc, d) => acc + (d.actual?.sessions?.length ?? 0), 0);
-
-    const matched = plannedDays.filter((d) => (d.actual?.sessions?.length ?? 0) > 0).length;
-    const missing = plannedDays.filter((d) => (d.actual?.sessions?.length ?? 0) === 0).length;
+    const actual = response.days.reduce((acc, day) => acc + (day.actual?.sessions.length ?? 0), 0);
+    const matched = plannedDays.filter((day) => (day.actual?.sessions.length ?? 0) > 0).length;
+    const missing = plannedDays.filter((day) => (day.actual?.sessions.length ?? 0) === 0).length;
 
     return { planned, actual, matched, missing };
 }
 
+function formatValue(value: number | null): string {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+    return Number(value.toFixed(2)).toString();
+}
+
 export function PlanVsActualPanel({ weekKey }: { weekKey: string }) {
     const { t } = useI18n();
-    const q = usePlanVsActual(weekKey); // Option A call
-    const norm = React.useMemo(() => normalizePva(q.data), [q.data]);
-    const busy = q.isFetching;
+    const query = usePlanVsActual(weekKey);
+    const norm = React.useMemo(() => normalizePva(query.data), [query.data]);
+    const busy = query.isFetching;
 
     return (
-        <div className="w-full min-w-0 rounded-xl border bg-card p-4 space-y-4">
-            <div className="min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="min-w-0">
-                    <div className="text-lg font-semibold wrap-break-words">{t("routines.planVsActualTitle")}</div>
-                    <div className="text-sm text-muted-foreground wrap-break-words">{t("routines.planVsActualHint")}</div>
-                </div>
+        <AppCard>
+            <AppSectionHeader
+                title={t("routines.planVsActualTitle")}
+                description={t("routines.planVsActualHint")}
+                actions={
+                    <Button variant="outlined" onClick={() => query.refetch()} disabled={busy}>
+                        {busy ? t("common.loading") : t("common.refetch")}
+                    </Button>
+                }
+            />
 
-                <Button
-                    variant="outline"
-                    onClick={() => q.refetch()}
-                    disabled={busy}
-                    className="w-full sm:w-auto whitespace-nowrap"
-                >
-                    {busy ? t("common.loading") : t("common.refetch")}
-                </Button>
-            </div>
+            <Box sx={{ mt: { xs: 1.5, md: 2 }, display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2 } }}>
+                {!query.data && !query.isFetching && !query.isError ? (
+                    <AppEmptyState title={t("routines.noDataYetTitle")} description={t("routines.noDataYetDesc")} variant="inline" />
+                ) : null}
 
-            {!q.data && !q.isFetching && !q.isError ? (
-                <EmptyState title={t("routines.noDataYetTitle")} description={t("routines.noDataYetDesc")} />
-            ) : null}
+                {query.isError ? <JsonDetails title="Error (JSON)" data={query.error} defaultOpen /> : null}
 
-            {q.isError ? <JsonDetails title="Error (JSON)" data={q.error} defaultOpen /> : null}
+                {query.data ? (
+                    <>
+                        <Box
+                            sx={{
+                                display: "grid",
+                                gridTemplateColumns: {
+                                    xs: "repeat(2, minmax(0, 1fr))",
+                                    md: "repeat(4, minmax(0, 1fr))",
+                                },
+                                gap: { xs: 1, md: 1.5 },
+                            }}
+                        >
+                            <AppMetricCard label={t("pva.planned")} value={formatValue(norm.planned)} compact />
+                            <AppMetricCard label={t("pva.actual")} value={formatValue(norm.actual)} compact />
+                            <AppMetricCard label={t("pva.matched")} value={formatValue(norm.matched)} compact />
+                            <AppMetricCard label={t("pva.missing")} value={formatValue(norm.missing)} compact />
+                        </Box>
 
-            {q.data ? (
-                <>
-                    <div className="grid gap-3 grid-cols-2 sm:gap-4 sm:grid-cols-4">
-                        <StatCard label={t("pva.planned")} value={norm.planned ?? "—"} />
-                        <StatCard label={t("pva.actual")} value={norm.actual ?? "—"} />
-                        <StatCard label={t("pva.matched")} value={norm.matched ?? "—"} />
-                        <StatCard label={t("pva.missing")} value={norm.missing ?? "—"} />
-                    </div>
-
-                    <JsonDetails title={t("pva.debugJson")} data={q.data} />
-                </>
-            ) : null}
-        </div>
+                        <JsonDetails title={t("pva.debugJson")} data={query.data} />
+                    </>
+                ) : null}
+            </Box>
+        </AppCard>
     );
 }

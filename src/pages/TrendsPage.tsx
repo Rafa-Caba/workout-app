@@ -1,24 +1,30 @@
+// src/pages/TrendsPage.tsx
+// MUI weekly trends page with responsive controls, KPI cards, and chart container.
+
 import React from "react";
 import { toast } from "sonner";
 import {
-    LineChart,
+    CartesianGrid,
     Line,
+    LineChart,
+    ResponsiveContainer,
+    Tooltip,
     XAxis,
     YAxis,
-    Tooltip,
-    ResponsiveContainer,
-    CartesianGrid,
 } from "recharts";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
 
-import { PageHeader } from "@/components/PageHeader";
-import { EmptyState } from "@/components/EmptyState";
 import { JsonDetails } from "@/components/JsonDetails";
-import { StatCard } from "@/components/StatCard";
+import { AppCard, AppEmptyState, AppMetricCard, AppPage, AppToolbar } from "@/components/mui";
 import { useI18n } from "@/i18n/I18nProvider";
 
 import { useWeeklyTrends } from "@/hooks/useWeeklyTrends";
-import { defaultTrendsRange, sanitizeWeekKeyInput } from "@/utils/trendsDefaults";
 import type { WeekKey } from "@/types/workoutSummary.types";
+import { defaultTrendsRange, sanitizeWeekKeyInput } from "@/utils/trendsDefaults";
 
 type ChartRow = {
     weekKey: string;
@@ -29,54 +35,51 @@ type ChartRow = {
     sleepDays: number;
 };
 
-function isValidWeekKey(v: string): v is WeekKey {
-    return /^(\d{4})-W(\d{2})$/.test(v);
+function isValidWeekKey(value: string): value is WeekKey {
+    return /^(\d{4})-W(\d{2})$/.test(value);
+}
+
+function formatNumber(value: number | null | undefined): string {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+    return Number(value.toFixed(2)).toString();
 }
 
 export function TrendsPage() {
     const { t } = useI18n();
+    const theme = useTheme();
 
     const defaults = React.useMemo(() => defaultTrendsRange(new Date()), []);
     const [fromWeek, setFromWeek] = React.useState(defaults.fromWeek);
     const [toWeek, setToWeek] = React.useState(defaults.toWeek);
-
-    // These are the actual query params (auto-updated)
     const [runFrom, setRunFrom] = React.useState<WeekKey | "">(defaults.fromWeek as WeekKey);
     const [runTo, setRunTo] = React.useState<WeekKey | "">(defaults.toWeek as WeekKey);
 
     const query = useWeeklyTrends(runFrom, runTo);
-
-    // prevent toast spam
     const lastToastRef = React.useRef<string>("");
 
     React.useEffect(() => {
         if (query.isError) toast.error(query.error.message);
     }, [query.isError, query.error]);
 
-    // AUTO-LOAD (debounced): whenever the user edits from/to, sanitize + if valid -> set runFrom/runTo
     React.useEffect(() => {
         const handle = window.setTimeout(() => {
             const nextFrom = sanitizeWeekKeyInput(fromWeek);
             const nextTo = sanitizeWeekKeyInput(toWeek);
 
-            // only normalize the visible inputs if sanitization changed them
             if (nextFrom !== fromWeek) setFromWeek(nextFrom);
             if (nextTo !== toWeek) setToWeek(nextTo);
 
             if (isValidWeekKey(nextFrom) && isValidWeekKey(nextTo)) {
-                // only update when actually changed
                 const key = `${nextFrom}:${nextTo}`;
-                const prev = `${runFrom}:${runTo}`;
-                if (key !== prev) {
+                const previous = `${runFrom}:${runTo}`;
+
+                if (key !== previous) {
                     setRunFrom(nextFrom);
                     setRunTo(nextTo);
                 }
-            } else {
-                // keep query disabled until valid
-                if (runFrom !== "" || runTo !== "") {
-                    setRunFrom("");
-                    setRunTo("");
-                }
+            } else if (runFrom !== "" || runTo !== "") {
+                setRunFrom("");
+                setRunTo("");
             }
         }, 450);
 
@@ -84,29 +87,26 @@ export function TrendsPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fromWeek, toWeek]);
 
-    // Loaded toast (only when success AND params changed)
     React.useEffect(() => {
-        if (!query.isSuccess) return;
-        if (!runFrom || !runTo) return;
+        if (!query.isSuccess || !runFrom || !runTo) return;
 
-        const k = `${runFrom}:${runTo}`;
-        if (lastToastRef.current !== k) {
-            lastToastRef.current = k;
+        const toastKey = `${runFrom}:${runTo}`;
+        if (lastToastRef.current !== toastKey) {
+            lastToastRef.current = toastKey;
             toast.success(t("trends.toast.loaded"));
         }
     }, [query.isSuccess, runFrom, runTo, t]);
 
     const points = query.data?.points ?? [];
-
     const chartData: ChartRow[] = React.useMemo(
         () =>
-            points.map((p) => ({
-                weekKey: p.weekKey,
-                sessionsCount: p.training.sessionsCount,
-                durationSeconds: p.training.durationSeconds,
-                activeKcal: p.training.activeKcal,
-                mediaCount: p.mediaCount,
-                sleepDays: p.sleep.daysWithSleep,
+            points.map((point) => ({
+                weekKey: point.weekKey,
+                sessionsCount: point.training.sessionsCount,
+                durationSeconds: point.training.durationSeconds,
+                activeKcal: point.training.activeKcal,
+                mediaCount: point.mediaCount,
+                sleepDays: point.sleep.daysWithSleep,
             })),
         [points]
     );
@@ -114,82 +114,109 @@ export function TrendsPage() {
     const last = points.length ? points[points.length - 1] : null;
 
     return (
-        <div className="px-4 sm:px-0 space-y-6">
-            <PageHeader title={t("pages.trends.title")} subtitle={t("pages.trends.subtitle")} />
-
-            <div className="rounded-xl border bg-card p-4 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
-                    <label className="text-sm w-full sm:w-auto">
-                        <span className="block sm:inline">{t("trends.fromWeek")}</span>{" "}
-                        <input
-                            className="mt-1 sm:mt-0 sm:ml-2 w-full sm:w-44 h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
-                            value={fromWeek}
-                            onChange={(e) => setFromWeek(e.target.value)}
-                            placeholder="YYYY-W##"
-                            inputMode="text"
-                            autoComplete="off"
-                            spellCheck={false}
-                        />
-                    </label>
-
-                    <label className="text-sm w-full sm:w-auto">
-                        <span className="block sm:inline">{t("trends.toWeek")}</span>{" "}
-                        <input
-                            className="mt-1 sm:mt-0 sm:ml-2 w-full sm:w-44 h-11 sm:h-10 rounded-md border bg-background px-3 text-sm"
-                            value={toWeek}
-                            onChange={(e) => setToWeek(e.target.value)}
-                            placeholder="YYYY-W##"
-                            inputMode="text"
-                            autoComplete="off"
-                            spellCheck={false}
-                        />
-                    </label>
-
-                    <span className="text-xs text-muted-foreground wrap-break-words">
-                        {t("week.loaded")}:{" "}
-                        <span className="font-mono">{runFrom || "—"}</span> →{" "}
-                        <span className="font-mono">{runTo || "—"}</span>
-                    </span>
-                </div>
-            </div>
+        <AppPage title={t("pages.trends.title")} subtitle={t("pages.trends.subtitle")} maxWidth="lg">
+            <AppToolbar sx={{ flexDirection: "row" }}>
+                <TextField
+                    label={t("trends.fromWeek")}
+                    size="small"
+                    value={fromWeek}
+                    onChange={(event) => setFromWeek(event.target.value)}
+                    placeholder="YYYY-W##"
+                    autoComplete="off"
+                    spellCheck={false}
+                    sx={{ width: { xs: "48%", sm: 180 } }}
+                />
+                <TextField
+                    label={t("trends.toWeek")}
+                    size="small"
+                    value={toWeek}
+                    onChange={(event) => setToWeek(event.target.value)}
+                    placeholder="YYYY-W##"
+                    autoComplete="off"
+                    spellCheck={false}
+                    sx={{ width: { xs: "48%", sm: 180 } }}
+                />
+                <Chip label={`${t("week.loaded")}: ${runFrom || "—"} → ${runTo || "—"}`} color="primary" variant="outlined" />
+            </AppToolbar>
 
             {query.isError ? <JsonDetails title={t("common.errorTitle")} data={query.error} defaultOpen /> : null}
 
             {query.isSuccess && last ? (
-                <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
-                    <StatCard label={t("trends.kpi.week")} value={last.weekKey} />
-                    <StatCard label={t("trends.kpi.sessions")} value={last.training.sessionsCount} />
-                    <StatCard label={t("trends.kpi.durationSeconds")} value={last.training.durationSeconds} />
-                    <StatCard label={t("trends.kpi.media")} value={last.mediaCount} />
-                </div>
+                <Box
+                    sx={{
+                        display: "grid",
+                        gridTemplateColumns: {
+                            xs: "repeat(2, minmax(0, 1fr))",
+                            md: "repeat(4, minmax(0, 1fr))",
+                        },
+                        gap: { xs: 1, md: 1.5 },
+                    }}
+                >
+                    <AppMetricCard label={t("trends.kpi.week")} value={last.weekKey} compact />
+                    <AppMetricCard label={t("trends.kpi.sessions")} value={formatNumber(last.training.sessionsCount)} compact />
+                    <AppMetricCard label={t("trends.kpi.durationSeconds")} value={formatNumber(last.training.durationSeconds)} compact />
+                    <AppMetricCard label={t("trends.kpi.media")} value={formatNumber(last.mediaCount)} compact />
+                </Box>
             ) : null}
 
-            <div className="rounded-xl border bg-card p-4">
-                {query.isFetching ? <p className="text-sm text-muted-foreground">{t("common.fetching")}</p> : null}
+            <AppCard>
+                {query.isFetching ? (
+                    <Typography variant="body2" color="text.secondary">
+                        {t("common.fetching")}
+                    </Typography>
+                ) : null}
 
                 {query.isSuccess && points.length === 0 ? (
-                    <EmptyState title={t("trends.empty.title")} description={t("trends.empty.desc")} />
+                    <AppEmptyState title={t("trends.empty.title")} description={t("trends.empty.desc")} />
                 ) : null}
 
                 {query.isSuccess && points.length > 0 ? (
-                    <div className="h-[75] sm:h-80">
+                    <Box sx={{ height: { xs: 320, md: 380 }, minWidth: 0 }}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="weekKey" />
-                                <YAxis />
-                                <Tooltip />
-
-                                <Line type="monotone" dataKey="sessionsCount" name={t("trends.line.sessions")} strokeWidth={2} dot={false} />
-                                <Line type="monotone" dataKey="durationSeconds" name={t("trends.line.durationSeconds")} strokeWidth={2} dot={false} />
-                                <Line type="monotone" dataKey="activeKcal" name={t("trends.line.activeKcal")} strokeWidth={2} dot={false} connectNulls={false} />
+                            <LineChart data={chartData} margin={{ top: 8, right: 20, bottom: 8, left: 0 }}>
+                                <CartesianGrid stroke={theme.palette.divider} strokeDasharray="3 3" />
+                                <XAxis dataKey="weekKey" stroke={theme.palette.text.secondary} />
+                                <YAxis stroke={theme.palette.text.secondary} />
+                                <Tooltip
+                                    contentStyle={{
+                                        background: theme.palette.background.paper,
+                                        border: `1px solid ${theme.palette.divider}`,
+                                        borderRadius: 10,
+                                        color: theme.palette.text.primary,
+                                    }}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="sessionsCount"
+                                    name={t("trends.line.sessions")}
+                                    stroke={theme.palette.primary.main}
+                                    strokeWidth={2}
+                                    dot={false}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="durationSeconds"
+                                    name={t("trends.line.durationSeconds")}
+                                    stroke={theme.palette.info.main}
+                                    strokeWidth={2}
+                                    dot={false}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="activeKcal"
+                                    name={t("trends.line.activeKcal")}
+                                    stroke={theme.palette.warning.main}
+                                    strokeWidth={2}
+                                    dot={false}
+                                    connectNulls={false}
+                                />
                             </LineChart>
                         </ResponsiveContainer>
-                    </div>
+                    </Box>
                 ) : null}
-            </div>
+            </AppCard>
 
             {query.isSuccess ? <JsonDetails title={t("trends.json.title")} data={query.data} /> : null}
-        </div>
+        </AppPage>
     );
 }

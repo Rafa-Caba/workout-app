@@ -76,9 +76,11 @@ export function GymCheckWeekPickerCard(props: Props) {
                         slotProps={{ inputLabel: { shrink: true } }}
                     />
 
-                    <AppActionRow align="left">
-                        <Button variant="outlined" onClick={onPrevWeek} disabled={busy}>{t("week.prev")}</Button>
-                        <Button variant="outlined" onClick={onNextWeek} disabled={busy}>{t("week.next")}</Button>
+                    <AppActionRow align="left" sx={{ flexDirection: "row" }}>
+                        <Box sx={{ display: "flex", flexDirection: "row", gap: 1.5 }}>
+                            <Button sx={{ fontSize: { xs: "0.8rem", md: "1rem" } }} variant="outlined" onClick={onPrevWeek} disabled={busy}>{t("week.prev")}</Button>
+                            <Button sx={{ fontSize: { xs: "0.8rem", md: "1rem" } }} variant="outlined" onClick={onNextWeek} disabled={busy}>{t("week.next")}</Button>
+                        </Box>
                         <Button variant="contained" onClick={onUseWeek} disabled={busy}>{lang === "es" ? "Usar semana" : "Use week"}</Button>
                     </AppActionRow>
                 </Box>
@@ -95,9 +97,9 @@ export function GymCheckWeekPickerCard(props: Props) {
                         bgcolor: "background.default",
                     }}
                 >
-                    <Chip size="small" label={`${lang === "es" ? "Seleccionado" : "Selected"}: ${derivedWeekKey}`} />
-                    <Chip size="small" label={`${lang === "es" ? "Cargado" : "Loaded"}: ${runWeekKey}`} />
-                    <Chip size="small" label={weekRangeLabel} />
+                    <Chip sx={{ fontSize: { xs: "0.7rem", md: "1rem" } }} size="small" label={`${lang === "es" ? "Seleccionado" : "Selected"}: ${derivedWeekKey}`} />
+                    <Chip sx={{ fontSize: { xs: "0.7rem", md: "1rem" } }} size="small" label={`${lang === "es" ? "Cargado" : "Loaded"}: ${runWeekKey}`} />
+                    <Chip sx={{ fontSize: { xs: "0.7rem", md: "1rem" } }} size="small" label={weekRangeLabel} />
                 </Box>
 
                 {routineExists ? (

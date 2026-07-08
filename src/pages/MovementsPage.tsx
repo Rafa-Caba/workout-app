@@ -1,51 +1,41 @@
-// /src/pages/MovementsPage.tsx
+// src/pages/MovementsPage.tsx
+// MUI movements catalog page. Keeps existing hooks/services/contracts and migrates only visible UI.
 
 import React from "react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/PageHeader";
-import { EmptyState } from "@/components/EmptyState";
-import { Button } from "@/components/ui/button";
-import { useI18n } from "@/i18n/I18nProvider";
+import Autocomplete from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 
-import type { ApiError } from "@/api/httpErrors";
-import type { Movement, MovementsListQuery } from "@/types/movements.types";
-
-import {
-    useMovements,
-    useCreateMovement,
-    useUpdateMovement,
-} from "@/hooks/useMovements";
-
-import { MediaViewerModal, type MediaLikeItem } from "@/components/media/MediaViewerModal";
 import { MediaCard } from "@/components/media/MediaCard";
-import { MuscleGroupSelect } from "@/components/MuscleGroupSelect";
-import { EquipmentSelect } from "@/components/EquipmentSelect";
-
-// -------------------- Helpers --------------------
+import { MediaViewerModal, type MediaLikeItem } from "@/components/media/MediaViewerModal";
+import { AppActionRow, AppCard, AppEmptyState, AppPage } from "@/components/mui";
+import type { ApiError } from "@/api/httpErrors";
+import { useI18n } from "@/i18n/I18nProvider";
+import { useCreateMovement, useMovements, useUpdateMovement } from "@/hooks/useMovements";
+import type { Movement, MovementsListQuery } from "@/types/movements.types";
 
 function toastApiError(errorValue: unknown, fallback: string) {
     const error = errorValue as Partial<ApiError> | undefined;
     const message = error?.message ?? fallback;
     const details = error?.details ? JSON.stringify(error.details, null, 2) : undefined;
-
     toast.error(message, { description: details });
 }
 
 function normalizeUniqueStrings(values: string[]): string[] {
-    const normalizedValues = values
-        .map((value) => String(value ?? "").trim())
-        .filter((value) => value.length > 0);
-
+    const normalizedValues = values.map((value) => String(value ?? "").trim()).filter((value) => value.length > 0);
     return Array.from(new Set(normalizedValues));
 }
 
 function sortMovements(list: Movement[]) {
     return [...list].sort((a, b) => {
-        if (a.isActive !== b.isActive) {
-            return a.isActive ? -1 : 1;
-        }
-
+        if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
         return a.name.localeCompare(b.name, "es", { sensitivity: "base" });
     });
 }
@@ -67,10 +57,7 @@ function movementToForm(movement: Movement): FormState {
 }
 
 function movementToMediaItem(movement: Movement): MediaLikeItem | null {
-    if (!movement.media) {
-        return null;
-    }
-
+    if (!movement.media) return null;
     const media = movement.media;
 
     return {
@@ -93,29 +80,19 @@ function useSingleFilePreview(file: File | null) {
     React.useEffect(() => {
         if (!file) {
             setUrl((previousUrl) => {
-                if (previousUrl) {
-                    URL.revokeObjectURL(previousUrl);
-                }
-
+                if (previousUrl) URL.revokeObjectURL(previousUrl);
                 return null;
             });
-
             return;
         }
 
         const nextUrl = URL.createObjectURL(file);
-
         setUrl((previousUrl) => {
-            if (previousUrl) {
-                URL.revokeObjectURL(previousUrl);
-            }
-
+            if (previousUrl) URL.revokeObjectURL(previousUrl);
             return nextUrl;
         });
 
-        return () => {
-            URL.revokeObjectURL(nextUrl);
-        };
+        return () => URL.revokeObjectURL(nextUrl);
     }, [file]);
 
     return url;
@@ -126,64 +103,154 @@ function isImageFile(file: File | null) {
 }
 
 function appendStringArray(formData: FormData, fieldName: string, values: string[]) {
-    normalizeUniqueStrings(values).forEach((value) => {
-        formData.append(fieldName, value);
-    });
+    normalizeUniqueStrings(values).forEach((value) => formData.append(fieldName, value));
 }
 
 function formatMovementDetails(values: string[], label: string) {
     const normalizedValues = normalizeUniqueStrings(values);
-
-    if (!normalizedValues.length) {
-        return `${label}: —`;
-    }
-
+    if (!normalizedValues.length) return `${label}: —`;
     return `${label}: ${normalizedValues.join(", ")}`;
 }
 
-// -------------------- Page --------------------
+const MUSCLE_OPTIONS = [
+    "chest",
+    "back",
+    "shoulders",
+    "biceps",
+    "triceps",
+    "quads",
+    "hamstrings",
+    "glutes",
+    "calves",
+    "core",
+    "abs",
+    "fullBody",
+    "cardio",
+    "mobility",
+];
+
+const EQUIPMENT_OPTIONS = [
+    "bodyweight",
+    "dumbbells",
+    "barbell",
+    "kettlebell",
+    "machines",
+    "cable",
+    "bands",
+    "smithMachine",
+    "trapBar",
+    "bench",
+    "pullupBar",
+    "treadmill",
+    "bike",
+    "rower",
+    "elliptical",
+    "medicineBall",
+    "foamRoller",
+];
+
+function MovementFormControls({
+    form,
+    disabled,
+    imagePreview,
+    imageFile,
+    inputRef,
+    submitLabel,
+    onFormChange,
+    onImageChange,
+    onSubmit,
+    onCancel,
+}: {
+    form: FormState;
+    disabled: boolean;
+    imagePreview: string | null;
+    imageFile: File | null;
+    inputRef: React.RefObject<HTMLInputElement | null>;
+    submitLabel: string;
+    onFormChange: (next: FormState) => void;
+    onImageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    onSubmit: () => void;
+    onCancel?: () => void;
+}) {
+    return (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" }, gap: 1.25 }}>
+                <TextField
+                    label="Nombre"
+                    value={form.name}
+                    onChange={(event) => onFormChange({ ...form, name: event.target.value })}
+                    disabled={disabled}
+                    placeholder="Nombre (requerido)"
+                    size="small"
+                    fullWidth
+                />
+                <Autocomplete
+                    multiple
+                    freeSolo
+                    options={MUSCLE_OPTIONS}
+                    value={form.muscleGroup}
+                    onChange={(_event, nextValue) => onFormChange({ ...form, muscleGroup: normalizeUniqueStrings(nextValue) })}
+                    disabled={disabled}
+                    renderInput={(params) => <TextField {...params} label="Grupo muscular" size="small" placeholder="Selecciona o escribe..." />}
+                />
+                <Autocomplete
+                    multiple
+                    freeSolo
+                    options={EQUIPMENT_OPTIONS}
+                    value={form.equipment}
+                    onChange={(_event, nextValue) => onFormChange({ ...form, equipment: normalizeUniqueStrings(nextValue) })}
+                    disabled={disabled}
+                    renderInput={(params) => <TextField {...params} label="Equipo" size="small" placeholder="Selecciona o escribe..." />}
+                />
+            </Box>
+
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "stretch", sm: "center" }, justifyContent: "space-between", gap: 1.25 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap" }}>
+                    <input ref={inputRef} type="file" hidden accept="image/*" onChange={onImageChange} />
+                    <Button type="button" variant="outlined" onClick={() => inputRef.current?.click()} disabled={disabled}>
+                        Elegir imagen
+                    </Button>
+                    {imageFile ? <Chip label={imageFile.name} size="small" /> : null}
+                    {imagePreview && isImageFile(imageFile) ? (
+                        <Box component="img" src={imagePreview} alt="Preview" sx={{ height: 48, width: 72, objectFit: "cover", borderRadius: 2, border: 1, borderColor: "divider" }} />
+                    ) : null}
+                </Box>
+
+                <FormControlLabel
+                    control={<Switch checked={form.isActive} onChange={(event) => onFormChange({ ...form, isActive: event.target.checked })} disabled={disabled} />}
+                    label="Activo"
+                />
+            </Box>
+
+            <AppActionRow dense>
+                {onCancel ? <Button variant="outlined" onClick={onCancel} disabled={disabled}>Cancelar</Button> : null}
+                <Button variant="contained" onClick={onSubmit} disabled={disabled}>{submitLabel}</Button>
+            </AppActionRow>
+        </Box>
+    );
+}
 
 export function MovementsPage() {
     const { t, lang } = useI18n();
 
     const [activeOnly, setActiveOnly] = React.useState<boolean>(true);
     const [q, setQ] = React.useState<string>("");
-
-    const [createForm, setCreateForm] = React.useState<FormState>({
-        name: "",
-        muscleGroup: [],
-        equipment: [],
-        isActive: true,
-    });
+    const [createForm, setCreateForm] = React.useState<FormState>({ name: "", muscleGroup: [], equipment: [], isActive: true });
     const [createImageFile, setCreateImageFile] = React.useState<File | null>(null);
     const createImagePreview = useSingleFilePreview(createImageFile);
     const createImageInputRef = React.useRef<HTMLInputElement | null>(null);
-
     const [editingId, setEditingId] = React.useState<string | null>(null);
-    const [editForm, setEditForm] = React.useState<FormState>({
-        name: "",
-        muscleGroup: [],
-        equipment: [],
-        isActive: true,
-    });
+    const [editForm, setEditForm] = React.useState<FormState>({ name: "", muscleGroup: [], equipment: [], isActive: true });
     const [editImageFile, setEditImageFile] = React.useState<File | null>(null);
     const editImagePreview = useSingleFilePreview(editImageFile);
     const editImageInputRef = React.useRef<HTMLInputElement | null>(null);
-
     const [selectedMedia, setSelectedMedia] = React.useState<MediaLikeItem | null>(null);
 
     const movementsQuery: MovementsListQuery = React.useMemo(() => {
         const params: MovementsListQuery = {};
-
-        if (activeOnly) {
-            params.activeOnly = true;
-        }
-
+        if (activeOnly) params.activeOnly = true;
         const needle = q.trim();
-        if (needle) {
-            params.q = needle;
-        }
-
+        if (needle) params.q = needle;
         return params;
     }, [activeOnly, q]);
 
@@ -192,12 +259,7 @@ export function MovementsPage() {
     const updateMovementMutation = useUpdateMovement(movementsQuery);
     const toggleActiveMutation = useUpdateMovement(movementsQuery);
 
-    const busy =
-        listQuery.isFetching ||
-        createMovementMutation.isPending ||
-        updateMovementMutation.isPending ||
-        toggleActiveMutation.isPending;
-
+    const busy = listQuery.isFetching || createMovementMutation.isPending || updateMovementMutation.isPending || toggleActiveMutation.isPending;
     const movements = sortMovements(listQuery.data ?? []);
     const empty = !listQuery.isFetching && movements.length === 0;
 
@@ -209,18 +271,12 @@ export function MovementsPage() {
 
     function cancelEdit() {
         setEditingId(null);
-        setEditForm({
-            name: "",
-            muscleGroup: [],
-            equipment: [],
-            isActive: true,
-        });
+        setEditForm({ name: "", muscleGroup: [], equipment: [], isActive: true });
         setEditImageFile(null);
     }
 
     async function onCreate() {
         const name = createForm.name.trim();
-
         if (!name) {
             toast.error(lang === "es" ? "Escribe un nombre" : "Enter a name");
             return;
@@ -231,22 +287,12 @@ export function MovementsPage() {
         appendStringArray(formData, "muscleGroup", createForm.muscleGroup);
         appendStringArray(formData, "equipment", createForm.equipment);
         formData.append("isActive", String(createForm.isActive));
-
-        if (createImageFile) {
-            formData.append("media", createImageFile);
-        }
+        if (createImageFile) formData.append("media", createImageFile);
 
         try {
             await createMovementMutation.mutateAsync(formData);
-
             toast.success(lang === "es" ? "Movimiento creado" : "Movement created");
-
-            setCreateForm({
-                name: "",
-                muscleGroup: [],
-                equipment: [],
-                isActive: true,
-            });
+            setCreateForm({ name: "", muscleGroup: [], equipment: [], isActive: true });
             setCreateImageFile(null);
         } catch (errorValue) {
             toastApiError(errorValue, lang === "es" ? "No se pudo crear" : "Failed to create");
@@ -254,12 +300,8 @@ export function MovementsPage() {
     }
 
     async function onSaveEdit() {
-        if (!editingId) {
-            return;
-        }
-
+        if (!editingId) return;
         const name = editForm.name.trim();
-
         if (!name) {
             toast.error(lang === "es" ? "El nombre no puede ir vacío" : "Name cannot be empty");
             return;
@@ -270,24 +312,12 @@ export function MovementsPage() {
         appendStringArray(formData, "muscleGroup", editForm.muscleGroup);
         appendStringArray(formData, "equipment", editForm.equipment);
         formData.append("isActive", String(editForm.isActive));
-
-        if (editImageFile) {
-            formData.append("media", editImageFile);
-        }
+        if (editImageFile) formData.append("media", editImageFile);
 
         try {
             await updateMovementMutation.mutateAsync({ id: editingId, formData });
-
             toast.success(lang === "es" ? "Movimiento actualizado" : "Movement updated");
-
-            setEditingId(null);
-            setEditForm({
-                name: "",
-                muscleGroup: [],
-                equipment: [],
-                isActive: true,
-            });
-            setEditImageFile(null);
+            cancelEdit();
         } catch (errorValue) {
             toastApiError(errorValue, lang === "es" ? "No se pudo actualizar" : "Failed to update");
         }
@@ -299,30 +329,10 @@ export function MovementsPage() {
         formData.append("isActive", String(nextActive));
 
         toggleActiveMutation.mutate(
+            { id: movement.id, formData },
             {
-                id: movement.id,
-                formData,
-            },
-            {
-                onSuccess: () => {
-                    toast.success(
-                        lang === "es"
-                            ? nextActive
-                                ? "Movimiento activado"
-                                : "Movimiento desactivado"
-                            : nextActive
-                                ? "Movement activated"
-                                : "Movement deactivated"
-                    );
-                },
-                onError: (errorValue) => {
-                    toastApiError(
-                        errorValue,
-                        lang === "es"
-                            ? "No se pudo cambiar estatus"
-                            : "Failed to change status"
-                    );
-                },
+                onSuccess: () => toast.success(nextActive ? "Movimiento activado" : "Movimiento desactivado"),
+                onError: (errorValue) => toastApiError(errorValue, "No se pudo cambiar estatus"),
             }
         );
     }
@@ -340,414 +350,93 @@ export function MovementsPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <PageHeader
-                title={lang === "es" ? "Movimientos" : "Movements"}
-                subtitle={
-                    lang === "es"
-                        ? "Catálogo para el selector de ejercicios en rutinas."
-                        : "Catalog for the routines exercise selector."
-                }
-                right={
-                    <div className="flex w-full sm:w-auto items-center gap-2">
-                        <label className="w-full sm:w-auto inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm bg-background">
-                            <input
-                                type="checkbox"
-                                checked={activeOnly}
-                                onChange={(event) => setActiveOnly(event.target.checked)}
-                                disabled={busy}
-                            />
-                            <span className="whitespace-nowrap">
-                                {lang === "es" ? "Solo activos" : "Active only"}
-                            </span>
-                        </label>
-                    </div>
-                }
-            />
+        <AppPage
+            title={lang === "es" ? "Movimientos" : "Movements"}
+            subtitle={lang === "es" ? "Catálogo para el selector de ejercicios en rutinas." : "Catalog for the routines exercise selector."}
+            actions={<FormControlLabel control={<Switch checked={activeOnly} onChange={(event) => setActiveOnly(event.target.checked)} disabled={busy} />} label={lang === "es" ? "Solo activos" : "Active only"} />}
+        >
+            <AppCard title={lang === "es" ? "Buscar y crear" : "Search and create"}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                    <TextField label={lang === "es" ? "Buscar" : "Search"} value={q} onChange={(event) => setQ(event.target.value)} disabled={busy} placeholder={lang === "es" ? "Nombre..." : "Name..."} size="small" fullWidth />
+                    <MovementFormControls
+                        form={createForm}
+                        disabled={busy}
+                        imagePreview={createImagePreview}
+                        imageFile={createImageFile}
+                        inputRef={createImageInputRef}
+                        submitLabel={lang === "es" ? "Crear" : "Create"}
+                        onFormChange={setCreateForm}
+                        onImageChange={onCreateImageChange}
+                        onSubmit={() => void onCreate()}
+                    />
+                </Box>
+            </AppCard>
 
-            <div className="rounded-xl border bg-card p-3 sm:p-4 space-y-3">
-                <div className="grid gap-4 md:grid-cols-2">
-                    <div className="md:col-span-1">
-                        <label className="text-xs font-medium">
-                            {lang === "es" ? "Buscar" : "Search"}
-                        </label>
-                        <input
-                            className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                            value={q}
-                            onChange={(event) => setQ(event.target.value)}
-                            disabled={busy}
-                            placeholder={lang === "es" ? "Nombre..." : "Name..."}
-                        />
-                    </div>
+            <AppCard title={lang === "es" ? "Listado" : "List"} subtitle={`${lang === "es" ? "Mostrando" : "Showing"} ${movements.length}`}>
+                {listQuery.isError ? (
+                    <AppEmptyState title="No se pudo cargar movimientos" description={listQuery.error.message} variant="inline" />
+                ) : null}
 
-                    <div className="md:col-span-2 space-y-3">
-                        <div>
-                            <label className="text-xs font-medium">
-                                {lang === "es" ? "Nuevo movimiento" : "New movement"}
-                            </label>
+                {empty ? (
+                    <AppEmptyState title={lang === "es" ? "Sin movimientos" : "No movements"} description={lang === "es" ? "Ajusta los filtros o crea uno nuevo." : "Adjust filters or create a new one."} variant="inline" />
+                ) : null}
 
-                            <div className="mt-2 grid gap-2 sm:grid-cols-2 md:grid-cols-3">
-                                <div className="flex flex-col sm:col-span-2 md:col-span-1 justify-between">
-                                    <span className="text-xs font-medium">
-                                        {lang === "es" ? "Nombre" : "Name"}
-                                    </span>
-                                    <input
-                                        className="rounded-md border bg-background px-3 py-2 text-sm"
-                                        value={createForm.name}
-                                        onChange={(event) =>
-                                            setCreateForm((previous) => ({
-                                                ...previous,
-                                                name: event.target.value,
-                                            }))
-                                        }
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" }, gap: 1.25 }}>
+                    {movements.map((movement) => {
+                        const mediaItem = movementToMediaItem(movement);
+                        const editing = editingId === movement.id;
+
+                        return (
+                            <AppCard key={movement.id} padding="sm" sx={{ height: "100%" }}>
+                                {editing ? (
+                                    <MovementFormControls
+                                        form={editForm}
                                         disabled={busy}
-                                        placeholder={
-                                            lang === "es"
-                                                ? "Nombre (requerido)"
-                                                : "Name (required)"
-                                        }
+                                        imagePreview={editImagePreview}
+                                        imageFile={editImageFile}
+                                        inputRef={editImageInputRef}
+                                        submitLabel={lang === "es" ? "Guardar" : "Save"}
+                                        onFormChange={setEditForm}
+                                        onImageChange={onEditImageChange}
+                                        onSubmit={() => void onSaveEdit()}
+                                        onCancel={cancelEdit}
                                     />
-                                </div>
+                                ) : (
+                                    <Box sx={{ display: "grid", gridTemplateColumns: mediaItem ? { xs: "1fr", sm: "160px minmax(0, 1fr)" } : "1fr", gap: 1.25 }}>
+                                        {mediaItem ? (
+                                            <MediaCard item={mediaItem} onOpen={setSelectedMedia} showMetaInfo={false} showTitle={false} />
+                                        ) : null}
 
-                                {/* <div> */}
-                                <MuscleGroupSelect
-                                    t={t}
-                                    value={createForm.muscleGroup}
-                                    onChange={(next) =>
-                                        setCreateForm((previous) => ({
-                                            ...previous,
-                                            muscleGroup: next,
-                                        }))
-                                    }
-                                />
+                                        <Box sx={{ minWidth: 0 }}>
+                                            <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1, alignItems: "flex-start" }}>
+                                                <Box sx={{ minWidth: 0 }}>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 800 }} noWrap>{movement.name}</Typography>
+                                                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", overflowWrap: "anywhere" }}>id: {movement.id}</Typography>
+                                                </Box>
+                                                <Chip size="small" color={movement.isActive ? "success" : "default"} label={movement.isActive ? "Activo" : "Inactivo"} />
+                                            </Box>
 
-                                <EquipmentSelect
-                                    t={t}
-                                    value={createForm.equipment}
-                                    onChange={(next) =>
-                                        setCreateForm((previous) => ({
-                                            ...previous,
-                                            equipment: next,
-                                        }))
-                                    }
-                                />
-                                {/* </div> */}
-                            </div>
-                        </div>
+                                            <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 0.5 }}>
+                                                <Typography variant="body2" color="text.secondary">{formatMovementDetails(movement.muscleGroup, "Músculo")}</Typography>
+                                                <Typography variant="body2" color="text.secondary">{formatMovementDetails(movement.equipment, "Equipo")}</Typography>
+                                            </Box>
 
-                        <div className="grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <input
-                                    ref={createImageInputRef}
-                                    type="file"
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={onCreateImageChange}
-                                />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="h-8"
-                                    onClick={() => createImageInputRef.current?.click()}
-                                    disabled={busy}
-                                >
-                                    {lang === "es" ? "Elegir imagen" : "Choose image"}
-                                </Button>
+                                            <AppActionRow dense sx={{ mt: 1.25 }}>
+                                                <Button variant="outlined" onClick={() => startEdit(movement)} disabled={busy}>Editar</Button>
+                                                <Button variant="outlined" color={movement.isActive ? "warning" : "success"} onClick={() => onToggleActive(movement)} disabled={busy}>
+                                                    {movement.isActive ? "Desactivar" : "Activar"}
+                                                </Button>
+                                            </AppActionRow>
+                                        </Box>
+                                    </Box>
+                                )}
+                            </AppCard>
+                        );
+                    })}
+                </Box>
+            </AppCard>
 
-                                {createImageFile ? (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="h-8"
-                                        onClick={() => setCreateImageFile(null)}
-                                        disabled={busy}
-                                    >
-                                        {lang === "es" ? "Quitar imagen" : "Remove image"}
-                                    </Button>
-                                ) : null}
-                            </div>
-
-                            {createImagePreview && isImageFile(createImageFile) ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="text-xs text-muted-foreground">
-                                        {lang === "es" ? "Vista previa" : "Preview"}
-                                    </div>
-                                    <img
-                                        src={createImagePreview}
-                                        alt="Movimiento"
-                                        className="h-16 w-16 rounded-md border object-cover"
-                                    />
-                                </div>
-                            ) : null}
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                            <label className="inline-flex items-center gap-2 text-sm">
-                                <input
-                                    type="checkbox"
-                                    checked={createForm.isActive}
-                                    onChange={(event) =>
-                                        setCreateForm((previous) => ({
-                                            ...previous,
-                                            isActive: event.target.checked,
-                                        }))
-                                    }
-                                    disabled={busy}
-                                />
-                                <span>{lang === "es" ? "Activo" : "Active"}</span>
-                            </label>
-
-                            <Button className="h-9 w-full sm:w-auto" onClick={onCreate} disabled={busy}>
-                                {lang === "es" ? "Crear" : "Create"}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="text-xs text-muted-foreground">
-                    {listQuery.isFetching
-                        ? lang === "es"
-                            ? "Cargando movimientos..."
-                            : "Loading movements..."
-                        : lang === "es"
-                            ? `Mostrando ${movements.length}`
-                            : `Showing ${movements.length}`}
-                </div>
-            </div>
-
-            {empty ? (
-                <EmptyState
-                    title={lang === "es" ? "No hay movimientos" : "No movements"}
-                    description={
-                        lang === "es"
-                            ? "Crea tu primer movimiento para usarlo en rutinas."
-                            : "Create your first movement."
-                    }
-                />
-            ) : null}
-
-            {!empty ? (
-                <div className="rounded-xl border bg-card p-2 border-primary/40">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {movements.map((movement) => {
-                            const isEditing = editingId === movement.id;
-                            const mediaItem = movementToMediaItem(movement);
-
-                            return (
-                                <div
-                                    key={movement.id}
-                                    className="p-3 flex flex-col gap-3 border rounded-2xl border-primary/40"
-                                >
-                                    <div className="min-w-0">
-                                        {isEditing ? (
-                                            <div className="space-y-3">
-                                                <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                                                    <div className="flex flex-row sm:flex-col items-start gap-3">
-                                                        <div className="shrink-0">
-                                                            {editImagePreview && isImageFile(editImageFile) ? (
-                                                                <img
-                                                                    src={editImagePreview}
-                                                                    alt="Movimiento"
-                                                                    className="h-16 w-16 rounded-md border object-cover"
-                                                                />
-                                                            ) : mediaItem ? (
-                                                                <MediaCard
-                                                                    item={mediaItem}
-                                                                    onOpen={(item) => setSelectedMedia(item)}
-                                                                    showMetaInfo={false}
-                                                                    showTitle={false}
-                                                                    className="w-16"
-                                                                />
-                                                            ) : null}
-                                                        </div>
-
-                                                        <div className="flex flex-col gap-2">
-                                                            <input
-                                                                ref={editImageInputRef}
-                                                                type="file"
-                                                                className="hidden"
-                                                                accept="image/*"
-                                                                onChange={onEditImageChange}
-                                                            />
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                className="h-8"
-                                                                onClick={() => editImageInputRef.current?.click()}
-                                                                disabled={busy}
-                                                            >
-                                                                {lang === "es" ? "Elegir imagen" : "Choose image"}
-                                                            </Button>
-
-                                                            {editImageFile ? (
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="outline"
-                                                                    className="h-8"
-                                                                    onClick={() => setEditImageFile(null)}
-                                                                    disabled={busy}
-                                                                >
-                                                                    {lang === "es" ? "Quitar imagen" : "Remove image"}
-                                                                </Button>
-                                                            ) : null}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex-1 min-w-0 space-y-2">
-                                                        <div className="grid gap-2 md:grid-cols-3">
-                                                            <input
-                                                                className="rounded-md border bg-background px-3 py-2 text-sm md:col-span-2"
-                                                                value={editForm.name}
-                                                                onChange={(event) =>
-                                                                    setEditForm((previous) => ({
-                                                                        ...previous,
-                                                                        name: event.target.value,
-                                                                    }))
-                                                                }
-                                                                disabled={busy}
-                                                                placeholder={lang === "es" ? "Nombre" : "Name"}
-                                                            />
-                                                            <label className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm bg-background">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={editForm.isActive}
-                                                                    onChange={(event) =>
-                                                                        setEditForm((previous) => ({
-                                                                            ...previous,
-                                                                            isActive: event.target.checked,
-                                                                        }))
-                                                                    }
-                                                                    disabled={busy}
-                                                                />
-                                                                <span className="whitespace-nowrap">
-                                                                    {lang === "es" ? "Activo" : "Active"}
-                                                                </span>
-                                                            </label>
-                                                        </div>
-
-                                                        <div className="grid gap-2 md:grid-cols-2">
-                                                            <MuscleGroupSelect
-                                                                t={t}
-                                                                value={editForm.muscleGroup}
-                                                                onChange={(next) =>
-                                                                    setEditForm((previous) => ({
-                                                                        ...previous,
-                                                                        muscleGroup: next,
-                                                                    }))
-                                                                }
-                                                            />
-
-                                                            <EquipmentSelect
-                                                                t={t}
-                                                                value={editForm.equipment}
-                                                                onChange={(next) =>
-                                                                    setEditForm((previous) => ({
-                                                                        ...previous,
-                                                                        equipment: next,
-                                                                    }))
-                                                                }
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex flex-col sm:flex-row gap-2">
-                                                    <Button
-                                                        className="h-9 w-full sm:w-auto"
-                                                        onClick={onSaveEdit}
-                                                        disabled={busy}
-                                                    >
-                                                        {lang === "es" ? "Guardar" : "Save"}
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        className="h-9 w-full sm:w-auto"
-                                                        onClick={cancelEdit}
-                                                        disabled={busy}
-                                                    >
-                                                        {lang === "es" ? "Cancelar" : "Cancel"}
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-row items-start gap-3">
-                                                {mediaItem ? (
-                                                    <MediaCard
-                                                        item={mediaItem}
-                                                        onOpen={(item) => setSelectedMedia(item)}
-                                                        showMetaInfo={false}
-                                                        showTitle={false}
-                                                        className="w-16 shrink-0"
-                                                    />
-                                                ) : null}
-
-                                                <div className="min-w-0">
-                                                    <div className="text-sm font-semibold truncate">
-                                                        {movement.name}{" "}
-                                                        {!movement.isActive ? (
-                                                            <span className="ml-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] opacity-70">
-                                                                {lang === "es" ? "Inactivo" : "Inactive"}
-                                                            </span>
-                                                        ) : null}
-                                                    </div>
-
-                                                    <div className="text-xs text-muted-foreground wrap-break-words">
-                                                        {formatMovementDetails(
-                                                            movement.muscleGroup,
-                                                            lang === "es" ? "Músculo" : "Muscle"
-                                                        )}
-                                                        {" • "}
-                                                        {formatMovementDetails(
-                                                            movement.equipment,
-                                                            lang === "es" ? "Equipo" : "Equipment"
-                                                        )}
-                                                    </div>
-
-                                                    <div className="text-[11px] text-muted-foreground font-mono truncate">
-                                                        {movement.id}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {!isEditing ? (
-                                        <div className="flex flex-col sm:flex-row sm:justify-end flex-wrap gap-2">
-                                            <Button
-                                                variant="outline"
-                                                className="h-9 w-full sm:w-auto"
-                                                onClick={() => startEdit(movement)}
-                                                disabled={busy}
-                                            >
-                                                {lang === "es" ? "Editar" : "Edit"}
-                                            </Button>
-
-                                            <Button
-                                                variant="outline"
-                                                className="h-9 w-full sm:w-auto"
-                                                onClick={() => onToggleActive(movement)}
-                                                disabled={busy}
-                                            >
-                                                {lang === "es"
-                                                    ? movement.isActive
-                                                        ? "Desactivar"
-                                                        : "Activar"
-                                                    : movement.isActive
-                                                        ? "Deactivate"
-                                                        : "Activate"}
-                                            </Button>
-                                        </div>
-                                    ) : null}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            ) : null}
-
-            {selectedMedia ? (
-                <MediaViewerModal item={selectedMedia} onClose={() => setSelectedMedia(null)} />
-            ) : null}
-        </div>
+            {selectedMedia ? <MediaViewerModal item={selectedMedia} onClose={() => setSelectedMedia(null)} /> : null}
+        </AppPage>
     );
 }

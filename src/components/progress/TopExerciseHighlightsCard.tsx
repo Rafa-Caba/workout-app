@@ -1,9 +1,10 @@
 // src/components/progress/TopExerciseHighlightsCard.tsx
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
+// MUI highlights by exercise.
 
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+
+import { AppCard } from "@/components/mui";
 import type { WorkoutExerciseHighlightsItem } from "@/types/workoutProgress.types";
 
 type Props = {
@@ -12,25 +13,19 @@ type Props = {
 
 export function TopExerciseHighlightsCard({ items }: Props) {
     return (
-        <Card className={themedPanelCard}>
-            <CardHeader>
-                <CardTitle className="text-base">Highlights por ejercicio</CardTitle>
-            </CardHeader>
-
-            <CardContent className="space-y-3">
+        <AppCard title="Highlights por ejercicio">
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                 {!items.length ? (
-                    <div className="text-sm text-muted-foreground">
-                        Aún no hay mejoras comparables suficientes.
-                    </div>
+                    <Typography variant="body2" color="text.secondary">Aún no hay mejoras comparables suficientes.</Typography>
                 ) : (
                     items.map((item) => (
-                        <div key={item.id} className={cn("rounded-xl border p-3 space-y-1", themedNestedCard)}>
-                            <div className="font-semibold">{item.title}</div>
-                            <div className="text-sm text-muted-foreground">{item.message}</div>
-                        </div>
+                        <Box key={item.id} sx={{ border: 1, borderColor: "divider", borderRadius: 2, p: 1.25, bgcolor: "background.default" }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{item.title}</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>{item.message}</Typography>
+                        </Box>
                     ))
                 )}
-            </CardContent>
-        </Card>
+            </Box>
+        </AppCard>
     );
 }

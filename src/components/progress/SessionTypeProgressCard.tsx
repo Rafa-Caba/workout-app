@@ -1,10 +1,10 @@
 // src/components/progress/SessionTypeProgressCard.tsx
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// MUI card for progress grouped by session type.
 
-import { cn } from "@/lib/utils";
-import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 
+import { AppCard } from "@/components/mui";
 import type { WorkoutSessionTypeProgressItem } from "@/types/workoutProgress.types";
 import { formatMetricDelta, formatMetricValue } from "./progressFormatters";
 
@@ -14,43 +14,36 @@ type Props = {
 
 export function SessionTypeProgressCard({ items }: Props) {
     return (
-        <Card className={themedPanelCard}>
-            <CardHeader>
-                <CardTitle className="text-base">Progreso por tipo de sesión</CardTitle>
-            </CardHeader>
-
-            <CardContent className="space-y-3 grid sm:grid-cols-2 xl:grid-cols-3 sm:gap-3">
-                {!items.length ? (
-                    <div className="text-sm text-muted-foreground">
-                        No hay tipos de sesión comparables todavía.
-                    </div>
-                ) : (
-                    items.slice(0, 8).map((item) => (
-                        <div
+        <AppCard title="Progreso por tipo de sesión">
+            {!items.length ? (
+                <Typography variant="body2" color="text.secondary">No hay tipos de sesión comparables todavía.</Typography>
+            ) : (
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", xl: "repeat(3, minmax(0, 1fr))" }, gap: 1 }}>
+                    {items.slice(0, 8).map((item) => (
+                        <Box
                             key={item.sessionType}
-                            className={cn("rounded-xl border p-3 flex items-center gap-3", themedNestedCard)}
+                            sx={{ display: "flex", gap: 1.5, border: 1, borderColor: "divider", borderRadius: 2, p: 1.25, bgcolor: "background.default" }}
                         >
-                            <div className="flex-1 min-w-0 space-y-1">
-                                <div className="font-semibold truncate">{item.sessionType}</div>
-                                <div className="text-xs text-muted-foreground">
-                                    {formatMetricValue(item.sessionsCount)} ·{" "}
-                                    {formatMetricDelta(item.sessionsCount)}
-                                </div>
-                            </div>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800 }} noWrap>{item.sessionType}</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    {formatMetricValue(item.sessionsCount)} · {formatMetricDelta(item.sessionsCount)}
+                                </Typography>
+                            </Box>
 
-                            <div className="text-right shrink-0 text-xs space-y-1">
-                                <div>Duración: {formatMetricValue(item.durationSeconds)}</div>
-                                <div>Kcal: {formatMetricValue(item.activeKcal)}</div>
+                            <Box sx={{ textAlign: "right", flexShrink: 0 }}>
+                                <Typography variant="caption" sx={{ display: "block" }}>Duración: {formatMetricValue(item.durationSeconds)}</Typography>
+                                <Typography variant="caption" sx={{ display: "block" }}>Kcal: {formatMetricValue(item.activeKcal)}</Typography>
                                 {item.completionPct ? (
-                                    <div className="font-semibold text-primary">
+                                    <Typography variant="caption" color="primary" sx={{ display: "block", fontWeight: 800 }}>
                                         Cumplimiento: {formatMetricValue(item.completionPct)}
-                                    </div>
+                                    </Typography>
                                 ) : null}
-                            </div>
-                        </div>
-                    ))
-                )}
-            </CardContent>
-        </Card>
+                            </Box>
+                        </Box>
+                    ))}
+                </Box>
+            )}
+        </AppCard>
     );
 }

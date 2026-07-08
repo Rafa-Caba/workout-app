@@ -1,14 +1,17 @@
 // src/components/progress/BodyProgressHighlightsCard.tsx
+// MUI highlights card for body progress insights.
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
+
+import { AppCard } from "@/components/mui";
 import type { BodyProgressHighlight } from "@/types/bodyProgress.types";
-import { cn } from "@/lib/utils";
-import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
 
-function getToneClasses(tone: BodyProgressHighlight["tone"]): string {
-    if (tone === "positive") return "text-primary";
-    if (tone === "attention") return "text-amber-600";
-    return "text-muted-foreground";
+function toneColor(tone: BodyProgressHighlight["tone"]): "success.main" | "warning.main" | "text.secondary" {
+    if (tone === "positive") return "success.main";
+    if (tone === "attention") return "warning.main";
+    return "text.secondary";
 }
 
 export function BodyProgressHighlightsCard({
@@ -18,29 +21,31 @@ export function BodyProgressHighlightsCard({
     title: string;
     items: BodyProgressHighlight[];
 }) {
-    if (!items.length) {
-        return null;
-    }
+    if (!items.length) return null;
 
     return (
-        <Card className={themedPanelCard}>
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
-            </CardHeader>
-
-            <CardContent className="space-y-3">
+        <AppCard title={title}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                 {items.map((item) => (
-                    <div
+                    <Box
                         key={item.id}
-                        className={cn("rounded-xl border p-4", themedNestedCard)}
+                        sx={(theme) => ({
+                            border: 1,
+                            borderColor: "divider",
+                            borderRadius: 2,
+                            p: { xs: 1.25, md: 1.5 },
+                            bgcolor: alpha(theme.palette.primary.main, 0.025),
+                        })}
                     >
-                        <div className={`font-semibold ${getToneClasses(item.tone)}`}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: toneColor(item.tone) }}>
                             {item.title}
-                        </div>
-                        <div className="mt-1 text-sm text-foreground">{item.message}</div>
-                    </div>
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            {item.message}
+                        </Typography>
+                    </Box>
                 ))}
-            </CardContent>
-        </Card>
+            </Box>
+        </AppCard>
     );
 }

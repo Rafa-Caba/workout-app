@@ -1,6 +1,20 @@
-import React from "react";
+// src/components/media/MediaViewerModal.tsx
+// MUI modal for previewing and downloading media files.
+
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
+import CloseIcon from "@mui/icons-material/Close";
+import DownloadIcon from "@mui/icons-material/Download";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+
 import { JsonDetails } from "@/components/JsonDetails";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { MediaResourceType } from "@/types/media.types";
@@ -10,12 +24,10 @@ export type MediaLikeItem = {
     publicId?: string | null;
     resourceType?: MediaResourceType | null;
     format?: string | null;
-
     createdAt?: string | null;
     date?: string | null;
     sessionType?: string | null;
     source?: string | null;
-
     meta?: unknown;
     originalName?: string | null;
 };
@@ -37,9 +49,9 @@ function safeFileNameFromItem(item: MediaLikeItem): string {
         return `${base}.${extFromFormat}`;
     }
 
-    const m = item.url.match(/\.([a-z0-9]+)(\?.*)?$/i);
-    if (m?.[1]) {
-        const ext = m[1].toLowerCase();
+    const extensionMatch = item.url.match(/\.([a-z0-9]+)(\?.*)?$/i);
+    if (extensionMatch?.[1]) {
+        const ext = extensionMatch[1].toLowerCase();
         if (base.toLowerCase().endsWith(`.${ext}`)) return base;
         return `${base}.${ext}`;
     }
@@ -49,45 +61,39 @@ function safeFileNameFromItem(item: MediaLikeItem): string {
 
 async function downloadMedia(url: string, filename: string): Promise<void> {
     try {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        a.rel = "noreferrer";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = filename;
+        anchor.rel = "noreferrer";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
         return;
     } catch {
-        // continue
+        // Continue with fetch fallback.
     }
 
     try {
-        const res = await fetch(url, { mode: "cors" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const blob = await res.blob();
+        const response = await fetch(url, { mode: "cors" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const blob = await response.blob();
         const objectUrl = URL.createObjectURL(blob);
 
-        const a = document.createElement("a");
-        a.href = objectUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        const anchor = document.createElement("a");
+        anchor.href = objectUrl;
+        anchor.download = filename;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
 
         URL.revokeObjectURL(objectUrl);
-    } catch (e) {
+    } catch (error) {
         window.open(url, "_blank", "noreferrer");
-        throw e;
+        throw error;
     }
 }
 
-export function MediaViewerModal({
-    item,
-    onClose,
-}: {
-    item: MediaLikeItem;
-    onClose: () => void;
-}) {
+export function MediaViewerModal({ item, onClose }: { item: MediaLikeItem; onClose: () => void }) {
     const { t } = useI18n();
 
     const url = item.url;
@@ -112,82 +118,123 @@ export function MediaViewerModal({
     }
 
     return (
-        <div
-            className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden"
-            role="dialog"
-            aria-modal="true"
-            onMouseDown={(e) => {
-                if (e.target === e.currentTarget) onClose();
+        <Dialog
+            open
+            onClose={onClose}
+            fullWidth
+            maxWidth="lg"
+            slotProps={{
+                paper: {
+                    sx: {
+                        borderRadius: 3,
+                        overflow: "hidden",
+                    },
+                },
             }}
         >
-            <div className="absolute inset-0 bg-black/80" />
+            <DialogTitle
+                component="div"
+                sx={{
+                    p: 0,
+                    borderBottom: 1,
+                    borderColor: "divider",
+                }}
+            >
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 2,
+                        px: { xs: 2, md: 2.5 },
+                        py: 1.5,
+                    }}
+                >
+                    <Box sx={{ minWidth: 0 }}>
+                        <Typography
+                            variant="h6"
+                            component="h2"
+                            sx={{ fontWeight: 800, overflowWrap: "anywhere" }}
+                        >
+                            {fileName}
+                        </Typography>
+                        <Box sx={{ mt: 0.75, display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                            <Chip label={inferredType} size="small" />
+                            {item.createdAt ? <Chip label={item.createdAt} size="small" /> : null}
+                            {item.date ? <Chip label={item.date} size="small" /> : null}
+                            {item.sessionType ? <Chip label={item.sessionType} size="small" /> : null}
+                            {item.source ? <Chip label={`src:${item.source}`} size="small" /> : null}
+                        </Box>
+                    </Box>
 
-            <div className="relative min-h-full p-3 sm:p-4 md:p-8 flex items-start sm:items-center justify-center">
-                <div className="w-full max-w-5xl rounded-2xl border bg-background shadow-xl overflow-hidden max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] flex flex-col">
-                    {/* Header */}
-                    <div className="flex w-full min-w-0 flex-col md:flex-row md:items-center items-start justify-between gap-3 p-4 border-b">
-                        {/* Left: file + meta */}
-                        <div className="flex-1 min-w-0 w-full">
-                            <div className="text-sm font-semibold truncate max-w-full" title={fileName}>
-                                {fileName}
-                            </div>
+                    <IconButton aria-label="Cerrar" onClick={onClose}>
+                        <CloseIcon />
+                    </IconButton>
+                </Box>
+            </DialogTitle>
 
-                            <div className="min-w-0 text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-1">
-                                <span className="font-mono">{inferredType}</span>
-                                {item.createdAt ? <span className="font-mono">{item.createdAt}</span> : null}
-                                {item.date ? <span className="font-mono">{item.date}</span> : null}
-                                {item.sessionType ? <span className="font-mono">{item.sessionType}</span> : null}
-                                {item.source ? <span className="font-mono break-all">src:{item.source}</span> : null}
-                            </div>
-                        </div>
-
-                        {/* Right: actions */}
-                        <div className="flex items-center gap-2 shrink-0 w-full md:w-auto justify-start md:justify-end flex-wrap">
-                            <Button variant="outline" onClick={() => window.open(url, "_blank", "noreferrer")}>
+            <DialogContent
+                sx={{
+                    p: 0,
+                    bgcolor: "background.default",
+                    scrollbarWidth: "none",
+                    "&::-webkit-scrollbar": { display: "none" },
+                }}
+            >
+                <Box sx={{ bgcolor: "black", display: "grid", placeItems: "center" }}>
+                    {inferredType === "image" ? (
+                        <Box
+                            component="img"
+                            src={url}
+                            alt={fileName}
+                            sx={{
+                                maxWidth: "100%",
+                                maxHeight: { xs: "62vh", md: "72vh" },
+                                objectFit: "contain",
+                            }}
+                        />
+                    ) : inferredType === "video" ? (
+                        <Box
+                            component="video"
+                            src={url}
+                            controls
+                            playsInline
+                            sx={{
+                                width: "100%",
+                                maxHeight: { xs: "62vh", md: "72vh" },
+                                bgcolor: "black",
+                            }}
+                        />
+                    ) : (
+                        <Box sx={{ p: 5, textAlign: "center" }}>
+                            <Button
+                                variant="contained"
+                                endIcon={<OpenInNewIcon />}
+                                onClick={() => window.open(url, "_blank", "noreferrer")}
+                            >
                                 {t("media.open")}
                             </Button>
-                            <Button onClick={onDownload}>Descargar</Button>
-                            <Button variant="outline" onClick={onClose}>
-                                ✕
-                            </Button>
-                        </div>
-                    </div>
+                        </Box>
+                    )}
+                </Box>
 
-                    {/* Scrollable body */}
-                    <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
-                        {/* Viewer */}
-                        <div className="bg-black/5">
-                            <div className="w-full aspect-video flex items-center justify-center">
-                                {inferredType === "image" ? (
-                                    <img
-                                        src={url}
-                                        alt={fileName}
-                                        className="max-h-[60vh] sm:max-h-[75vh] w-auto max-w-full object-contain"
-                                    />
-                                ) : inferredType === "video" ? (
-                                    <video
-                                        src={url}
-                                        className="max-h-[60vh] sm:max-h-[75vh] w-full object-contain"
-                                        controls
-                                    />
-                                ) : (
-                                    <div className="p-6 sm:p-8 text-center space-y-3">
-                                        <div className="text-sm text-muted-foreground">{t("media.open")}</div>
-                                        <a className="underline break-all" href={url} target="_blank" rel="noreferrer">
-                                            {url}
-                                        </a>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                <Box sx={{ p: { xs: 2, md: 2.5 } }}>
+                    <JsonDetails title="Metadata" data={item.meta ?? item} defaultOpen={false} />
+                </Box>
+            </DialogContent>
 
-                        {/* Meta */}
-                        <div className="p-4 border-t">
-                            <JsonDetails title="Meta (JSON)" data={item.meta ?? null} />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            <DialogActions sx={{ px: { xs: 2, md: 2.5 }, py: 1.5 }}>
+                <Button
+                    variant="outlined"
+                    startIcon={<OpenInNewIcon />}
+                    onClick={() => window.open(url, "_blank", "noreferrer")}
+                >
+                    {t("media.open")}
+                </Button>
+                <Button variant="contained" startIcon={<DownloadIcon />} onClick={() => void onDownload()}>
+                    Descargar
+                </Button>
+            </DialogActions>
+        </Dialog>
     );
 }

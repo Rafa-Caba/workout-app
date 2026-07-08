@@ -1,10 +1,13 @@
 // src/components/progress/ProgressPeriodToolbar.tsx
-import React from "react";
-import type {
-    WorkoutProgressCompareTo,
-    WorkoutProgressMode,
-} from "@/types/workoutProgress.types";
-import { Button } from "@/components/ui/button";
+// MUI toolbar for progress mode, custom ranges and comparison options.
+
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+
+import { AppCard } from "@/components/mui";
+import type { WorkoutProgressCompareTo, WorkoutProgressMode } from "@/types/workoutProgress.types";
 
 type Props = {
     mode: WorkoutProgressMode;
@@ -44,109 +47,79 @@ export function ProgressPeriodToolbar({
     onChangeCustomTo,
     onApplyCustomRange,
 }: Props) {
-    const canApplyCustomRange =
-        mode === "customRange" &&
-        Boolean(customFrom) &&
-        Boolean(customTo) &&
-        customFrom <= customTo;
+    const canApplyCustomRange = mode === "customRange" && Boolean(customFrom) && Boolean(customTo) && customFrom <= customTo;
 
     return (
-        <div className="rounded-xl border bg-card p-4 space-y-4">
-            <div className="space-y-2">
-                <div className="text-sm font-semibold">Periodo</div>
+        <AppCard>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>Periodo</Typography>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                        {MODE_OPTIONS.map((option) => (
+                            <Button
+                                key={option.value}
+                                type="button"
+                                size="small"
+                                variant={option.value === mode ? "contained" : "outlined"}
+                                onClick={() => onChangeMode(option.value)}
+                            >
+                                {option.label}
+                            </Button>
+                        ))}
+                    </Box>
 
-                <div className="flex flex-wrap gap-2">
-                    {MODE_OPTIONS.map((option) => (
-                        <Button
-                            key={option.value}
-                            type="button"
-                            variant={option.value === mode ? "default" : "outline"}
-                            onClick={() => onChangeMode(option.value)}
-                        >
-                            {option.label}
-                        </Button>
-                    ))}
-                </div>
+                    {mode === "customRange" ? (
+                        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1, alignItems: { xs: "stretch", sm: "flex-end" }, mt: 1.5 }}>
+                            <TextField
+                                label="Fecha inicio"
+                                type="date"
+                                value={customFrom}
+                                onChange={(event) => onChangeCustomFrom(event.target.value)}
+                                size="small"
+                            />
+                            <TextField
+                                label="Fecha fin"
+                                type="date"
+                                value={customTo}
+                                onChange={(event) => onChangeCustomTo(event.target.value)}
+                                size="small"
+                            />
+                            <Button type="button" variant="contained" onClick={onApplyCustomRange} disabled={!canApplyCustomRange}>
+                                Aplicar rango
+                            </Button>
+                        </Box>
+                    ) : null}
 
-                {mode === "customRange" ? (
-                    <>
-                        <div className="flex flex-row gap-3 items-start md:items-end pt-2">
-                            <div className="space-y-1">
-                                <div className="text-xs font-semibold text-muted-foreground">
-                                    Fecha inicio
-                                </div>
-                                <input
-                                    type="date"
-                                    value={customFrom}
-                                    onChange={(event) => onChangeCustomFrom(event.target.value)}
-                                    className={[
-                                        "flex h-10 w-auto md:w-52 rounded-md border border-input bg-background px-3 py-2",
-                                        "text-sm ring-offset-background",
-                                        "file:border-0 file:bg-transparent file:text-sm file:font-medium",
-                                        "placeholder:text-muted-foreground",
-                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                        "disabled:cursor-not-allowed disabled:opacity-50",
-                                    ].join(" ")}
-                                />
-                            </div>
+                    {mode === "customRange" && customRangeLabel ? (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+                            {customRangeLabel}
+                        </Typography>
+                    ) : null}
 
-                            <div className="space-y-1">
-                                <div className="text-xs font-semibold text-muted-foreground">
-                                    Fecha fin
-                                </div>
-                                <input
-                                    type="date"
-                                    value={customTo}
-                                    onChange={(event) => onChangeCustomTo(event.target.value)}
-                                    className={[
-                                        "flex h-10 w-auto md:w-52 rounded-md border border-input bg-background px-3 py-2",
-                                        "text-sm ring-offset-background",
-                                        "file:border-0 file:bg-transparent file:text-sm file:font-medium",
-                                        "placeholder:text-muted-foreground",
-                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                        "disabled:cursor-not-allowed disabled:opacity-50",
-                                    ].join(" ")}
-                                />
-                            </div>
-                        </div>
-                        <Button
-                            type="button"
-                            onClick={onApplyCustomRange}
-                            disabled={!canApplyCustomRange}
-                        >
-                            Aplicar rango
-                        </Button>
-                    </>
-                ) : null}
+                    {mode === "customRange" && customFrom && customTo && customFrom > customTo ? (
+                        <Typography variant="caption" color="warning.main" sx={{ display: "block", mt: 1, fontWeight: 800 }}>
+                            La fecha inicial no puede ser mayor que la final.
+                        </Typography>
+                    ) : null}
+                </Box>
 
-                {mode === "customRange" && customRangeLabel ? (
-                    <div className="text-xs text-muted-foreground font-medium">
-                        {customRangeLabel}
-                    </div>
-                ) : null}
-
-                {mode === "customRange" && customFrom && customTo && customFrom > customTo ? (
-                    <div className="text-xs font-semibold text-amber-600">
-                        La fecha inicial no puede ser mayor que la final.
-                    </div>
-                ) : null}
-            </div>
-
-            <div className="space-y-2">
-                <div className="text-sm font-semibold">Comparar con</div>
-                <div className="flex flex-wrap gap-2">
-                    {COMPARE_OPTIONS.map((option) => (
-                        <Button
-                            key={option.value}
-                            type="button"
-                            variant={option.value === compareTo ? "default" : "outline"}
-                            onClick={() => onChangeCompareTo(option.value)}
-                        >
-                            {option.label}
-                        </Button>
-                    ))}
-                </div>
-            </div>
-        </div>
+                <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>Comparar con</Typography>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                        {COMPARE_OPTIONS.map((option) => (
+                            <Button
+                                key={option.value}
+                                type="button"
+                                size="small"
+                                variant={option.value === compareTo ? "contained" : "outlined"}
+                                onClick={() => onChangeCompareTo(option.value)}
+                            >
+                                {option.label}
+                            </Button>
+                        ))}
+                    </Box>
+                </Box>
+            </Box>
+        </AppCard>
     );
 }

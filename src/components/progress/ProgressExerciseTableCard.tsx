@@ -1,14 +1,12 @@
 // src/components/progress/ProgressExerciseTableCard.tsx
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
+// MUI top exercise comparison list.
 
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+
+import { AppCard } from "@/components/mui";
 import type { WorkoutProgressExerciseTableRow } from "@/types/workoutProgress.types";
-import {
-    formatExerciseBasisLabel,
-    formatUnitValue,
-} from "./progressFormatters";
+import { formatExerciseBasisLabel, formatUnitValue } from "./progressFormatters";
 
 type Props = {
     rows: WorkoutProgressExerciseTableRow[];
@@ -16,52 +14,51 @@ type Props = {
 
 export function ProgressExerciseTableCard({ rows }: Props) {
     return (
-        <Card className={themedPanelCard}>
-            <CardHeader>
-                <CardTitle className="text-base">Top ejercicios</CardTitle>
-            </CardHeader>
-
-            <CardContent className="space-y-3">
+        <AppCard title="Top ejercicios">
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                 {!rows.length ? (
-                    <div className="text-sm text-muted-foreground">
-                        Todavía no hay comparaciones suficientes.
-                    </div>
+                    <Typography variant="body2" color="text.secondary">Todavía no hay comparaciones suficientes.</Typography>
                 ) : (
                     rows.map((row) => {
                         const improvementText =
                             row.improvementPct !== null
                                 ? `${row.improvementPct > 0 ? "+" : ""}${row.improvementPct.toFixed(1)}%`
                                 : row.improvementAbsolute !== null
-                                    ? `${row.improvementAbsolute > 0 ? "+" : ""}${formatUnitValue(
-                                        row.improvementAbsolute,
-                                        row.unit
-                                    )}`
+                                    ? `${row.improvementAbsolute > 0 ? "+" : ""}${formatUnitValue(row.improvementAbsolute, row.unit)}`
                                     : "—";
 
                         return (
-                            <div
+                            <Box
                                 key={row.exerciseKey}
-                                className={cn("rounded-xl border p-3 flex items-center gap-3", themedNestedCard)}
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1.5,
+                                    border: 1,
+                                    borderColor: "divider",
+                                    borderRadius: 2,
+                                    p: 1.25,
+                                    bgcolor: "background.default",
+                                }}
                             >
-                                <div className="flex-1 space-y-1 min-w-0">
-                                    <div className="font-semibold truncate">{row.exerciseLabel}</div>
-                                    <div className="text-xs text-muted-foreground">
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }} noWrap>{row.exerciseLabel}</Typography>
+                                    <Typography variant="caption" color="text.secondary">
                                         {formatExerciseBasisLabel(row.basis)} · {row.periodLabel}
-                                    </div>
-                                </div>
+                                    </Typography>
+                                </Box>
 
-                                <div className="text-right shrink-0">
-                                    <div className="font-semibold text-primary">{improvementText}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                        {formatUnitValue(row.previous, row.unit)} →{" "}
-                                        {formatUnitValue(row.current, row.unit)}
-                                    </div>
-                                </div>
-                            </div>
+                                <Box sx={{ textAlign: "right", flexShrink: 0 }}>
+                                    <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 800 }}>{improvementText}</Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {formatUnitValue(row.previous, row.unit)} → {formatUnitValue(row.current, row.unit)}
+                                    </Typography>
+                                </Box>
+                            </Box>
                         );
                     })
                 )}
-            </CardContent>
-        </Card>
+            </Box>
+        </AppCard>
     );
 }

@@ -1,7 +1,12 @@
 // src/components/bodyMetrics/BodyMetricsEntryCard.tsx
+// MUI card for a saved body metric entry.
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
+
+import { AppActionRow, AppCard, AppMetricCard } from "@/components/mui";
 import type { UserMetricEntry } from "@/types/bodyMetrics.types";
 
 function formatValue(value: number | null, suffix: string): string {
@@ -22,69 +27,50 @@ export function BodyMetricsEntryCard({
     onDelete: () => void;
 }) {
     return (
-        <Card>
-            <CardContent className="p-0">
-                <div className="space-y-4 px-4 pb-4 pt-5">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="space-y-1">
-                            <div className="text-base font-semibold leading-none tracking-tight">
-                                {entry.date}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                                Fuente: {entry.source}
-                            </div>
-                        </div>
+        <AppCard
+            title={entry.date}
+            subtitle={`Fuente: ${entry.source}`}
+            action={
+                <AppActionRow dense>
+                    <Button variant="outlined" onClick={onEdit}>Editar</Button>
+                    <Button variant="contained" color="error" onClick={onDelete}>Eliminar</Button>
+                </AppActionRow>
+            }
+        >
+            <Box
+                sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
+                    gap: 1,
+                }}
+            >
+                <AppMetricCard compact label="Peso" value={formatValue(entry.weightKg, "kg")} />
+                <AppMetricCard compact label="Grasa corporal" value={formatValue(entry.bodyFatPct, "%")} />
+                <AppMetricCard compact label="Cintura" value={formatValue(entry.waistCm, "cm")} />
+            </Box>
 
-                        <div className="flex flex-wrap gap-2">
-                            <Button variant="outline" onClick={onEdit}>
-                                Editar
-                            </Button>
-                            <Button variant="destructive" onClick={onDelete}>
-                                Eliminar
-                            </Button>
-                        </div>
-                    </div>
+            {entry.notes ? (
+                <Box sx={{ mt: 1.25, p: 1.25, border: 1, borderColor: "divider", borderRadius: 2, bgcolor: "background.default" }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                        Notas
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}>
+                        {entry.notes}
+                    </Typography>
+                </Box>
+            ) : null}
 
-                    <div className="grid grid-cols-1 gap-2 rounded-xl border bg-background p-3 text-sm sm:grid-cols-3">
-                        <div className="grid grid-cols-[1fr_auto] items-center gap-3">
-                            <span className="text-muted-foreground">Peso</span>
-                            <span className="font-medium">{formatValue(entry.weightKg, "kg")}</span>
-                        </div>
-
-                        <div className="grid grid-cols-[1fr_auto] items-center gap-3">
-                            <span className="text-muted-foreground">Grasa corporal</span>
-                            <span className="font-medium">{formatValue(entry.bodyFatPct, "%")}</span>
-                        </div>
-
-                        <div className="grid grid-cols-[1fr_auto] items-center gap-3">
-                            <span className="text-muted-foreground">Cintura</span>
-                            <span className="font-medium">{formatValue(entry.waistCm, "cm")}</span>
-                        </div>
-                    </div>
-
-                    {entry.notes ? (
-                        <div className="rounded-xl border bg-background p-3">
-                            <div className="mb-1 text-xs font-semibold text-muted-foreground">
-                                Notas
-                            </div>
-                            <div className="whitespace-pre-wrap text-sm">{entry.notes}</div>
-                        </div>
-                    ) : null}
-
-                    {entry.customMetrics.length ? (
-                        <div className="flex flex-wrap gap-2">
-                            {entry.customMetrics.map((metric) => (
-                                <div
-                                    key={`${entry.id}-${metric.key}`}
-                                    className="rounded-full border bg-background px-3 py-1.5 text-xs font-medium"
-                                >
-                                    {metric.label}: {metric.value} {metric.unit}
-                                </div>
-                            ))}
-                        </div>
-                    ) : null}
-                </div>
-            </CardContent>
-        </Card>
+            {entry.customMetrics.length ? (
+                <Box sx={{ mt: 1.25, display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                    {entry.customMetrics.map((metric) => (
+                        <Chip
+                            key={`${entry.id}-${metric.key}`}
+                            label={`${metric.label}: ${metric.value} ${metric.unit}`}
+                            size="small"
+                        />
+                    ))}
+                </Box>
+            ) : null}
+        </AppCard>
     );
 }

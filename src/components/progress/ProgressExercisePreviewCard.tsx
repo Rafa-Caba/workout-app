@@ -1,9 +1,13 @@
 // src/components/progress/ProgressExercisePreviewCard.tsx
-import React from "react";
-import { Link } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// MUI quick preview card for dashboard progress.
+
+import { useNavigate } from "react-router-dom";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+
+import { AppCard } from "@/components/mui";
 import type { WorkoutProgressOverviewResponse } from "@/types/workoutProgress.types";
-import { Button } from "@/components/ui/button";
 import { formatExerciseBasisLabel } from "./progressFormatters";
 
 type Props = {
@@ -11,62 +15,37 @@ type Props = {
     isLoading?: boolean;
 };
 
-export function ProgressExercisePreviewCard({
-    data,
-    isLoading = false,
-}: Props) {
+export function ProgressExercisePreviewCard({ data, isLoading = false }: Props) {
+    const navigate = useNavigate();
     const rows = data?.exerciseTable ?? [];
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-base">Progreso</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                    Preview rápido de las mejores mejoras del periodo.
-                </p>
-            </CardHeader>
-
-            <CardContent className="space-y-3">
-                {isLoading ? (
-                    <div className="text-sm text-muted-foreground">Cargando progreso...</div>
-                ) : rows.length ? (
-                    <>
-                        {rows.slice(0, 3).map((row) => (
-                            <div
-                                key={row.exerciseKey}
-                                className="rounded-xl border bg-background p-3 flex items-center gap-3"
-                            >
-                                <div className="flex-1 min-w-0">
-                                    <div className="font-semibold truncate">{row.exerciseLabel}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                        {formatExerciseBasisLabel(row.basis)}
-                                    </div>
-                                </div>
-
-                                <div className="font-semibold text-primary shrink-0">
-                                    {row.improvementPct !== null
-                                        ? `${row.improvementPct > 0 ? "+" : ""}${row.improvementPct.toFixed(1)}%`
-                                        : "—"}
-                                </div>
-                            </div>
-                        ))}
-
-                        <Button asChild variant="outline" className="w-full">
-                            <Link to="/progress">Ver sección completa</Link>
-                        </Button>
-                    </>
-                ) : (
-                    <>
-                        <div className="text-sm text-muted-foreground">
-                            Aún no hay datos comparables suficientes para mostrar preview.
-                        </div>
-
-                        <Button asChild variant="outline" className="w-full">
-                            <Link to="/progress">Abrir progreso</Link>
-                        </Button>
-                    </>
-                )}
-            </CardContent>
-        </Card>
+        <AppCard title="Progreso" subtitle="Preview rápido de las mejores mejoras del periodo.">
+            {isLoading ? (
+                <Typography variant="body2" color="text.secondary">Cargando progreso...</Typography>
+            ) : rows.length ? (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    {rows.slice(0, 3).map((row) => (
+                        <Box key={row.exerciseKey} sx={{ display: "flex", alignItems: "center", gap: 1.5, border: 1, borderColor: "divider", borderRadius: 2, p: 1.25, bgcolor: "background.default" }}>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800 }} noWrap>{row.exerciseLabel}</Typography>
+                                <Typography variant="caption" color="text.secondary">{formatExerciseBasisLabel(row.basis)}</Typography>
+                            </Box>
+                            <Typography color="primary" sx={{ fontWeight: 800, flexShrink: 0 }}>
+                                {row.improvementPct !== null ? `${row.improvementPct > 0 ? "+" : ""}${row.improvementPct.toFixed(1)}%` : "—"}
+                            </Typography>
+                        </Box>
+                    ))}
+                    <Button variant="outlined" fullWidth onClick={() => navigate("/progress")}>Ver sección completa</Button>
+                </Box>
+            ) : (
+                <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                        Aún no hay datos comparables suficientes para mostrar preview.
+                    </Typography>
+                    <Button variant="outlined" fullWidth onClick={() => navigate("/progress")}>Abrir progreso</Button>
+                </Box>
+            )}
+        </AppCard>
     );
 }

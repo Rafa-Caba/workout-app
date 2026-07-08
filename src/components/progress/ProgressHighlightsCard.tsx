@@ -1,45 +1,52 @@
 // src/components/progress/ProgressHighlightsCard.tsx
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// MUI highlights card for automatic workout progress insights.
+
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+
+import { AppCard } from "@/components/mui";
 import type { WorkoutProgressHighlightsItem } from "@/types/workoutProgress.types";
-import { cn } from "@/lib/utils";
-import { themedPanelCard, themedNestedCard } from "@/theme/cardHierarchy";
 
 type Props = {
     title?: string;
     items: WorkoutProgressHighlightsItem[];
 };
 
-export function ProgressHighlightsCard({
-    title = "Highlights",
-    items,
-}: Props) {
+function dotColor(tone: WorkoutProgressHighlightsItem["tone"]): string {
+    if (tone === "positive") return "success.main";
+    if (tone === "attention") return "warning.main";
+    return "text.secondary";
+}
+
+export function ProgressHighlightsCard({ title = "Highlights", items }: Props) {
     return (
-        <Card className={themedPanelCard}>
-            <CardHeader>
-                <CardTitle className="text-base">{title}</CardTitle>
-            </CardHeader>
-
-            <CardContent className="space-y-3">
-                {items.map((item) => {
-                    const dotClass =
-                        item.tone === "positive"
-                            ? "bg-emerald-500"
-                            : item.tone === "attention"
-                                ? "bg-amber-500"
-                                : "bg-muted-foreground";
-
-                    return (
-                        <div key={item.id} className={cn("rounded-xl border p-3 flex gap-3", themedNestedCard)}>
-                            <div className={`mt-1 h-2.5 w-2.5 rounded-full shrink-0 ${dotClass}`} />
-                            <div className="space-y-1">
-                                <div className="font-semibold">{item.title}</div>
-                                <div className="text-sm text-muted-foreground">{item.message}</div>
-                            </div>
-                        </div>
-                    );
-                })}
-            </CardContent>
-        </Card>
+        <AppCard title={title}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                {items.length ? (
+                    items.map((item) => (
+                        <Box
+                            key={item.id}
+                            sx={{
+                                display: "flex",
+                                gap: 1.25,
+                                border: 1,
+                                borderColor: "divider",
+                                borderRadius: 2,
+                                p: 1.25,
+                                bgcolor: "background.default",
+                            }}
+                        >
+                            <Box sx={{ mt: 0.75, width: 10, height: 10, borderRadius: 999, bgcolor: dotColor(item.tone), flexShrink: 0 }} />
+                            <Box sx={{ minWidth: 0 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{item.title}</Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>{item.message}</Typography>
+                            </Box>
+                        </Box>
+                    ))
+                ) : (
+                    <Typography variant="body2" color="text.secondary">Sin highlights por ahora.</Typography>
+                )}
+            </Box>
+        </AppCard>
     );
 }

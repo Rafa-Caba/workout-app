@@ -1,13 +1,13 @@
 // src/components/progress/ProgressHeroCard.tsx
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type {
-    WorkoutProgressComparisonRange,
-    WorkoutProgressHero,
-} from "@/types/workoutProgress.types";
+// MUI hero summary for the Progress page.
+
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
+
+import { AppCard } from "@/components/mui";
+import type { WorkoutProgressComparisonRange, WorkoutProgressHero } from "@/types/workoutProgress.types";
 import { formatRangeLabel } from "./progressFormatters";
-import { cn } from "@/lib/utils";
-import { themedPanelCard, themedNestedCard, themedPill } from "@/theme/cardHierarchy";
 
 type Props = {
     hero: WorkoutProgressHero;
@@ -17,50 +17,36 @@ type Props = {
 
 export function ProgressHeroCard({ hero, range, compareRange }: Props) {
     return (
-        <Card className={themedPanelCard}>
-            <CardHeader>
-                <CardTitle className="text-base">{hero.title}</CardTitle>
-                <p className="text-sm text-muted-foreground">{hero.subtitle}</p>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-                <div className={cn("rounded-xl border p-3 text-sm space-y-2", themedNestedCard)}>
-                    <div>
-                        <span className="font-semibold">Rango actual:</span>{" "}
-                        <span className="font-mono">{formatRangeLabel(range)}</span>
-                    </div>
-
+        <AppCard title={hero.title} subtitle={hero.subtitle} tone="accent">
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+                <Box sx={{ border: 1, borderColor: "divider", borderRadius: 2, p: 1.25, bgcolor: "background.default" }}>
+                    <Typography variant="body2">
+                        <strong>Rango actual:</strong> <Box component="span" sx={{ fontFamily: "monospace" }}>{formatRangeLabel(range)}</Box>
+                    </Typography>
                     {compareRange ? (
-                        <div>
-                            <span className="font-semibold">Comparado:</span>{" "}
-                            <span className="font-mono">{formatRangeLabel(compareRange)}</span>
-                        </div>
+                        <Typography variant="body2" sx={{ mt: 0.5 }}>
+                            <strong>Comparado:</strong> <Box component="span" sx={{ fontFamily: "monospace" }}>{formatRangeLabel(compareRange)}</Box>
+                        </Typography>
                     ) : null}
-                </div>
+                </Box>
 
                 {hero.items.length ? (
-                    <div className="flex flex-wrap gap-2">
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
                         {hero.items.map((item) => (
-                            <span
-                                key={item}
-                                className={cn("rounded-full border px-3 py-1 text-xs font-semibold", themedPill)}
-                            >
-                                {item}
-                            </span>
+                            <Chip key={item} label={item} size="small" color="primary" variant="outlined" />
                         ))}
-                    </div>
+                    </Box>
                 ) : null}
 
-                <div className={cn("rounded-xl border p-3 space-y-2", themedNestedCard)}>
-                    <p className="font-semibold">{hero.message}</p>
-
+                <Box sx={{ border: 1, borderColor: "divider", borderRadius: 2, p: 1.25, bgcolor: "background.default" }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{hero.message}</Typography>
                     {hero.bullets.map((bullet) => (
-                        <p key={bullet} className="text-sm text-muted-foreground">
+                        <Typography key={bullet} variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                             • {bullet}
-                        </p>
+                        </Typography>
                     ))}
-                </div>
-            </CardContent>
-        </Card>
+                </Box>
+            </Box>
+        </AppCard>
     );
 }

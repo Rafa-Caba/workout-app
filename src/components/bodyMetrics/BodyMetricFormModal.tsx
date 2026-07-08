@@ -1,12 +1,20 @@
 // src/components/bodyMetrics/BodyMetricFormModal.tsx
+// MUI dialog for creating or editing body metric entries.
 
 import * as React from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type {
-    UpsertUserMetricRequest,
-    UserMetricEntry,
-} from "@/types/bodyMetrics.types";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import CloseIcon from "@mui/icons-material/Close";
+
+import { AppFormGrid } from "@/components/mui";
+import type { UpsertUserMetricRequest, UserMetricEntry } from "@/types/bodyMetrics.types";
 
 type FormState = {
     date: string;
@@ -35,12 +43,9 @@ function parseNullableNumber(value: string): number | null {
 function toInitialForm(entry: UserMetricEntry | null): FormState {
     return {
         date: entry?.date ?? getTodayIsoDate(),
-        weightKg:
-            typeof entry?.weightKg === "number" ? String(entry.weightKg) : "",
-        bodyFatPct:
-            typeof entry?.bodyFatPct === "number" ? String(entry.bodyFatPct) : "",
-        waistCm:
-            typeof entry?.waistCm === "number" ? String(entry.waistCm) : "",
+        weightKg: typeof entry?.weightKg === "number" ? String(entry.weightKg) : "",
+        bodyFatPct: typeof entry?.bodyFatPct === "number" ? String(entry.bodyFatPct) : "",
+        waistCm: typeof entry?.waistCm === "number" ? String(entry.waistCm) : "",
         notes: entry?.notes ?? "",
     };
 }
@@ -51,21 +56,6 @@ function isMeaningfulPayload(payload: UpsertUserMetricRequest): boolean {
         payload.bodyFatPct !== null ||
         payload.waistCm !== null ||
         (typeof payload.notes === "string" && payload.notes.trim().length > 0)
-    );
-}
-
-function Field({
-    label,
-    children,
-}: {
-    label: string;
-    children: React.ReactNode;
-}) {
-    return (
-        <label className="grid gap-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">{label}</span>
-            {children}
-        </label>
     );
 }
 
@@ -89,10 +79,8 @@ export function BodyMetricFormModal({
         setForm(toInitialForm(initialEntry));
     }, [initialEntry, open]);
 
-    if (!open) return null;
-
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
+    async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
 
         const payload: UpsertUserMetricRequest = {
             weightKg: parseNullableNumber(form.weightKg),
@@ -106,91 +94,125 @@ export function BodyMetricFormModal({
             return;
         }
 
-        await onSave({
-            date: form.date,
-            payload,
-        });
+        await onSave({ date: form.date, payload });
     }
 
     return (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
-            <Card className="max-h-[90vh] w-full max-w-2xl overflow-auto">
-                <CardHeader>
-                    <CardTitle>
-                        {initialEntry ? "Editar registro corporal" : "Nuevo registro corporal"}
-                    </CardTitle>
-                    <CardDescription>
-                        Guarda peso, cintura, grasa corporal y notas del día.
-                    </CardDescription>
-                </CardHeader>
+        <Dialog
+            open={open}
+            onClose={saving ? undefined : onClose}
+            fullWidth
+            maxWidth="sm"
+            slotProps={{
+                paper: {
+                    sx: {
+                        borderRadius: 3,
+                        overflow: "hidden",
+                    },
+                },
+            }}
+        >
+            <Box component="form" onSubmit={(event) => void handleSubmit(event)}>
+                <DialogTitle
+                    component="div"
+                    sx={{ p: 0, borderBottom: 1, borderColor: "divider" }}
+                >
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 2,
+                            px: { xs: 2, md: 2.5 },
+                            py: 1.5,
+                        }}
+                    >
+                        <Box sx={{ minWidth: 0 }}>
+                            <Typography variant="h6" component="h2" sx={{ fontWeight: 800 }}>
+                                {initialEntry ? "Editar registro corporal" : "Nuevo registro corporal"}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Guarda peso, cintura, grasa corporal y notas del día.
+                            </Typography>
+                        </Box>
 
-                <CardContent>
-                    <form className="space-y-4" onSubmit={handleSubmit}>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <Field label="Fecha">
-                                <input
-                                    type="date"
-                                    value={form.date}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, date: e.target.value }))}
-                                    className="h-10 rounded-md border bg-background px-3 text-sm"
-                                    required
-                                />
-                            </Field>
+                        <IconButton aria-label="Cerrar" onClick={onClose} disabled={saving}>
+                            <CloseIcon />
+                        </IconButton>
+                    </Box>
+                </DialogTitle>
 
-                            <Field label="Peso (kg)">
-                                <input
-                                    type="number"
-                                    step="0.1"
-                                    value={form.weightKg}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, weightKg: e.target.value }))}
-                                    className="h-10 rounded-md border bg-background px-3 text-sm"
-                                    placeholder="Ej. 78.4"
-                                />
-                            </Field>
+                <DialogContent
+                    sx={{
+                        p: { xs: 2, md: 2.5 },
+                        scrollbarWidth: "none",
+                        "&::-webkit-scrollbar": { display: "none" },
+                    }}
+                >
+                    <AppFormGrid columns={{ xs: 1, sm: 2 }}>
+                        <TextField
+                            label="Fecha"
+                            type="date"
+                            value={form.date}
+                            onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))}
+                            required
+                            size="small"
+                            fullWidth
+                        />
+                        <TextField
+                            label="Peso (kg)"
+                            type="number"
+                            value={form.weightKg}
+                            onChange={(event) => setForm((prev) => ({ ...prev, weightKg: event.target.value }))}
+                            placeholder="Ej. 78.4"
+                            size="small"
+                            fullWidth
+                            slotProps={{ htmlInput: { step: "0.1" } }}
+                        />
+                        <TextField
+                            label="Grasa corporal (%)"
+                            type="number"
+                            value={form.bodyFatPct}
+                            onChange={(event) => setForm((prev) => ({ ...prev, bodyFatPct: event.target.value }))}
+                            placeholder="Ej. 18.2"
+                            size="small"
+                            fullWidth
+                            slotProps={{ htmlInput: { step: "0.1" } }}
+                        />
+                        <TextField
+                            label="Cintura (cm)"
+                            type="number"
+                            value={form.waistCm}
+                            onChange={(event) => setForm((prev) => ({ ...prev, waistCm: event.target.value }))}
+                            placeholder="Ej. 84.5"
+                            size="small"
+                            fullWidth
+                            slotProps={{ htmlInput: { step: "0.1" } }}
+                        />
+                    </AppFormGrid>
 
-                            <Field label="Grasa corporal (%)">
-                                <input
-                                    type="number"
-                                    step="0.1"
-                                    value={form.bodyFatPct}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, bodyFatPct: e.target.value }))}
-                                    className="h-10 rounded-md border bg-background px-3 text-sm"
-                                    placeholder="Ej. 18.2"
-                                />
-                            </Field>
+                    <TextField
+                        label="Notas"
+                        value={form.notes}
+                        onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+                        placeholder="Cómo te sentiste, contexto, observaciones..."
+                        fullWidth
+                        multiline
+                        minRows={4}
+                        size="small"
+                        sx={{ mt: 2 }}
+                    />
+                </DialogContent>
 
-                            <Field label="Cintura (cm)">
-                                <input
-                                    type="number"
-                                    step="0.1"
-                                    value={form.waistCm}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, waistCm: e.target.value }))}
-                                    className="h-10 rounded-md border bg-background px-3 text-sm"
-                                    placeholder="Ej. 84.5"
-                                />
-                            </Field>
-                        </div>
-
-                        <Field label="Notas">
-                            <textarea
-                                value={form.notes}
-                                onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
-                                className="min-h-[27.5] rounded-md border bg-background px-3 py-2 text-sm"
-                                placeholder="Cómo te sentiste, contexto, observaciones..."
-                            />
-                        </Field>
-
-                        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={saving}>
-                                {saving ? "Guardando..." : "Guardar"}
-                            </Button>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
-        </div>
+                <DialogActions sx={{ px: { xs: 2, md: 2.5 }, py: 1.5 }}>
+                    <Button type="button" variant="outlined" onClick={onClose} disabled={saving}>
+                        Cancelar
+                    </Button>
+                    <Button type="submit" variant="contained" disabled={saving}>
+                        {saving ? "Guardando..." : "Guardar"}
+                    </Button>
+                </DialogActions>
+            </Box>
+        </Dialog>
     );
 }

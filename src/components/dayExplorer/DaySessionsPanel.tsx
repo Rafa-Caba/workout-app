@@ -24,7 +24,7 @@ import type {
 import type { MediaLikeItem } from "@/components/media/MediaViewerModal";
 import { BadgePill } from "@/components/dayExplorer/BadgePill";
 import { CardioRouteMap } from "@/components/cardio/CardioRouteMap";
-import { AppCard, AppEmptyState, AppMetricCard, AppSectionHeader } from "@/components/mui";
+import { AppCard, AppEmptyState, AppSectionHeader } from "@/components/mui";
 
 type JsonRecord = Record<string, unknown>;
 type TFn = (key: I18nKey, vars?: Record<string, string | number>) => string;
@@ -327,7 +327,7 @@ function splitSessions(sessions: WorkoutSession[]): {
 }
 
 function Metric({ label, value }: { label: string; value: string | null }) {
-    return <AppMetricCard compact label={label} value={value ?? "—"} />;
+    return <BadgePill dense label={label} value={value} />;
 }
 
 function SessionCard({
@@ -471,41 +471,45 @@ function SessionCard({
                         }}
                     >
                         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25, minWidth: 0 }}>
-                            <Box
-                                sx={{
-                                    display: "grid",
-                                    gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
-                                    gap: 1,
-                                }}
-                            >
-                                <BadgePill emoji="⏱️" label={t("days.sessions.duration")} value={duration} />
-                                <BadgePill emoji="📎" label={t("days.sessions.media")} value={`${mediaCount}`} />
-                                <BadgePill emoji="🔥" label={t("days.sessions.activeKcal")} value={activeKcal} />
-                                <BadgePill emoji="🧮" label={t("days.sessions.totalKcal")} value={totalKcal} />
-                                <BadgePill emoji="❤️" label={t("days.sessions.avgHr")} value={avgHr} />
-                                <BadgePill emoji="⬆️" label={t("days.sessions.maxHr")} value={maxHr} />
-                                <BadgePill emoji="🚶" label={t("days.sessions.stepsLabel")} value={steps} />
-                                <BadgePill emoji="📏" label={t("days.sessions.distanceLabel")} value={distance} />
-                                <BadgePill emoji="⛰️" label={t("days.sessions.elevationLabel")} value={elevation} />
-                                <BadgePill emoji="⏱️" label={t("days.sessions.paceLabel")} value={pace ? `${pace} ${t("days.sessions.paceUnit")}` : null} />
-                                <BadgePill emoji="🔁" label={t("days.sessions.cadenceLabel")} value={cadence} />
-                                <BadgePill emoji="🎯" label={t("days.sessions.rpe")} value={rpe} />
-                                <BadgePill emoji="🟢" label={t("days.sessions.startAt")} value={startAt} />
-                                <BadgePill emoji="🔴" label={t("days.sessions.endAt")} value={endAt} />
-                                <BadgePill emoji="🏋️" label={t("days.sessions.exercises")} value={exercisesCount > 0 ? `${exercisesCount}` : null} />
-                                <BadgePill emoji="📚" label={t("days.sessions.sets")} value={setsCount > 0 ? `${loggedSets}/${setsCount}` : null} />
-                                <BadgePill emoji="⌚" label={t("days.sessions.sourceDevice")} value={sourceDevice} />
-                                <BadgePill emoji="⬇️" label={t("days.sessions.importedAt")} value={importedAt} />
-                                <BadgePill emoji="🔄" label={t("days.sessions.lastSyncedAt")} value={lastSyncedAt} />
-                                <BadgePill emoji="🆔" label={t("days.sessions.externalId")} value={externalId} />
+                            <Box sx={{ gap: 0.5 }}>
+                                <Box
+                                    sx={{
+                                        display: "grid",
+                                        gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: isCardio ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))" },
+                                        gap: { xs: 0.75, md: 1 },
+                                    }}
+                                >
+                                    <BadgePill dense emoji="⏱️" label={t("days.sessions.duration")} value={duration} />
+                                    <BadgePill dense emoji="📎" label={t("days.sessions.media")} value={`${mediaCount}`} />
+                                    <BadgePill dense emoji="🔥" label={t("days.sessions.activeKcal")} value={activeKcal} />
+                                    <BadgePill dense emoji="🧮" label={t("days.sessions.totalKcal")} value={totalKcal} />
+                                    <BadgePill dense emoji="❤️" label={t("days.sessions.avgHr")} value={avgHr} />
+                                    <BadgePill dense emoji="⬆️" label={t("days.sessions.maxHr")} value={maxHr} />
+                                    <BadgePill dense emoji="🚶" label={t("days.sessions.stepsLabel")} value={steps} />
+                                    <BadgePill dense emoji="📏" label={t("days.sessions.distanceLabel")} value={distance} />
+                                    <BadgePill dense emoji="⛰️" label={t("days.sessions.elevationLabel")} value={elevation} />
+                                    <BadgePill dense emoji="⏱️" label={t("days.sessions.paceLabel")} value={pace ? `${pace} ${t("days.sessions.paceUnit")}` : null} />
+                                    <BadgePill dense emoji="🔁" label={t("days.sessions.cadenceLabel")} value={cadence} />
+                                    <BadgePill dense emoji="🎯" label={t("days.sessions.rpe")} value={rpe} />
+                                    <BadgePill dense emoji="🟢" label={t("days.sessions.startAt")} value={startAt} />
+                                    <BadgePill dense emoji="🔴" label={t("days.sessions.endAt")} value={endAt} />
+                                    <BadgePill dense emoji="🏋️" label={t("days.sessions.exercises")} value={exercisesCount > 0 ? `${exercisesCount}` : null} />
+                                    <BadgePill dense emoji="📚" label={t("days.sessions.sets")} value={setsCount > 0 ? `${loggedSets}/${setsCount}` : null} />
+                                    <BadgePill dense emoji="⬇️" label={t("days.sessions.importedAt")} value={importedAt} />
+                                    <BadgePill dense emoji="🔄" label={t("days.sessions.lastSyncedAt")} value={lastSyncedAt} />
+                                </Box>
+                                <Box sx={{ display: "flex", gap: 0.7, mt: 0.7, flexDirection: "column" }}>
+                                    <BadgePill dense emoji="⌚" label={t("days.sessions.sourceDevice")} value={sourceDevice} />
+                                    <BadgePill dense emoji="🆔" label={t("days.sessions.externalId")} value={externalId} />
+                                </Box>
                             </Box>
 
                             {isCardio ? (
                                 <Box
                                     sx={{
                                         display: "grid",
-                                        gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
-                                        gap: 1,
+                                        gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(2, minmax(0, 1fr))" },
+                                        gap: { xs: 0.75, md: 1 },
                                     }}
                                 >
                                     <Metric label={t("days.sessions.route")} value={session.hasRoute ? t("days.sessions.routeYes") : t("days.sessions.routeNo")} />
@@ -564,8 +568,8 @@ function SessionCard({
                                                 <Box
                                                     sx={{
                                                         display: "grid",
-                                                        gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
-                                                        gap: 1,
+                                                        gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(2, minmax(0, 1fr))" },
+                                                        gap: { xs: 0.75, md: 1 },
                                                         mt: 1,
                                                     }}
                                                 >

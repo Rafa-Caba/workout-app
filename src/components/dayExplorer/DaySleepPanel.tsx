@@ -156,27 +156,27 @@ export function DaySleepPanel({ t, day }: { t: TFn; day: WorkoutDay }) {
             <Box
                 sx={{
                     display: "grid",
-                    gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+                    gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(4, minmax(0, 1fr))" },
                     gap: 1,
                 }}
             >
-                <BadgePill emoji="🛌" label={t("days.sleep.total")} value={total} />
-                <BadgePill emoji="🏆" label={t("days.sleep.score")} value={scoreText} />
+                <BadgePill dense emoji="🛌" label={t("days.sleep.total")} value={total} />
+                <BadgePill dense emoji="🏆" label={t("days.sleep.score")} value={scoreText} />
 
-                <BadgePill emoji="💤" label={t("days.sleep.efficiency")} value={formatPercent(efficiencyPct)} />
-                <BadgePill emoji="🔁" label={t("days.sleep.readiness")} value={isFiniteNumber(readiness) ? `${readiness}` : null} />
+                <BadgePill dense emoji="💤" label={t("days.sleep.efficiency")} value={formatPercent(efficiencyPct)} />
+                <BadgePill dense emoji="🔁" label={t("days.sleep.readiness")} value={isFiniteNumber(readiness) ? `${readiness}` : null} />
 
-                <BadgePill emoji="🧠" label={t("days.sleep.remPct")} value={formatPercent(remPct)} />
-                <BadgePill emoji="🌙" label={t("days.sleep.deepPct")} value={formatPercent(deepPct)} />
+                <BadgePill dense emoji="🧠" label={t("days.sleep.remPct")} value={formatPercent(remPct)} />
+                <BadgePill dense emoji="🌙" label={t("days.sleep.deepPct")} value={formatPercent(deepPct)} />
 
-                <BadgePill emoji="💤" label={t("days.sleep.core")} value={formatMinutes(coreMin)} />
-                <BadgePill emoji="⏱" label={t("days.sleep.awake")} value={formatMinutes(awakeMin)} />
+                <BadgePill dense emoji="💤" label={t("days.sleep.core")} value={formatMinutes(coreMin)} />
+                <BadgePill dense emoji="⏱" label={t("days.sleep.awake")} value={formatMinutes(awakeMin)} />
 
-                <BadgePill emoji="📡" label={t("days.sleep.source")} value={source} />
-                <BadgePill emoji="⌚" label={t("days.sleep.sourceDevice")} value={sourceDevice} />
+                <BadgePill dense emoji="📡" label={t("days.sleep.source")} value={source} />
+                <BadgePill dense emoji="⌚" label={t("days.sleep.sourceDevice")} value={sourceDevice} sx={{ gridColumn: { xs: "span 2", md: "auto" } }} />
 
-                <BadgePill emoji="⬇️" label={t("days.sleep.importedAt")} value={importedAt} />
-                <BadgePill emoji="🔄" label={t("days.sleep.lastSyncedAt")} value={lastSyncedAt} />
+                <BadgePill dense emoji="⬇️" label={t("days.sleep.importedAt")} value={importedAt} />
+                <BadgePill dense emoji="🔄" label={t("days.sleep.lastSyncedAt")} value={lastSyncedAt} />
             </Box>
         </AppCard>
     );

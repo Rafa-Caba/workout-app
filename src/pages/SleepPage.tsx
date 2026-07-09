@@ -277,7 +277,7 @@ export function SleepPage() {
             ) : null}
 
             <AppCard title={t("sleep.title")} subtitle={t("sleep.subtitle")}>
-                <AppFormGrid columns={{ xs: 1, sm: 2, lg: 4 }}>
+                <AppFormGrid columns={{ xs: 2, sm: 2, lg: 4 }}>
                     <NumericSleepField
                         label={t("sleep.fields.timeAsleepMinutes")}
                         helper={t("sleep.hints.timeAsleepMinutes")}
@@ -379,7 +379,7 @@ export function SleepPage() {
                         <MenuItem value="health-connect">health-connect</MenuItem>
                     </TextField>
 
-                    <Box sx={{ gridColumn: { xs: "auto", sm: "span 2", lg: "span 2" } }}>
+                    <Box sx={{ gridColumn: { xs: "span 2", sm: "span 2", lg: "span 2" } }}>
                         <DeviceSelect
                             t={t}
                             value={form.sourceDevice}

@@ -12,6 +12,7 @@ type AppActionRowProps = {
     align?: AppActionRowAlign;
     dense?: boolean;
     reverseOnMobile?: boolean;
+    stackOnMobile?: boolean;
     sx?: SxProps<Theme>;
 };
 
@@ -27,6 +28,7 @@ export function AppActionRow({
     align = "right",
     dense = false,
     reverseOnMobile = false,
+    stackOnMobile = false,
     sx,
 }: AppActionRowProps) {
     return (
@@ -35,10 +37,10 @@ export function AppActionRow({
                 {
                     display: "flex",
                     flexDirection: {
-                        xs: reverseOnMobile ? "column-reverse" : "column",
+                        xs: stackOnMobile ? (reverseOnMobile ? "column-reverse" : "column") : "row",
                         sm: "row",
                     },
-                    alignItems: { xs: "stretch", sm: "center" },
+                    alignItems: { xs: stackOnMobile ? "stretch" : "center", sm: "center" },
                     justifyContent: justifyFromAlign(align),
                     gap: dense ? 1 : 1.5,
                     flexWrap: "wrap",

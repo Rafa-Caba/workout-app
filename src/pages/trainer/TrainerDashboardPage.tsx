@@ -199,10 +199,10 @@ export function TrainerDashboardPage() {
                                         gap: 1,
                                     }}
                                 >
-                                    <Button variant="outlined" onClick={onPrevWeek}>
+                                    <Button sx={{ fontSize: { xs: "0.75rem", md: "1rem" } }} variant="outlined" onClick={onPrevWeek}>
                                         ← {lang === "es" ? "Semana anterior" : "Previous week"}
                                     </Button>
-                                    <Button variant="outlined" onClick={onNextWeek}>
+                                    <Button sx={{ fontSize: { xs: "0.75rem", md: "1rem" } }} variant="outlined" onClick={onNextWeek}>
                                         {lang === "es" ? "Semana siguiente" : "Next week"} →
                                     </Button>
                                 </Box>
@@ -227,8 +227,8 @@ export function TrainerDashboardPage() {
                                     color: "text.secondary",
                                 }}
                             >
-                                <Chip size="small" label={`Semana: ${weekKey}`} />
-                                <Chip size="small" label={weekRangeLabel} />
+                                <Chip sx={{ fontSize: { xs: "0.72rem", md: "1rem" } }} size="small" label={`Semana: ${weekKey}`} />
+                                <Chip sx={{ fontSize: { xs: "0.72rem", md: "1rem" } }} size="small" label={weekRangeLabel} />
                             </Box>
                         </Box>
                     </Box>

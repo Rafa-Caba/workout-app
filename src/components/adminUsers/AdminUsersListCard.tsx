@@ -1,10 +1,24 @@
 // src/components/adminUsers/AdminUsersListCard.tsx
-import React from "react";
+// MUI admin users list with filters, table, pagination and actions.
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import MenuItem from "@mui/material/MenuItem";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+
+import { AppCard, AppEmptyState } from "@/components/mui";
 import type { AdminUser } from "@/types/adminUser.types";
-
 import {
     coachModeLabel,
     formatLastLogin,
@@ -24,22 +38,17 @@ type Props = {
     page: number;
     pageSize: number;
     totalPages: number;
-
     search: string;
     roleFilter: RoleFilter;
     activeFilter: ActiveFilter;
-
     loading: boolean;
     error: string | null;
-
     trainersById: Map<string, AdminUser>;
-
     onSearchChange: (value: string) => void;
     onRoleFilterChange: (value: RoleFilter) => void;
     onActiveFilterChange: (value: ActiveFilter) => void;
     onPrevPage: () => void;
     onNextPage: () => void;
-
     onCreate: () => void;
     onEdit: (user: AdminUser) => void;
     onDelete: (user: AdminUser) => void;
@@ -72,115 +81,83 @@ export function AdminUsersListCard({
     onOpenProfileImage,
 }: Props) {
     return (
-        <Card className="w-full">
-            <CardHeader className="p-4 sm:p-6">
-                <CardTitle className="text-base">
-                    {lang === "es" ? "Usuarios (Admin)" : "Users (Admin)"}
-                </CardTitle>
-            </CardHeader>
+        <AppCard
+            title={lang === "es" ? "Usuarios" : "Users"}
+            subtitle={`${lang === "es" ? "Mostrando" : "Showing"} ${items.length} / ${total}`}
+            action={
+                <Button variant="contained" onClick={onCreate} disabled={loading}>
+                    {lang === "es" ? "Nuevo usuario" : "New user"}
+                </Button>
+            }
+        >
+            <Box sx={{ display: "grid", gap: { xs: 1.5, md: 2 } }}>
+                <Box
+                    sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", md: "minmax(220px, 1fr) 180px 180px" },
+                        gap: 1.25,
+                    }}
+                >
+                    <TextField
+                        size="small"
+                        label={lang === "es" ? "Buscar" : "Search"}
+                        value={search}
+                        onChange={(event) => onSearchChange(event.target.value)}
+                        placeholder={lang === "es" ? "Nombre o email..." : "Name or email..."}
+                    />
+                    <TextField
+                        select
+                        size="small"
+                        label={lang === "es" ? "Rol" : "Role"}
+                        value={roleFilter}
+                        onChange={(event) => onRoleFilterChange(event.target.value as RoleFilter)}
+                    >
+                        <MenuItem value="all">{lang === "es" ? "Todos" : "All"}</MenuItem>
+                        <MenuItem value="admin">admin</MenuItem>
+                        <MenuItem value="user">user</MenuItem>
+                    </TextField>
+                    <TextField
+                        select
+                        size="small"
+                        label={lang === "es" ? "Estado" : "Status"}
+                        value={activeFilter}
+                        onChange={(event) => onActiveFilterChange(event.target.value as ActiveFilter)}
+                    >
+                        <MenuItem value="all">{lang === "es" ? "Todos" : "All"}</MenuItem>
+                        <MenuItem value="active">{lang === "es" ? "Activos" : "Active"}</MenuItem>
+                        <MenuItem value="inactive">{lang === "es" ? "Inactivos" : "Inactive"}</MenuItem>
+                    </TextField>
+                </Box>
 
-            <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
-                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                    <div className="grid gap-2 md:w-2/3 md:grid-cols-3">
-                        <div className="space-y-1">
-                            <label className="text-xs font-medium">{lang === "es" ? "Buscar" : "Search"}</label>
-                            <input
-                                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                                value={search}
-                                onChange={(e) => onSearchChange(e.target.value)}
-                                placeholder={lang === "es" ? "Nombre o email..." : "Name or email..."}
-                            />
-                        </div>
+                {loading ? <Typography variant="body2" color="text.secondary">{lang === "es" ? "Cargando usuarios..." : "Loading users..."}</Typography> : null}
+                {error ? <Chip color="error" label={error} /> : null}
 
-                        <div className="space-y-1">
-                            <label className="text-xs font-medium">{lang === "es" ? "Rol" : "Role"}</label>
-                            <select
-                                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                                value={roleFilter}
-                                onChange={(e) =>
-                                    onRoleFilterChange(
-                                        e.target.value === "admin" || e.target.value === "user" ? e.target.value : "all"
-                                    )
-                                }
-                            >
-                                <option value="all">{lang === "es" ? "Todos" : "All"}</option>
-                                <option value="admin">{lang === "es" ? "Admins" : "Admins"}</option>
-                                <option value="user">{lang === "es" ? "Usuarios" : "Users"}</option>
-                            </select>
-                        </div>
-
-                        <div className="space-y-1">
-                            <label className="text-xs font-medium">{lang === "es" ? "Estado" : "Status"}</label>
-                            <select
-                                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                                value={activeFilter}
-                                onChange={(e) =>
-                                    onActiveFilterChange(
-                                        e.target.value === "active" || e.target.value === "inactive" ? e.target.value : "all"
-                                    )
-                                }
-                            >
-                                <option value="all">{lang === "es" ? "Todos" : "All"}</option>
-                                <option value="active">{lang === "es" ? "Activos" : "Active"}</option>
-                                <option value="inactive">{lang === "es" ? "Inactivos" : "Inactive"}</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-end">
-                        <Button type="button" onClick={onCreate} disabled={loading} className="w-full md:w-auto">
-                            {lang === "es" ? "Nuevo usuario" : "New user"}
-                        </Button>
-                    </div>
-                </div>
-
-                {loading ? (
-                    <div className="text-xs text-muted-foreground">
-                        {lang === "es" ? "Cargando usuarios..." : "Loading users..."}
-                    </div>
-                ) : null}
-
-                {error ? <div className="text-xs text-red-500 wrap-break-words">{error}</div> : null}
-
-                <div className="overflow-x-auto rounded-lg border border-primary/40">
-                    <table className="min-w-[281.25] w-full text-sm">
-                        <thead className="bg-primary/20">
-                            <tr className="text-left">
-                                <th className="px-3 py-2 font-medium whitespace-nowrap">
-                                    {lang === "es" ? "Foto perfil" : "Profile"}
-                                </th>
-                                <th className="px-3 py-2 font-medium whitespace-nowrap">Nombre</th>
-                                <th className="px-3 py-2 font-medium whitespace-nowrap">Email</th>
-                                <th className="px-3 py-2 font-medium whitespace-nowrap">
-                                    {lang === "es" ? "Rol" : "Role"}
-                                </th>
-                                <th className="px-3 py-2 font-medium whitespace-nowrap">
-                                    {lang === "es" ? "Coaching" : "Coaching"}
-                                </th>
-                                <th className="px-3 py-2 font-medium whitespace-nowrap">
-                                    {lang === "es" ? "Trainer" : "Trainer"}
-                                </th>
-                                <th className="px-3 py-2 font-medium whitespace-nowrap">
-                                    {lang === "es" ? "Estado" : "Status"}
-                                </th>
-                                <th className="px-3 py-2 font-medium whitespace-nowrap">
-                                    {lang === "es" ? "Último acceso" : "Last login"}
-                                </th>
-                                <th className="px-3 py-2 font-medium whitespace-nowrap">
-                                    {lang === "es" ? "Acciones" : "Actions"}
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
+                <TableContainer sx={{ border: 1, borderColor: "divider", borderRadius: 2 }}>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>{lang === "es" ? "Perfil" : "Profile"}</TableCell>
+                                <TableCell>{lang === "es" ? "Nombre" : "Name"}</TableCell>
+                                <TableCell>Email</TableCell>
+                                <TableCell>{lang === "es" ? "Rol" : "Role"}</TableCell>
+                                <TableCell>{lang === "es" ? "Coaching" : "Coaching"}</TableCell>
+                                <TableCell>Trainer</TableCell>
+                                <TableCell>{lang === "es" ? "Estado" : "Status"}</TableCell>
+                                <TableCell>{lang === "es" ? "Último acceso" : "Last login"}</TableCell>
+                                <TableCell align="right">{lang === "es" ? "Acciones" : "Actions"}</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
                             {items.length === 0 ? (
-                                <tr>
-                                    <td colSpan={9} className="px-3 py-4 text-center text-xs text-muted-foreground">
-                                        {lang === "es"
-                                            ? "No hay usuarios que coincidan con los filtros."
-                                            : "No users match the current filters."}
-                                    </td>
-                                </tr>
+                                <TableRow>
+                                    <TableCell colSpan={9}>
+                                        <AppEmptyState
+                                            title={lang === "es" ? "Sin usuarios" : "No users"}
+                                            description={lang === "es" ? "No hay usuarios que coincidan con los filtros." : "No users match the filters."}
+                                            variant="inline"
+                                        />
+                                    </TableCell>
+                                </TableRow>
                             ) : (
                                 items.map((user) => {
                                     const coachMode = readCoachMode(user);
@@ -189,170 +166,74 @@ export function AdminUsersListCard({
                                     const hasProfilePic = typeof user.profilePicUrl === "string" && user.profilePicUrl.trim().length > 0;
 
                                     return (
-                                        <tr key={user.id} className="border-t border-border/60">
-                                            <td className="px-3 py-2">
-                                                {hasProfilePic ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => onOpenProfileImage(user)}
-                                                        className="mx-auto flex h-15 w-15 items-center justify-center overflow-hidden rounded-full border bg-background"
-                                                        title={lang === "es" ? "Ver foto de perfil" : "View profile picture"}
+                                        <TableRow key={user.id} hover>
+                                            <TableCell>
+                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                                    <Avatar
+                                                        src={hasProfilePic ? user.profilePicUrl ?? undefined : undefined}
+                                                        alt={user.name}
+                                                        sx={{ width: 42, height: 42, fontWeight: 800 }}
+                                                        slotProps={{ img: { referrerPolicy: "no-referrer" } }}
                                                     >
-                                                        <img
-                                                            src={user.profilePicUrl ?? undefined}
-                                                            alt={user.name}
-                                                            className="h-full w-full object-cover"
-                                                            loading="lazy"
-                                                        />
-                                                    </button>
-                                                ) : (
-                                                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border bg-background text-[11px] font-semibold text-muted-foreground">
                                                         {getInitials(user.name)}
-                                                    </div>
-                                                )}
-                                            </td>
-
-                                            <td className="px-3 py-2">
-                                                <div className="flex min-w-0 flex-col">
-                                                    <span className="truncate font-medium">{user.name}</span>
-                                                    <span className="truncate text-[11px] text-muted-foreground">
-                                                        id: {user.id}
-                                                    </span>
-                                                </div>
-                                            </td>
-
-                                            <td className="px-3 py-2">
-                                                <span className="font-mono text-xs">{user.email}</span>
-                                            </td>
-
-                                            <td className="px-3 py-2">
-                                                <span className="whitespace-nowrap rounded-full bg-muted px-2 py-1 text-xs">
-                                                    {user.role === "admin" ? "admin" : "user"}
-                                                </span>
-                                            </td>
-
-                                            <td className="px-3 py-2">
-                                                <span className="whitespace-nowrap rounded-full bg-muted px-2 py-1 text-xs">
-                                                    {coachModeLabel(coachMode, lang)}
-                                                </span>
-                                            </td>
-
-                                            <td className="px-3 py-2">
+                                                    </Avatar>
+                                                    {hasProfilePic ? (
+                                                        <IconButton size="small" onClick={() => onOpenProfileImage(user)} aria-label="Ver foto">
+                                                            <VisibilityIcon fontSize="small" />
+                                                        </IconButton>
+                                                    ) : null}
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2" sx={{ fontWeight: 800 }}>{user.name}</Typography>
+                                                <Typography variant="caption" color="text.secondary">id: {shortId(user.id)}</Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2" sx={{ fontFamily: "monospace" }}>{user.email}</Typography>
+                                            </TableCell>
+                                            <TableCell><Chip size="small" label={user.role} /></TableCell>
+                                            <TableCell><Chip size="small" label={coachModeLabel(coachMode, lang)} /></TableCell>
+                                            <TableCell>
                                                 {coachMode === "TRAINEE" ? (
-                                                    <div className="flex min-w-0 flex-col">
-                                                        <span className="truncate text-xs font-medium">
-                                                            {assignedTrainerUser?.name ?? (assignedTrainerId ? shortId(assignedTrainerId) : "—")}
-                                                        </span>
-                                                        <span className="truncate font-mono text-[11px] text-muted-foreground">
-                                                            {assignedTrainerId ? `id: ${assignedTrainerId}` : "—"}
-                                                        </span>
-                                                    </div>
+                                                    <Box>
+                                                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                                            {assignedTrainerUser?.name ?? shortId(assignedTrainerId)}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary">{shortId(assignedTrainerId)}</Typography>
+                                                    </Box>
                                                 ) : (
-                                                    <span className="text-xs text-muted-foreground">—</span>
+                                                    <Typography variant="body2" color="text.secondary">—</Typography>
                                                 )}
-                                            </td>
-
-                                            <td className="px-3 py-2">
-                                                <span
-                                                    className={
-                                                        "text-xs font-medium " +
-                                                        (user.isActive
-                                                            ? "text-emerald-600 dark:text-emerald-400"
-                                                            : "text-muted-foreground")
-                                                    }
-                                                >
-                                                    {user.isActive
-                                                        ? lang === "es"
-                                                            ? "Activo"
-                                                            : "Active"
-                                                        : lang === "es"
-                                                            ? "Inactivo"
-                                                            : "Inactive"}
-                                                </span>
-                                            </td>
-
-                                            <td className="px-3 py-2">
-                                                <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
-                                                    {formatLastLogin(user.lastLoginAt, lang)}
-                                                </span>
-                                            </td>
-
-                                            <td className="px-3 py-2">
-                                                <div className="flex gap-2">
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="h-7 px-2 text-xs"
-                                                        onClick={() => onEdit(user)}
-                                                    >
-                                                        {lang === "es" ? "Editar" : "Edit"}
-                                                    </Button>
-
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="h-7 px-2 text-xs"
-                                                        onClick={() => onDelete(user)}
-                                                    >
-                                                        {lang === "es" ? "Eliminar" : "Delete"}
-                                                    </Button>
-
-                                                    <Button
-                                                        type="button"
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        className="h-7 px-2 text-xs text-white"
-                                                        onClick={() => onPurge(user)}
-                                                        disabled={loading}
-                                                    >
-                                                        {lang === "es" ? "Purgar" : "Purge"}
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip size="small" color={user.isActive ? "success" : "default"} label={user.isActive ? "Activo" : "Inactivo"} />
+                                            </TableCell>
+                                            <TableCell>{formatLastLogin(user.lastLoginAt, lang)}</TableCell>
+                                            <TableCell align="right">
+                                                <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, flexWrap: "wrap" }}>
+                                                    <Button size="small" variant="outlined" onClick={() => onEdit(user)}>{lang === "es" ? "Editar" : "Edit"}</Button>
+                                                    <Button size="small" variant="outlined" color="warning" onClick={() => onDelete(user)}>{lang === "es" ? "Eliminar" : "Delete"}</Button>
+                                                    <Button size="small" variant="contained" color="error" onClick={() => onPurge(user)}>{lang === "es" ? "Purgar" : "Purge"}</Button>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
                                     );
                                 })
                             )}
-                        </tbody>
-                    </table>
-                </div>
+                        </TableBody>
+                    </Table>
+                </TableContainer>
 
-                {total > pageSize ? (
-                    <div className="flex flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            {lang === "es"
-                                ? `Mostrando página ${page} de ${totalPages}, total ${total} usuario(s).`
-                                : `Showing page ${page} of ${totalPages}, total ${total} user(s).`}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-7 px-2"
-                                disabled={page <= 1 || loading}
-                                onClick={onPrevPage}
-                            >
-                                {lang === "es" ? "Anterior" : "Prev"}
-                            </Button>
-
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-7 px-2"
-                                disabled={page >= totalPages || loading}
-                                onClick={onNextPage}
-                            >
-                                {lang === "es" ? "Siguiente" : "Next"}
-                            </Button>
-                        </div>
-                    </div>
-                ) : null}
-            </CardContent>
-        </Card>
+                <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+                    <Typography variant="caption" color="text.secondary">
+                        {lang === "es" ? "Página" : "Page"} {page} / {totalPages} · {pageSize} {lang === "es" ? "por página" : "per page"}
+                    </Typography>
+                    <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
+                        <Button variant="outlined" onClick={onPrevPage} disabled={page <= 1 || loading}>← {lang === "es" ? "Anterior" : "Previous"}</Button>
+                        <Button variant="outlined" onClick={onNextPage} disabled={page >= totalPages || loading}>{lang === "es" ? "Siguiente" : "Next"} →</Button>
+                    </Box>
+                </Box>
+            </Box>
+        </AppCard>
     );
 }

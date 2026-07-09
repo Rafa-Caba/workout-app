@@ -113,6 +113,7 @@ export function AppPage({
                             sx={{
                                 display: "flex",
                                 alignItems: "center",
+                                flexDirection: "row",
                                 justifyContent: { xs: "flex-start", md: "flex-end" },
                                 flexWrap: "wrap",
                                 gap: 1,

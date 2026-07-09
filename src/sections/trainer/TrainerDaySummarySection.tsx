@@ -1,323 +1,155 @@
-import React from "react";
-import { EmptyState } from "@/components/EmptyState";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+// src/sections/trainer/TrainerDaySummarySection.tsx
+// MUI daily trainer summary. Keeps trainer day hook unchanged.
+
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
+import Typography from "@mui/material/Typography";
+
+import { AppCard, AppEmptyState, AppMetricCard } from "@/components/mui";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTrainerDay } from "@/hooks/trainer/useTrainerDay";
-
 import type { ISODate, WorkoutDay } from "@/types/workoutDay.types";
 
-function mmToHhMm(min: number | null | undefined): string {
-    if (min == null) return "—";
-    const h = Math.floor(min / 60);
-    const m = min % 60;
-    return `${h}h ${String(m).padStart(2, "0")}m`;
+function minutesToHhMm(minutes: number | null | undefined): string {
+    if (minutes === null || minutes === undefined || !Number.isFinite(minutes)) return "—";
+    const safe = Math.max(0, Math.round(minutes));
+    const h = Math.floor(safe / 60);
+    const m = safe % 60;
+    if (h <= 0) return `${m}m`;
+    return `${h}h ${m}m`;
 }
 
-function pct(n: number | null | undefined): string {
-    if (n == null) return "—";
-    return `${Math.round(n)}%`;
+function fmt(value: number | null | undefined, suffix = ""): string {
+    if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+    const rounded = Math.round(value * 100) / 100;
+    return `${rounded}${suffix}`;
 }
 
 function calcEfficiency(sleep: WorkoutDay["sleep"]): number | null {
     if (!sleep) return null;
     const asleep = sleep.timeAsleepMinutes ?? null;
     const inBed = sleep.timeInBedMinutes ?? null;
-    if (asleep == null || inBed == null || inBed <= 0) return null;
+    if (asleep === null || inBed === null || inBed <= 0) return null;
     return (asleep / inBed) * 100;
 }
 
 function hasTrainingSessions(day: WorkoutDay | null): boolean {
-    const sessions: any[] = Array.isArray(day?.training?.sessions) ? (day as any).training.sessions : [];
-    return sessions.length > 0;
+    return Array.isArray(day?.training?.sessions) && day.training.sessions.length > 0;
 }
 
-export function TrainerDaySummarySection({
-    traineeId,
-    date,
-}: {
-    traineeId: string;
-    date: ISODate;
-}) {
+export function TrainerDaySummarySection({ traineeId, date }: { traineeId: string; date: ISODate }) {
     const { lang } = useI18n();
-
     const q = useTrainerDay({ traineeId, date });
 
     if (q.isLoading) {
-        return (
-            <EmptyState
-                title={lang === "es" ? "Cargando resumen del día…" : "Loading day summary…"}
-                description={lang === "es" ? "Esto puede tardar unos segundos." : "This can take a few seconds."}
-            />
-        );
+        return <AppEmptyState title={lang === "es" ? "Cargando resumen del día…" : "Loading day summary…"} variant="inline" />;
     }
 
     if (q.isError) {
-        const status = (q.error as any)?.status;
-        const msg =
-            status === 403
-                ? lang === "es"
-                    ? "No tienes acceso a este trainee."
-                    : "You don't have access to this trainee."
-                : lang === "es"
-                    ? "No se pudo cargar el día."
-                    : "Failed to load day.";
-
         return (
-            <EmptyState
-                title={msg}
+            <AppEmptyState
+                title={lang === "es" ? "No se pudo cargar el día." : "Failed to load day."}
                 description={lang === "es" ? "Intenta recargar o cambia de fecha." : "Try reloading or changing the date."}
+                variant="inline"
             />
         );
     }
 
     const day = q.data?.day ?? null;
-
     if (!day) {
         return (
-            <EmptyState
+            <AppEmptyState
                 title={lang === "es" ? "Sin datos para este día" : "No data for this day"}
                 description={lang === "es" ? "No existe WorkoutDay para esta fecha." : "No WorkoutDay exists for this date."}
+                variant="inline"
             />
         );
     }
 
-    const eff = calcEfficiency(day.sleep);
-    const trainingExists = hasTrainingSessions(day);
-
-    const planned = day.plannedRoutine ?? null;
-    const plannedExercises = Array.isArray(planned?.exercises) ? planned!.exercises : [];
-    const plannedCount = plannedExercises.length;
-
     const sleep = day.sleep ?? null;
+    const planned = day.plannedRoutine ?? null;
+    const trainingExists = hasTrainingSessions(day);
+    const plannedExercises = planned?.exercises ?? [];
+    const sessions = day.training?.sessions ?? [];
+    const sleepEfficiency = calcEfficiency(sleep);
 
     return (
-        <div className="space-y-4">
-            {/* Header mini */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>{lang === "es" ? "Resumen del día" : "Day summary"}</CardTitle>
-                    <CardDescription>
-                        {lang === "es" ? `Fecha: ${day.date}` : `Date: ${day.date}`} · {lang === "es" ? `Semana: ${day.weekKey}` : `Week: ${day.weekKey}`}
-                    </CardDescription>
-                </CardHeader>
+        <Box sx={{ display: "grid", gap: { xs: 1.5, md: 2 } }}>
+            <AppCard
+                title={lang === "es" ? "Resumen del día" : "Day summary"}
+                subtitle={`${day.date} · ${day.weekKey}`}
+            >
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                    <Chip size="small" color={sleep ? "primary" : "default"} label={sleep ? (lang === "es" ? "Sueño" : "Sleep") : (lang === "es" ? "Sin sueño" : "No sleep")} />
+                    <Chip size="small" color={planned ? "primary" : "default"} label={planned ? (lang === "es" ? "Plan asignado" : "Assigned plan") : (lang === "es" ? "Sin plan" : "No plan")} />
+                    <Chip size="small" color={trainingExists ? "success" : "default"} label={trainingExists ? (lang === "es" ? "Entrenó" : "Trained") : (lang === "es" ? "Sin entrenamiento" : "No training")} />
+                </Box>
+            </AppCard>
 
-                <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                        <span
-                            className={[
-                                "text-[11px] px-2 py-0.5 rounded-full border",
-                                sleep ? "bg-primary/10 border-primary/20" : "bg-muted/30",
-                            ].join(" ")}
-                        >
-                            {sleep ? (lang === "es" ? "Sueño" : "Sleep") : (lang === "es" ? "Sin sueño" : "No sleep")}
-                        </span>
+            <AppCard title={lang === "es" ? "Sueño" : "Sleep"}>
+                {!sleep ? (
+                    <Typography variant="body2" color="text.secondary">{lang === "es" ? "No hay registro de sueño." : "No sleep record."}</Typography>
+                ) : (
+                    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", lg: "repeat(4, 1fr)" }, gap: 1.25 }}>
+                        <AppMetricCard label="Score" value={fmt(sleep.score)} />
+                        <AppMetricCard label={lang === "es" ? "Dormido" : "Asleep"} value={minutesToHhMm(sleep.timeAsleepMinutes)} />
+                        <AppMetricCard label={lang === "es" ? "En cama" : "In bed"} value={minutesToHhMm(sleep.timeInBedMinutes)} />
+                        <AppMetricCard label={lang === "es" ? "Eficiencia" : "Efficiency"} value={fmt(sleepEfficiency, "%")} />
+                        <AppMetricCard label="REM" value={minutesToHhMm(sleep.remMinutes)} />
+                        <AppMetricCard label="Core" value={minutesToHhMm(sleep.coreMinutes)} />
+                        <AppMetricCard label="Deep" value={minutesToHhMm(sleep.deepMinutes)} />
+                        <AppMetricCard label="Awake" value={minutesToHhMm(sleep.awakeMinutes)} />
+                    </Box>
+                )}
+            </AppCard>
 
-                        <span
-                            className={[
-                                "text-[11px] px-2 py-0.5 rounded-full border",
-                                planned ? "bg-accent/20 border-accent/30" : "bg-muted/30",
-                            ].join(" ")}
-                        >
-                            {planned ? (lang === "es" ? "Plan asignado" : "Assigned plan") : (lang === "es" ? "Sin plan" : "No plan")}
-                        </span>
+            <AppCard title={lang === "es" ? "Plan asignado" : "Assigned plan"}>
+                {!planned ? (
+                    <Typography variant="body2" color="text.secondary">{lang === "es" ? "No hay plan asignado." : "No assigned plan."}</Typography>
+                ) : (
+                    <Box sx={{ display: "grid", gap: 1.25 }}>
+                        <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
+                            <Chip size="small" color="primary" label={planned.sessionType ?? "—"} />
+                            {planned.focus ? <Chip size="small" label={planned.focus} /> : null}
+                            <Chip size="small" label={`${plannedExercises.length} ${lang === "es" ? "ejercicio(s)" : "exercise(s)"}`} />
+                        </Box>
+                        {planned.notes ? <Typography variant="body2">{planned.notes}</Typography> : null}
+                        <Divider />
+                        <Box sx={{ display: "grid", gap: 1 }}>
+                            {plannedExercises.length === 0 ? (
+                                <Typography variant="body2" color="text.secondary">—</Typography>
+                            ) : (
+                                plannedExercises.map((exercise) => (
+                                    <Box key={exercise.id} sx={{ p: 1.25, border: 1, borderColor: "divider", borderRadius: 2 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 850 }}>{exercise.name}</Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {exercise.sets ?? "—"} sets · {exercise.reps ?? "—"} reps · RPE {exercise.rpe ?? "—"} · {exercise.load ?? "—"}
+                                        </Typography>
+                                    </Box>
+                                ))
+                            )}
+                        </Box>
+                    </Box>
+                )}
+            </AppCard>
 
-                        <span
-                            className={[
-                                "text-[11px] px-2 py-0.5 rounded-full border",
-                                trainingExists ? "bg-emerald-500/15 border-emerald-500/30" : "bg-muted/30",
-                            ].join(" ")}
-                        >
-                            {trainingExists ? (lang === "es" ? "Entrenó" : "Trained") : (lang === "es" ? "Sin entrenamiento" : "No training")}
-                        </span>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Sleep */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>{lang === "es" ? "Sueño" : "Sleep"}</CardTitle>
-                    <CardDescription>{lang === "es" ? "Bloque de sueño del día" : "Day sleep block"}</CardDescription>
-                </CardHeader>
-
-                <CardContent>
-                    {!sleep ? (
-                        <div className="text-sm text-muted-foreground">
-                            {lang === "es" ? "No hay registro de sueño." : "No sleep record."}
-                        </div>
-                    ) : (
-                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                            <div className="rounded-lg border bg-background p-3">
-                                <div className="text-xs text-muted-foreground">{lang === "es" ? "Score" : "Score"}</div>
-                                <div className="mt-1 text-lg font-semibold">{sleep.score ?? "—"}</div>
-                            </div>
-
-                            <div className="rounded-lg border bg-background p-3">
-                                <div className="text-xs text-muted-foreground">{lang === "es" ? "Dormido" : "Asleep"}</div>
-                                <div className="mt-1 text-lg font-semibold">{mmToHhMm(sleep.timeAsleepMinutes)}</div>
-                            </div>
-
-                            <div className="rounded-lg border bg-background p-3">
-                                <div className="text-xs text-muted-foreground">{lang === "es" ? "En cama" : "In bed"}</div>
-                                <div className="mt-1 text-lg font-semibold">{mmToHhMm(sleep.timeInBedMinutes)}</div>
-                            </div>
-
-                            <div className="rounded-lg border bg-background p-3">
-                                <div className="text-xs text-muted-foreground">{lang === "es" ? "Eficiencia" : "Efficiency"}</div>
-                                <div className="mt-1 text-lg font-semibold">{pct(eff)}</div>
-                            </div>
-
-                            <div className="rounded-lg border bg-background p-3">
-                                <div className="text-xs text-muted-foreground">REM</div>
-                                <div className="mt-1 text-sm font-semibold">{mmToHhMm(sleep.remMinutes)}</div>
-                            </div>
-
-                            <div className="rounded-lg border bg-background p-3">
-                                <div className="text-xs text-muted-foreground">{lang === "es" ? "Core" : "Core"}</div>
-                                <div className="mt-1 text-sm font-semibold">{mmToHhMm(sleep.coreMinutes)}</div>
-                            </div>
-
-                            <div className="rounded-lg border bg-background p-3">
-                                <div className="text-xs text-muted-foreground">{lang === "es" ? "Deep" : "Deep"}</div>
-                                <div className="mt-1 text-sm font-semibold">{mmToHhMm(sleep.deepMinutes)}</div>
-                            </div>
-
-                            <div className="rounded-lg border bg-background p-3">
-                                <div className="text-xs text-muted-foreground">{lang === "es" ? "Awake" : "Awake"}</div>
-                                <div className="mt-1 text-sm font-semibold">{mmToHhMm(sleep.awakeMinutes)}</div>
-                            </div>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            {/* Planned routine */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>{lang === "es" ? "Plan asignado" : "Assigned plan"}</CardTitle>
-                    <CardDescription>{lang === "es" ? "plannedRoutine + plannedMeta" : "plannedRoutine + plannedMeta"}</CardDescription>
-                </CardHeader>
-
-                <CardContent>
-                    {!planned ? (
-                        <div className="text-sm text-muted-foreground">
-                            {lang === "es" ? "No hay plan asignado para este día." : "No plan assigned for this day."}
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            <div className="rounded-lg border bg-background p-3">
-                                <div className="text-xs text-muted-foreground">{lang === "es" ? "Resumen" : "Summary"}</div>
-                                <div className="mt-1 text-sm">
-                                    <span className="font-semibold">{planned.sessionType ?? "—"}</span>
-                                    {planned.focus ? <span className="text-muted-foreground"> · {planned.focus}</span> : null}
-                                </div>
-
-                                {planned.tags?.length ? (
-                                    <div className="mt-2 flex flex-wrap gap-1.5">
-                                        {planned.tags.map((tag) => (
-                                            <span key={tag} className="text-[11px] px-2 py-0.5 rounded-full border bg-muted/30">
-                                                {tag}
-                                            </span>
-                                        ))}
-                                    </div>
-                                ) : null}
-
-                                {planned.notes ? (
-                                    <div className="mt-2 text-xs text-muted-foreground whitespace-pre-wrap">
-                                        {planned.notes}
-                                    </div>
-                                ) : null}
-
-                                <div className="mt-2 text-xs text-muted-foreground">
-                                    {lang === "es" ? "Ejercicios:" : "Exercises:"}{" "}
-                                    <span className="font-semibold">{plannedCount}</span>
-                                </div>
-                            </div>
-
-                            {plannedCount > 0 ? (
-                                <div className="space-y-2">
-                                    {plannedExercises.map((ex: any) => (
-                                        <div key={String(ex.id)} className="rounded-lg border bg-background p-3">
-                                            <div className="flex items-center justify-between gap-2">
-                                                <div className="text-sm font-semibold">
-                                                    {ex.movementName ?? ex.name ?? "—"}
-                                                </div>
-                                                <div className="text-xs text-muted-foreground font-mono">
-                                                    {ex.sets != null ? `${ex.sets}x` : ""}
-                                                    {ex.reps ? ` ${ex.reps}` : ""}
-                                                    {ex.rpe != null ? ` · RPE ${ex.rpe}` : ""}
-                                                </div>
-                                            </div>
-
-                                            <div className="mt-1 text-xs text-muted-foreground">
-                                                {ex.load ? (lang === "es" ? `Carga: ${ex.load}` : `Load: ${ex.load}`) : null}
-                                                {ex.load && ex.notes ? " · " : null}
-                                                {ex.notes ? ex.notes : null}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : null}
-
-                            {day.plannedMeta ? (
-                                <div className="text-xs text-muted-foreground">
-                                    {lang === "es" ? "Asignado:" : "Planned:"}{" "}
-                                    <span className="font-mono">{day.plannedMeta.plannedAt}</span>
-                                    {day.plannedMeta.source ? (
-                                        <>
-                                            {" "}
-                                            · {lang === "es" ? "Fuente:" : "Source:"}{" "}
-                                            <span className="font-mono">{day.plannedMeta.source}</span>
-                                        </>
-                                    ) : null}
-                                </div>
-                            ) : null}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            {/* Training */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>{lang === "es" ? "Entrenamiento (real)" : "Training (actual)"}</CardTitle>
-                    <CardDescription>{lang === "es" ? "training.sessions" : "training.sessions"}</CardDescription>
-                </CardHeader>
-
-                <CardContent>
-                    {!trainingExists ? (
-                        <div className="text-sm text-muted-foreground">
-                            {lang === "es" ? "No hay sesiones registradas." : "No sessions recorded."}
-                        </div>
-                    ) : (
-                        <div className="space-y-2">
-                            {(day.training?.sessions ?? []).map((s: any) => (
-                                <div key={String(s.id ?? s._id)} className="rounded-lg border bg-background p-3">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="text-sm font-semibold">{s.type ?? "—"}</div>
-                                        <div className="text-xs text-muted-foreground font-mono">
-                                            {s.durationSeconds != null ? `${Math.round(s.durationSeconds / 60)} min` : "—"}
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-1 text-xs text-muted-foreground">
-                                        {s.activeKcal != null ? `${s.activeKcal} kcal` : null}
-                                        {s.activeKcal != null && s.avgHr != null ? " · " : null}
-                                        {s.avgHr != null ? `HR ${s.avgHr}` : null}
-                                        {s.maxHr != null ? `/${s.maxHr}` : null}
-                                    </div>
-
-                                    {s.notes ? (
-                                        <div className="mt-2 text-xs text-muted-foreground whitespace-pre-wrap">
-                                            {s.notes}
-                                        </div>
-                                    ) : null}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
+            <AppCard title={lang === "es" ? "Entrenamiento real" : "Actual training"}>
+                {sessions.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">{lang === "es" ? "No hay sesiones reales." : "No actual sessions."}</Typography>
+                ) : (
+                    <Box sx={{ display: "grid", gap: 1 }}>
+                        {sessions.map((session) => (
+                            <Box key={session.id} sx={{ p: 1.25, border: 1, borderColor: "divider", borderRadius: 2 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 850 }}>{session.type}</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    {fmt(session.durationSeconds ? session.durationSeconds / 60 : null, "m")} · {fmt(session.activeKcal, " kcal")} · HR {fmt(session.avgHr)} / {fmt(session.maxHr)}
+                                </Typography>
+                            </Box>
+                        ))}
+                    </Box>
+                )}
+            </AppCard>
+        </Box>
     );
 }

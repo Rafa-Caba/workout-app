@@ -1,3 +1,4 @@
-import { AdminSettingsSection } from "@/sections/admin/AdminSettingsSection";
+// src/pages/admin/AdminSettingsPage.tsx
+// Compatibility page that renders the main Admin page.
 
-export const AdminSettingsPage = () => <AdminSettingsSection />;
+export { AdminPage as AdminSettingsPage } from "./AdminPage";

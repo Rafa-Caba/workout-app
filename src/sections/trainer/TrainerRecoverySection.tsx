@@ -1,291 +1,136 @@
-import React from "react";
+// src/sections/trainer/TrainerRecoverySection.tsx
+// MUI recovery view for trainer weekly range.
+
 import { addDays, format } from "date-fns";
 
-import { EmptyState } from "@/components/EmptyState";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useI18n } from "@/i18n/I18nProvider";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
 
+import { AppCard, AppEmptyState, AppMetricCard } from "@/components/mui";
+import { useI18n } from "@/i18n/I18nProvider";
 import { useTrainerRecovery } from "@/hooks/trainer/useTrainerRecovery";
 import { weekKeyToStartDate } from "@/utils/weekKey";
 
-import type { TraineeRecoveryDay } from "@/types/trainer.types";
-import type { ISODate } from "@/types/workoutDay.types";
-
-/**
- * Notes:
- * - Recovery endpoint expects from/to as ISODate (YYYY-MM-DD).
- * - For an ISO weekKey, we display Mon..Sun (7 days).
- */
-
-function mmToHhMm(min: number | null | undefined): string {
-    if (min == null) return "—";
-    const h = Math.floor(min / 60);
-    const m = min % 60;
-    return `${h}h ${String(m).padStart(2, "0")}m`;
+function fmt(value: number | null | undefined, suffix = ""): string {
+    if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+    const rounded = Math.round(value * 100) / 100;
+    return `${rounded}${suffix}`;
 }
 
-function pct(n: number | null | undefined): string {
-    if (n == null) return "—";
-    return `${Math.round(n)}%`;
+function minutesToHhMm(minutes: number | null | undefined): string {
+    if (minutes === null || minutes === undefined || !Number.isFinite(minutes)) return "—";
+    const safe = Math.max(0, Math.round(minutes));
+    const h = Math.floor(safe / 60);
+    const m = safe % 60;
+    if (h <= 0) return `${m}m`;
+    return `${h}h ${m}m`;
 }
 
-function avg(nums: Array<number | null | undefined>): number | null {
-    const v = nums.filter((x): x is number => typeof x === "number" && Number.isFinite(x));
-    if (v.length === 0) return null;
-    return v.reduce((a, b) => a + b, 0) / v.length;
+function dayLabelFromIso(date: string, lang: string): string {
+    const parsed = new Date(`${date}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) return date;
+
+    try {
+        return new Intl.DateTimeFormat(lang === "es" ? "es-MX" : "en-US", {
+            weekday: "short",
+            month: "short",
+            day: "2-digit",
+        }).format(parsed);
+    } catch {
+        return date;
+    }
 }
 
-function safeIsoDate(d: Date): ISODate {
-    return format(d, "yyyy-MM-dd") as ISODate;
+function getWeekRange(weekKey: string): { from: string; to: string } {
+    try {
+        const start = weekKeyToStartDate(weekKey);
+        return {
+            from: format(start, "yyyy-MM-dd"),
+            to: format(addDays(start, 6), "yyyy-MM-dd"),
+        };
+    } catch {
+        const now = new Date();
+        return {
+            from: format(now, "yyyy-MM-dd"),
+            to: format(addDays(now, 6), "yyyy-MM-dd"),
+        };
+    }
 }
 
-function dayLabelFromIso(iso: ISODate, lang: string): string {
-    // No locale imports; keep a simple label
-    // YYYY-MM-DD -> show same; dayKey is not available here.
-    return lang === "es" ? iso : iso;
-}
-
-type SleepAgg = {
-    daysWithSleep: number;
-    avgScore: number | null;
-    avgAsleepMin: number | null;
-    avgInBedMin: number | null;
-    avgEfficiencyPct: number | null;
-
-    avgRemMin: number | null;
-    avgCoreMin: number | null;
-    avgDeepMin: number | null;
-    avgAwakeMin: number | null;
-};
-
-function buildSleepAgg(days: TraineeRecoveryDay[]): SleepAgg {
-    const withSleep = days.filter((d) => d.sleep != null);
-    const daysWithSleep = withSleep.length;
-
-    const avgScore = avg(withSleep.map((d) => d.sleep?.score ?? null));
-    const avgAsleepMin = avg(withSleep.map((d) => d.sleep?.timeAsleepMinutes ?? null));
-    const avgInBedMin = avg(withSleep.map((d) => d.sleep?.timeInBedMinutes ?? null));
-
-    const efficiencies = withSleep.map((d) => {
-        const asleep = d.sleep?.timeAsleepMinutes ?? null;
-        const inBed = d.sleep?.timeInBedMinutes ?? null;
-        if (asleep == null || inBed == null || inBed <= 0) return null;
-        return (asleep / inBed) * 100;
-    });
-
-    const avgEfficiencyPct = avg(efficiencies);
-
-    return {
-        daysWithSleep,
-        avgScore,
-        avgAsleepMin,
-        avgInBedMin,
-        avgEfficiencyPct,
-
-        avgRemMin: avg(withSleep.map((d) => d.sleep?.remMinutes ?? null)),
-        avgCoreMin: avg(withSleep.map((d) => d.sleep?.coreMinutes ?? null)),
-        avgDeepMin: avg(withSleep.map((d) => d.sleep?.deepMinutes ?? null)),
-        avgAwakeMin: avg(withSleep.map((d) => d.sleep?.awakeMinutes ?? null)),
-    };
-}
-
-export function TrainerRecoverySection({
-    traineeId,
-    weekKey,
-}: {
-    traineeId: string;
-    weekKey: string;
-}) {
+export function TrainerRecoverySection({ traineeId, weekKey }: { traineeId: string; weekKey: string }) {
     const { lang } = useI18n();
-
-    const weekStart = React.useMemo(() => {
-        const d = weekKeyToStartDate(weekKey);
-        return d ?? new Date();
-    }, [weekKey]);
-
-    // ISO week: Mon..Sun (7 days)
-    const from = React.useMemo<ISODate>(() => safeIsoDate(weekStart), [weekStart]);
-    const to = React.useMemo<ISODate>(() => safeIsoDate(addDays(weekStart, 6)), [weekStart]);
-
-    const q = useTrainerRecovery({ traineeId, from, to });
+    const range = getWeekRange(weekKey);
+    const q = useTrainerRecovery({ traineeId, from: range.from, to: range.to });
 
     if (q.isLoading) {
-        return (
-            <EmptyState
-                title={lang === "es" ? "Cargando recuperación…" : "Loading recovery…"}
-                description={lang === "es" ? "Esto puede tardar unos segundos." : "This can take a few seconds."}
-            />
-        );
+        return <AppEmptyState title={lang === "es" ? "Cargando recuperación…" : "Loading recovery…"} variant="inline" />;
     }
 
     if (q.isError) {
-        const status = (q.error as any)?.status;
-        const msg =
-            status === 403
-                ? lang === "es"
-                    ? "No tienes acceso a este trainee."
-                    : "You don't have access to this trainee."
-                : lang === "es"
-                    ? "No se pudo cargar recuperación."
-                    : "Failed to load recovery.";
-
         return (
-            <EmptyState
-                title={msg}
+            <AppEmptyState
+                title={lang === "es" ? "No se pudo cargar recuperación." : "Failed to load recovery."}
                 description={lang === "es" ? "Intenta recargar o cambia de semana." : "Try reloading or switching week."}
+                variant="inline"
             />
         );
     }
 
-    const data = q.data ?? null;
-    const days = Array.isArray(data?.days) ? data!.days : [];
-
-    if (days.length === 0) {
-        return (
-            <EmptyState
-                title={lang === "es" ? "Sin datos de recuperación" : "No recovery data"}
-                description={lang === "es" ? "No hay días en este rango." : "No days found for this range."}
-            />
-        );
-    }
-
-    const agg = buildSleepAgg(days);
+    const days = q.data?.days ?? [];
+    const sleepDays = days.filter((day) => Boolean(day.sleep));
+    const trainingDays = days.filter((day) => Boolean(day.hasTraining));
+    const avgSleep =
+        sleepDays.length > 0
+            ? sleepDays.reduce((sum, day) => sum + (day.sleep?.timeAsleepMinutes ?? 0), 0) / sleepDays.length
+            : null;
+    const avgScore =
+        sleepDays.length > 0
+            ? sleepDays.reduce((sum, day) => sum + (day.sleep?.score ?? 0), 0) / sleepDays.length
+            : null;
 
     return (
-        <div className="space-y-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>{lang === "es" ? "Recuperación (sueño)" : "Recovery (sleep)"}</CardTitle>
-                    <CardDescription>
-                        {lang === "es"
-                            ? `Semana ${weekKey} · ${from} → ${to}`
-                            : `Week ${weekKey} · ${from} → ${to}`}
-                    </CardDescription>
-                </CardHeader>
+        <Box sx={{ display: "grid", gap: { xs: 1.5, md: 2 } }}>
+            <AppCard title={lang === "es" ? "Recuperación" : "Recovery"} subtitle={`${range.from} → ${range.to}`}>
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" }, gap: 1.25 }}>
+                    <AppMetricCard label={lang === "es" ? "Días con sueño" : "Sleep days"} value={fmt(sleepDays.length)} />
+                    <AppMetricCard label={lang === "es" ? "Días entreno" : "Training days"} value={fmt(trainingDays.length)} />
+                    <AppMetricCard label={lang === "es" ? "Sueño prom" : "Avg sleep"} value={minutesToHhMm(avgSleep)} />
+                    <AppMetricCard label="Sleep score" value={fmt(avgScore)} />
+                </Box>
+            </AppCard>
 
-                <CardContent>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        <div className="rounded-lg border bg-background p-3">
-                            <div className="text-xs text-muted-foreground">{lang === "es" ? "Días con sueño" : "Days with sleep"}</div>
-                            <div className="mt-1 text-lg font-semibold">{agg.daysWithSleep}</div>
-                        </div>
-
-                        <div className="rounded-lg border bg-background p-3">
-                            <div className="text-xs text-muted-foreground">{lang === "es" ? "Score promedio" : "Avg score"}</div>
-                            <div className="mt-1 text-lg font-semibold">{agg.avgScore == null ? "—" : Math.round(agg.avgScore)}</div>
-                        </div>
-
-                        <div className="rounded-lg border bg-background p-3">
-                            <div className="text-xs text-muted-foreground">{lang === "es" ? "Tiempo dormido" : "Time asleep"}</div>
-                            <div className="mt-1 text-lg font-semibold">{mmToHhMm(agg.avgAsleepMin)}</div>
-                        </div>
-
-                        <div className="rounded-lg border bg-background p-3">
-                            <div className="text-xs text-muted-foreground">{lang === "es" ? "Eficiencia" : "Efficiency"}</div>
-                            <div className="mt-1 text-lg font-semibold">{pct(agg.avgEfficiencyPct)}</div>
-                        </div>
-                    </div>
-
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        <div className="rounded-lg border bg-background p-3">
-                            <div className="text-xs text-muted-foreground">REM</div>
-                            <div className="mt-1 text-sm font-semibold">{mmToHhMm(agg.avgRemMin)}</div>
-                        </div>
-                        <div className="rounded-lg border bg-background p-3">
-                            <div className="text-xs text-muted-foreground">{lang === "es" ? "Core" : "Core"}</div>
-                            <div className="mt-1 text-sm font-semibold">{mmToHhMm(agg.avgCoreMin)}</div>
-                        </div>
-                        <div className="rounded-lg border bg-background p-3">
-                            <div className="text-xs text-muted-foreground">{lang === "es" ? "Deep" : "Deep"}</div>
-                            <div className="mt-1 text-sm font-semibold">{mmToHhMm(agg.avgDeepMin)}</div>
-                        </div>
-                        <div className="rounded-lg border bg-background p-3">
-                            <div className="text-xs text-muted-foreground">{lang === "es" ? "Awake" : "Awake"}</div>
-                            <div className="mt-1 text-sm font-semibold">{mmToHhMm(agg.avgAwakeMin)}</div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>{lang === "es" ? "Detalle por día" : "Per-day detail"}</CardTitle>
-                    <CardDescription>
-                        {lang === "es"
-                            ? "Sueño + indicador de entrenamiento"
-                            : "Sleep + training indicator"}
-                    </CardDescription>
-                </CardHeader>
-
-                <CardContent>
-                    <div className="space-y-2">
-                        {days.map((d) => {
-                            const asleep = d.sleep?.timeAsleepMinutes ?? null;
-                            const inBed = d.sleep?.timeInBedMinutes ?? null;
-                            const eff =
-                                asleep != null && inBed != null && inBed > 0 ? (asleep / inBed) * 100 : null;
-
-                            const hasSleep = Boolean(d.sleep);
-                            const hasTraining = Boolean(d.hasTraining);
+            <AppCard title={lang === "es" ? "Días" : "Days"}>
+                <Box sx={{ display: "grid", gap: 1 }}>
+                    {days.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">—</Typography>
+                    ) : (
+                        days.map((day) => {
+                            const asleep = day.sleep?.timeAsleepMinutes ?? null;
+                            const inBed = day.sleep?.timeInBedMinutes ?? null;
+                            const efficiency = asleep !== null && inBed !== null && inBed > 0 ? (asleep / inBed) * 100 : null;
 
                             return (
-                                <div key={d.date} className="rounded-lg border bg-background p-3">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="font-mono text-sm font-semibold">
-                                            {dayLabelFromIso(d.date, lang)}
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                            <span
-                                                className={[
-                                                    "text-[11px] px-2 py-0.5 rounded-full border",
-                                                    hasSleep ? "bg-primary/10 border-primary/20" : "bg-muted/30",
-                                                ].join(" ")}
-                                            >
-                                                {hasSleep ? (lang === "es" ? "Sueño" : "Sleep") : (lang === "es" ? "Sin sueño" : "No sleep")}
-                                            </span>
-
-                                            <span
-                                                className={[
-                                                    "text-[11px] px-2 py-0.5 rounded-full border",
-                                                    hasTraining ? "bg-accent/20 border-accent/30" : "bg-muted/30",
-                                                ].join(" ")}
-                                            >
-                                                {hasTraining ? (lang === "es" ? "Entrenó" : "Trained") : (lang === "es" ? "Rest" : "Rest")}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {hasSleep ? (
-                                        <div className="mt-2 grid gap-2 sm:grid-cols-4">
-                                            <div className="text-xs">
-                                                <div className="text-muted-foreground">{lang === "es" ? "Score" : "Score"}</div>
-                                                <div className="font-semibold">{d.sleep?.score ?? "—"}</div>
-                                            </div>
-                                            <div className="text-xs">
-                                                <div className="text-muted-foreground">{lang === "es" ? "Dormido" : "Asleep"}</div>
-                                                <div className="font-semibold">{mmToHhMm(d.sleep?.timeAsleepMinutes ?? null)}</div>
-                                            </div>
-                                            <div className="text-xs">
-                                                <div className="text-muted-foreground">{lang === "es" ? "Deep" : "Deep"}</div>
-                                                <div className="font-semibold">{mmToHhMm(d.sleep?.deepMinutes ?? null)}</div>
-                                            </div>
-                                            <div className="text-xs">
-                                                <div className="text-muted-foreground">{lang === "es" ? "Eficiencia" : "Efficiency"}</div>
-                                                <div className="font-semibold">{pct(eff)}</div>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="mt-2 text-xs text-muted-foreground">
-                                            {lang === "es" ? "No hay registro de sueño para este día." : "No sleep record for this day."}
-                                        </div>
-                                    )}
-                                </div>
+                                <Box key={day.date} sx={{ p: 1.25, border: 1, borderColor: "divider", borderRadius: 2 }}>
+                                    <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 850 }}>{dayLabelFromIso(day.date, lang)}</Typography>
+                                        <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
+                                            <Chip size="small" color={day.sleep ? "primary" : "default"} label={day.sleep ? (lang === "es" ? "Sueño" : "Sleep") : (lang === "es" ? "Sin sueño" : "No sleep")} />
+                                            <Chip size="small" color={day.hasTraining ? "success" : "default"} label={day.hasTraining ? (lang === "es" ? "Entrenó" : "Trained") : "Rest"} />
+                                        </Box>
+                                    </Box>
+                                    <Box sx={{ mt: 1, display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" }, gap: 1 }}>
+                                        <AppMetricCard label={lang === "es" ? "Dormido" : "Asleep"} value={minutesToHhMm(asleep)} />
+                                        <AppMetricCard label={lang === "es" ? "En cama" : "In bed"} value={minutesToHhMm(inBed)} />
+                                        <AppMetricCard label={lang === "es" ? "Eficiencia" : "Efficiency"} value={fmt(efficiency, "%")} />
+                                        <AppMetricCard label="Score" value={fmt(day.sleep?.score)} />
+                                    </Box>
+                                </Box>
                             );
-                        })}
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+                        })
+                    )}
+                </Box>
+            </AppCard>
+        </Box>
     );
 }

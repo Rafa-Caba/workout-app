@@ -1,3 +1,4 @@
-import { AdminUsersSection } from "@/sections/admin/AdminUsersSection";
+// src/pages/admin/AdminUsersPage.tsx
+// Compatibility page that renders the main Admin page.
 
-export const AdminUsersPage = () => <AdminUsersSection />;
+export { AdminPage as AdminUsersPage } from "./AdminPage";

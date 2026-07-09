@@ -41,6 +41,7 @@ import { normalizePutBodyForApi, type RoutineUpsertBody } from "@/utils/routines
 
 import { saveRoutineWeekWithPlanFallback } from "@/utils/routines/saveRoutineWeek";
 import { safeParseJson, safeStringify } from "@/utils/routines/json";
+import { normalizeRoutineJsonExerciseIds } from "@/utils/routines/jsonIds";
 
 import { PlanVsActualPanel } from "@/components/pva/PlanVsActualPanel";
 
@@ -86,9 +87,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 }
 
 function makeId(): string {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const g: any = globalThis as any;
-    if (g?.crypto?.randomUUID) return g.crypto.randomUUID();
+    if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
     return `ex_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
@@ -98,7 +97,7 @@ function ensureExerciseIds(input: DayPlan[]): DayPlan[] {
         exercises: p.exercises?.map((e) => ({
             ...e,
             id: e.id || makeId(),
-            attachmentPublicIds: Array.isArray((e as any).attachmentPublicIds) ? (e as any).attachmentPublicIds : [],
+            attachmentPublicIds: Array.isArray(e.attachmentPublicIds) ? e.attachmentPublicIds : [],
         })),
     }));
 }
@@ -179,7 +178,7 @@ function buildWeekRangeLabel(args: { weekDate: string; routine: WorkoutRoutineWe
 }
 
 function buildAttachmentsSet(routine: unknown): Set<string> {
-    const list = extractAttachments(routine as any);
+    const list = extractAttachments(routine);
     const s = new Set<string>();
     for (const a of list) {
         if (a && typeof a.publicId === "string" && a.publicId.trim()) s.add(a.publicId.trim());
@@ -687,7 +686,8 @@ export function RoutinesPage() {
                 return;
             }
 
-            await updateMutation.mutateAsync(parsed.value);
+            const normalizedJson = normalizeRoutineJsonExerciseIds(parsed.value);
+            await updateMutation.mutateAsync(normalizedJson);
             toast.success(t("routines.saveSuccess"));
             await routineQuery.refetch();
         } catch (e) {

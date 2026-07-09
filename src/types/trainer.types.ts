@@ -52,8 +52,8 @@ export type PatchPlannedRoutineBody = {
 export type PatchPlannedRoutineResponse = WorkoutDay;
 
 export type WeeklyAssignBody = {
-    clearEmptyDays: boolean;
-    plannedAt: string | null; // ISO datetime or null => BE sets now()
+    clearEmptyDays?: boolean;
+    plannedAt?: string; // ISO datetime. If omitted, BE sets now().
 };
 
 export type WeeklyAssignReport = {

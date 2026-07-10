@@ -134,7 +134,19 @@ export function MediaPage() {
         if (statsQuery.isError) toast.error(statsQuery.error.message);
     }, [statsQuery.isError, statsQuery.error]);
 
-    const allItems = pages.flat();
+    const allItems = React.useMemo(() => {
+        const seen = new Set<string>();
+        const deduped: MediaFeedItem[] = [];
+
+        for (const item of pages.flat()) {
+            const key = item.publicId.trim().length > 0 ? item.publicId : `${item.url}:${item.createdAt}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            deduped.push(item);
+        }
+
+        return deduped;
+    }, [pages]);
 
     return (
         <AppPage title={t("pages.media.title")} subtitle={t("pages.media.subtitle")}>

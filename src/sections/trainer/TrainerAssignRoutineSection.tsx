@@ -43,7 +43,7 @@ type JsonWeekParseResult = {
     providedDayKeys: DayKey[];
 };
 
-type JsonWeekActionOptions = {
+type ActionRenderOptions = {
     includeBackToTop?: boolean;
     onBackToTop?: () => void;
 };
@@ -383,59 +383,49 @@ function dayPlanToJson(plan: DayPlan): Record<string, unknown> {
     };
 }
 
-function buildCurrentWeekJson(weekKey: string, plans: DayPlan[], activeDayKey: DayKey): Record<string, unknown> {
-    const normalized = normalizePlans(plans);
-    const days = normalized.reduce<Record<string, unknown>>((acc, plan) => {
-        if (hasPlannedRoutineContent(plan)) {
-            acc[plan.dayKey] = dayPlanToJson(plan);
-        }
-        return acc;
-    }, {});
-
-    if (Object.keys(days).length === 0) {
-        days[activeDayKey] = createDayJsonTemplate();
-    }
-
+function createEmptyExerciseJsonTemplate(): Record<string, unknown> {
     return {
-        weekKey,
-        source: "trainer",
-        plannedDays: Object.keys(days),
-        days,
+        id: "",
+        name: "",
+        movementId: null,
+        movementName: null,
+        sets: null,
+        reps: "",
+        rpe: null,
+        load: "",
+        notes: "",
+        attachmentPublicIds: null,
     };
 }
 
 function createDayJsonTemplate(): Record<string, unknown> {
     return {
-        sessionType: "Upper Hypertrophy",
-        focus: "Espalda",
-        exercises: [
-            {
-                id: "",
-                name: "Pull ups",
-                movementId: null,
-                movementName: null,
-                sets: 4,
-                reps: "6-8",
-                rpe: 7,
-                load: "bodyweight",
-                notes: "Controlado, descanso 2 min.",
-                attachmentPublicIds: null,
-            },
-        ],
-        notes: "Notas generales del día.",
-        tags: ["upper", "hypertrophy"],
+        sessionType: "",
+        focus: "",
+        exercises: [createEmptyExerciseJsonTemplate()],
+        notes: "",
+        tags: [],
     };
 }
 
-function createWeekJsonTemplate(weekKey: string, activeDayKey: DayKey): Record<string, unknown> {
+function buildCurrentWeekJson(weekKey: string, plans: DayPlan[]): Record<string, unknown> {
+    const normalizedByDay = new Map<DayKey, DayPlan>(normalizePlans(plans).map((plan) => [plan.dayKey, plan]));
+    const days = DAY_KEYS.reduce<Record<string, unknown>>((acc, dayKey) => {
+        const plan = normalizedByDay.get(dayKey);
+        acc[dayKey] = plan && hasPlannedRoutineContent(plan) ? dayPlanToJson(plan) : createDayJsonTemplate();
+        return acc;
+    }, {});
+
     return {
         weekKey,
         source: "trainer",
-        plannedDays: [activeDayKey],
-        days: {
-            [activeDayKey]: createDayJsonTemplate(),
-        },
+        plannedDays: DAY_KEYS,
+        days,
     };
+}
+
+function createWeekJsonTemplate(weekKey: string): Record<string, unknown> {
+    return buildCurrentWeekJson(weekKey, normalizePlans([]));
 }
 
 function WeekSaveReportCard({ report, lang }: { report: WeekSaveReport; lang: string }) {
@@ -460,7 +450,7 @@ export function TrainerAssignRoutineSection({ traineeId, weekKey, date }: { trai
     const [activeDayKey, setActiveDayKey] = React.useState<DayKey>(() => getDayKeyFromIsoDate(date));
     const [lastReport, setLastReport] = React.useState<WeekSaveReport | null>(null);
     const [plans, setPlans] = React.useState<DayPlan[]>(() => normalizePlans([]));
-    const [weekJsonEditor, setWeekJsonEditor] = React.useState(() => safeStringify(createWeekJsonTemplate(weekKey, getDayKeyFromIsoDate(date))));
+    const [weekJsonEditor, setWeekJsonEditor] = React.useState(() => safeStringify(createWeekJsonTemplate(weekKey)));
     const [isSavingWeek, setIsSavingWeek] = React.useState(false);
 
     const topRef = React.useRef<HTMLDivElement | null>(null);
@@ -479,7 +469,7 @@ export function TrainerAssignRoutineSection({ traineeId, weekKey, date }: { trai
         const nextActiveDayKey = getDayKeyFromIsoDate(date);
         setPlans(normalizePlans([]));
         setLastReport(null);
-        setWeekJsonEditor(safeStringify(createWeekJsonTemplate(weekKey, nextActiveDayKey)));
+        setWeekJsonEditor(safeStringify(createWeekJsonTemplate(weekKey)));
     }, [date, traineeId, weekKey]);
 
     React.useEffect(() => {
@@ -497,7 +487,7 @@ export function TrainerAssignRoutineSection({ traineeId, weekKey, date }: { trai
 
     React.useEffect(() => {
         if (editorMode !== "json") return;
-        setWeekJsonEditor(safeStringify(buildCurrentWeekJson(weekKey, plans, activeDayKey)));
+        setWeekJsonEditor(safeStringify(buildCurrentWeekJson(weekKey, plans)));
     }, [activeDayKey, editorMode, plans, weekKey]);
 
     function scrollToTop() {
@@ -544,33 +534,8 @@ export function TrainerAssignRoutineSection({ traineeId, weekKey, date }: { trai
     }
 
     function insertWeekTemplate() {
-        setWeekJsonEditor(safeStringify(createWeekJsonTemplate(weekKey, activeDayKey)));
+        setWeekJsonEditor(safeStringify(createWeekJsonTemplate(weekKey)));
         toast.success(lang === "es" ? "Template JSON insertado." : "JSON template inserted.");
-    }
-
-    function syncJsonFromForm() {
-        setWeekJsonEditor(safeStringify(buildCurrentWeekJson(weekKey, plans, activeDayKey)));
-        toast.success(lang === "es" ? "JSON actualizado desde el formulario." : "JSON updated from form.");
-    }
-
-    async function copyWeekJson() {
-        try {
-            await navigator.clipboard.writeText(weekJsonEditor);
-            toast.success(lang === "es" ? "JSON copiado." : "JSON copied.");
-        } catch {
-            toast.error(lang === "es" ? "No se pudo copiar el JSON." : "Failed to copy JSON.");
-        }
-    }
-
-    function formatWeekJson() {
-        const parsed = safeParseJson(weekJsonEditor);
-        if (!parsed.ok) {
-            toast.error(lang === "es" ? "JSON inválido." : "Invalid JSON.", { description: parsed.error });
-            return;
-        }
-
-        setWeekJsonEditor(safeStringify(normalizeRoutineJsonExerciseIds(parsed.value)));
-        toast.success(lang === "es" ? "JSON formateado." : "JSON formatted.");
     }
 
     async function saveActiveDay() {
@@ -646,7 +611,7 @@ export function TrainerAssignRoutineSection({ traineeId, weekKey, date }: { trai
             }
 
             setPlans(clearEmptyDays ? normalizePlans(parsedWeek.plans) : mergedPlans);
-            setWeekJsonEditor(safeStringify(buildCurrentWeekJson(weekKey, clearEmptyDays ? parsedWeek.plans : mergedPlans, activeDayKey)));
+            setWeekJsonEditor(safeStringify(buildCurrentWeekJson(weekKey, clearEmptyDays ? parsedWeek.plans : mergedPlans)));
             setLastReport(report);
 
             if (report.skippedLockedOrFailed > 0) {
@@ -730,97 +695,111 @@ export function TrainerAssignRoutineSection({ traineeId, weekKey, date }: { trai
 
     const isSavingDay = patchDayMutation.isPending || traineeDayQuery.isLoading || hasTrainingLock;
 
-    function renderJsonActions(options?: JsonWeekActionOptions) {
+    function renderJsonActions(options?: ActionRenderOptions) {
         return (
-            <AppActionRow align="right" dense>
-                {options?.includeBackToTop ? (
-                    <Button type="button" variant="text" onClick={options.onBackToTop} disabled={isSavingDay || isSavingWeek}>
-                        {lang === "es" ? "Volver arriba" : "Back to top"}
-                    </Button>
-                ) : null}
+            <AppActionRow
+                align="right"
+                dense
+                sx={{
+                    width: "100%",
+                    justifyContent: { xs: "stretch", sm: "flex-end" },
+                    "& > .MuiButton-root": {
+                        flex: { xs: "1 1 calc(50% - 8px)", sm: "0 0 auto" },
+                    },
+                }}
+            >
                 <Button type="button" variant="outlined" onClick={insertWeekTemplate} disabled={isSavingDay || isSavingWeek}>
                     {lang === "es" ? "Insertar template" : "Insert template"}
                 </Button>
-                <Button type="button" variant="outlined" onClick={formatWeekJson} disabled={isSavingDay || isSavingWeek}>
-                    {lang === "es" ? "Formatear" : "Format"}
-                </Button>
-                <Button type="button" variant="outlined" onClick={() => void copyWeekJson()} disabled={isSavingDay || isSavingWeek}>
-                    {lang === "es" ? "Copiar" : "Copy"}
-                </Button>
-                <Button type="button" variant="outlined" onClick={syncJsonFromForm} disabled={isSavingDay || isSavingWeek}>
-                    {lang === "es" ? "Actualizar desde formulario" : "Update from form"}
-                </Button>
                 <Button type="button" variant="contained" onClick={() => void saveWeekFromJson()} disabled={isSavingDay || isSavingWeek}>
-                    {isSavingWeek ? (lang === "es" ? "Guardando…" : "Saving…") : lang === "es" ? "Guardar JSON semanal" : "Save weekly JSON"}
+                    {isSavingWeek ? (lang === "es" ? "Guardando…" : "Saving…") : lang === "es" ? "Guardar JSON" : "Save JSON"}
                 </Button>
+                {options?.includeBackToTop ? (
+                    <Button type="button" variant="text" onClick={options.onBackToTop} disabled={isSavingDay || isSavingWeek} sx={{ flexBasis: { xs: "100%", sm: "auto" } }}>
+                        {lang === "es" ? "Volver arriba" : "Back to top"}
+                    </Button>
+                ) : null}
             </AppActionRow>
         );
     }
 
-    function renderFormActions(options?: JsonWeekActionOptions) {
+    function renderFormActions(options?: ActionRenderOptions) {
         return (
-            <AppActionRow align="right" dense>
-                {options?.includeBackToTop ? (
-                    <Button type="button" variant="text" onClick={options.onBackToTop} disabled={isSavingDay || isSavingWeek}>
-                        {lang === "es" ? "Volver arriba" : "Back to top"}
-                    </Button>
-                ) : null}
+            <AppActionRow
+                align="right"
+                dense
+                sx={{
+                    width: "100%",
+                    justifyContent: { xs: "stretch", sm: "flex-end" },
+                    "& > .MuiButton-root": {
+                        flex: { xs: "1 1 calc(50% - 8px)", sm: "0 0 auto" },
+                    },
+                }}
+            >
                 <Button variant="contained" onClick={() => void saveActiveDay()} disabled={isSavingDay || isSavingWeek}>
                     {patchDayMutation.isPending ? (lang === "es" ? "Guardando…" : "Saving…") : lang === "es" ? "Guardar día" : "Save day"}
                 </Button>
                 <Button variant="contained" color="secondary" onClick={() => void saveWeekFromForm()} disabled={isSavingDay || isSavingWeek}>
                     {isSavingWeek ? (lang === "es" ? "Guardando…" : "Saving…") : lang === "es" ? "Guardar semana" : "Save week"}
                 </Button>
-                <Button variant="outlined" onClick={() => void markRestActiveDay()} disabled={isSavingDay || isSavingWeek}>
+                <Button variant="outlined" onClick={() => void markRestActiveDay()} disabled={isSavingDay || isSavingWeek} sx={{ flexBasis: { xs: "100%", sm: "auto" } }}>
                     {lang === "es" ? "Descanso" : "Rest"}
                 </Button>
+                {options?.includeBackToTop ? (
+                    <Button type="button" variant="text" onClick={options.onBackToTop} disabled={isSavingDay || isSavingWeek} sx={{ flexBasis: { xs: "100%", sm: "auto" } }}>
+                        {lang === "es" ? "Volver arriba" : "Back to top"}
+                    </Button>
+                ) : null}
             </AppActionRow>
         );
     }
 
-    const editorActions = (
-        <AppActionRow align="right" dense>
-            <RoutinesModeToggle mode={editorMode} busy={patchDayMutation.isPending || isSavingWeek} t={t} onModeChange={setEditorMode} />
-            {editorMode === "json" ? renderJsonActions() : renderFormActions()}
-        </AppActionRow>
-    );
-
     return (
         <Box ref={topRef} sx={{ display: "grid", gap: { xs: 1.5, md: 2 } }}>
-            <AppCard
-                title={lang === "es" ? "Asignar rutina al trainee" : "Assign trainee routine"}
-                action={editorActions}
-            >
+            <AppCard title={lang === "es" ? "Asignar rutina al trainee" : "Assign trainee routine"}>
                 <Box sx={{ display: "grid", gap: 1.5 }}>
-                    <Typography variant="body2" color="text.secondary">
-                        {lang === "es"
-                            ? "Edita día por día con formulario o pega una semana completa en JSON. El JSON se guarda por día y no borra días omitidos salvo que actives limpiar días vacíos."
-                            : "Edit day-by-day by form or paste a full week as JSON. JSON saves day-by-day and does not delete omitted days unless clearing empty days is enabled."}
-                    </Typography>
-                    <FormControlLabel
-                        control={<Switch checked={clearEmptyDays} onChange={(event) => setClearEmptyDays(event.target.checked)} />}
-                        label={
-                            editorMode === "json"
-                                ? lang === "es"
-                                    ? "JSON: días omitidos o vacíos se marcan como descanso"
-                                    : "JSON: omitted or empty days are marked as rest"
-                                : lang === "es"
-                                    ? "Al guardar semana, marcar días vacíos como descanso"
-                                    : "When saving week, mark empty days as rest"
-                        }
-                    />
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: { xs: "1fr", md: "minmax(260px, 320px) 1fr" },
+                            alignItems: "center",
+                            gap: 1,
+                        }}
+                    >
+                        <RoutinesModeToggle mode={editorMode} busy={patchDayMutation.isPending || isSavingWeek} t={t} onModeChange={setEditorMode} />
+                        {editorMode === "json" ? renderJsonActions() : renderFormActions()}
+                    </Box>
 
-                    <AppResponsiveTabs
-                        value={activeDayKey}
-                        onChange={(next) => setActiveDayKey(next as DayKey)}
-                        ariaLabel={lang === "es" ? "Días de rutina" : "Routine days"}
-                        tabs={DAY_KEYS.map((dayKey) => ({ value: dayKey, label: dayKeyLabel(dayKey, lang) }))}
-                    />
+                    <Typography variant="body2" color="text.secondary" sx={{ my: 1 }}>
+                        {editorMode === "json"
+                            ? lang === "es"
+                                ? "Pega o edita una semana completa en JSON. Los días omitidos no se tocan; los días presentes pero vacíos se guardan como descanso."
+                                : "Paste or edit a full week as JSON. Omitted days are left untouched; provided empty days are saved as rest."
+                            : lang === "es"
+                                ? "Edita día por día con formulario. Puedes guardar el día activo o guardar toda la semana desde el editor actual."
+                                : "Edit day-by-day by form. You can save the active day or save the whole week from the current editor."}
+                    </Typography>
+
+                    {editorMode === "form" ? (
+                        <FormControlLabel
+                            control={<Switch checked={clearEmptyDays} onChange={(event) => setClearEmptyDays(event.target.checked)} />}
+                            label={lang === "es" ? "Al guardar semana, marcar días vacíos como descanso" : "When saving week, mark empty days as rest"}
+                        />
+                    ) : null}
+
+                    {editorMode === "form" ? (
+                        <AppResponsiveTabs
+                            value={activeDayKey}
+                            onChange={(next) => setActiveDayKey(next as DayKey)}
+                            ariaLabel={lang === "es" ? "Días de rutina" : "Routine days"}
+                            tabs={DAY_KEYS.map((dayKey) => ({ value: dayKey, label: dayKeyLabel(dayKey, lang) }))}
+                        />
+                    ) : null}
 
                     <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
-                        <Chip color="primary" size="small" label={`${activeDayKey} · ${activeDate}`} />
+                        {editorMode === "form" ? <Chip color="primary" size="small" label={`${activeDayKey} · ${activeDate}`} /> : null}
                         <Chip size="small" label={`${weekKey}`} />
-                        {editorMode === "json" ? <Chip size="small" label={lang === "es" ? "JSON semanal" : "Weekly JSON"} /> : null}
+                        {editorMode === "json" ? <Chip color="primary" size="small" label={lang === "es" ? "JSON semanal" : "Weekly JSON"} /> : null}
                         {hasTrainingLock ? <Chip color="warning" size="small" label={lang === "es" ? "Bloqueado por entrenamiento" : "Locked by training"} /> : null}
                     </Box>
 
@@ -855,10 +834,10 @@ export function TrainerAssignRoutineSection({ traineeId, weekKey, date }: { trai
                         />
                     ) : (
                         <Box sx={{ display: "grid", gap: 1.25 }}>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                                 {lang === "es"
-                                    ? "Pega una semana completa con days.Mon/Tue/etc. Si omites días, no se tocan. Activa limpiar días vacíos para marcarlos como descanso. También acepta un plannedRoutine de un solo día y lo inserta en el día activo."
-                                    : "Paste a full week with days.Mon/Tue/etc. Omitted days are left untouched. Enable clearing empty days to mark them as rest. It also accepts a single-day plannedRoutine and inserts it into the active day."}
+                                    ? "Estructura esperada: weekKey, plannedDays y days.Mon/Tue/Wed/Thu/Fri/Sat/Sun. Puedes dejar días vacíos para descanso o borrar días del JSON si no quieres tocarlos."
+                                    : "Expected shape: weekKey, plannedDays and days.Mon/Tue/Wed/Thu/Fri/Sat/Sun. Leave days empty for rest or remove days from JSON if you do not want to touch them."}
                             </Typography>
 
                             <TextField

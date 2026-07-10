@@ -178,6 +178,7 @@ export function AppCard({
                                     gap: 1,
                                     flexWrap: "wrap",
                                     flexShrink: 0,
+                                    mb: { xs: 1, sm: 0 }
                                 }}
                             >
                                 {action}

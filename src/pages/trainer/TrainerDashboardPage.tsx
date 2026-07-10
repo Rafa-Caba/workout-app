@@ -132,13 +132,13 @@ export function TrainerDashboardPage() {
                     <Box
                         sx={{
                             display: "grid",
-                            gridTemplateColumns: { xs: "1fr", md: "minmax(260px, 360px) 1fr" },
+                            gridTemplateColumns: { xs: "1fr", md: "1fr" },
                             gap: { xs: 1.5, md: 2 },
                             alignItems: "start",
                         }}
                     >
-                        <Box sx={{ display: "grid", gap: 0.75 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                        <Box sx={{ display: "grid", gap: 0.75, width: { md: "40%" }, mb: 1 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: "1rem", fontWeight: 800 }}>
                                 Trainee
                             </Typography>
                             <TextField
@@ -171,7 +171,7 @@ export function TrainerDashboardPage() {
                             ) : null}
                         </Box>
 
-                        <Box sx={{ display: "grid", gap: { xs: 1.25, md: 1.5 } }}>
+                        <Box sx={{ display: "grid", gap: { xs: 1.25 } }}>
                             <AppResponsiveTabs
                                 value={tab}
                                 onChange={(next) => setTab(next as TrainerTab)}
@@ -197,6 +197,8 @@ export function TrainerDashboardPage() {
                                         display: "grid",
                                         gridTemplateColumns: { xs: "1fr 1fr", sm: "auto auto" },
                                         gap: 1,
+                                        width: { md: "60%" },
+                                        my: 1.5
                                     }}
                                 >
                                     <Button sx={{ fontSize: { xs: "0.75rem", md: "1rem" } }} variant="outlined" onClick={onPrevWeek}>
@@ -214,7 +216,7 @@ export function TrainerDashboardPage() {
                                     value={date}
                                     onChange={(event) => setDate(event.target.value)}
                                     slotProps={{ inputLabel: { shrink: true } }}
-                                    sx={{ minWidth: { xs: "100%", sm: 180 } }}
+                                    sx={{ minWidth: { xs: "100%", sm: 200 } }}
                                 />
                             </Box>
 

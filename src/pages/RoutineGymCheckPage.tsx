@@ -1,4 +1,5 @@
 // src/pages/RoutineGymCheckPage.tsx
+// Routine Gym Check page with shared top and bottom session action props.
 
 import * as React from "react";
 import { toast } from "sonner";
@@ -594,6 +595,20 @@ export function RoutineGymCheckPage() {
         }
     }
 
+
+    const sessionMetricsProps: React.ComponentProps<typeof GymCheckSessionMetrics> = {
+        t,
+        lang,
+        busy,
+        routineExists: Boolean(routine),
+        doneCount,
+        gymCheckSessionExists,
+        onSyncToLoadedWeek: syncToLoadedWeek,
+        onSaveGymCheckToDb,
+        onCreateRealSession,
+        onResetWeek: resetWeek,
+    };
+
     return (
         <AppPage
             title="Gym Check"
@@ -627,6 +642,13 @@ export function RoutineGymCheckPage() {
 
             {routine ? (
                 <div className="space-y-4">
+
+                    {hasExercises && (
+                        <div className="pt-2">
+                            <GymCheckSessionMetrics {...sessionMetricsProps} />
+                        </div>
+                    )}
+
                     {/* Mobile: allow horizontal scrolling for day tabs */}
                     <div className="-mx-2 px-2 overflow-x-auto">
                         <div className="min-w-max">
@@ -689,6 +711,14 @@ export function RoutineGymCheckPage() {
                                             mediaPublicIds={Array.isArray(exState.mediaPublicIds) ? exState.mediaPublicIds : []}
                                             attachmentByPublicId={attachmentByPublicId}
                                             performedSets={Array.isArray(exState.performedSets) ? exState.performedSets : []}
+                                            onEnsurePerformedSets={() => {
+                                                ensureExercisePrefilledFromPlan({
+                                                    dayKey: activeDay,
+                                                    exerciseId,
+                                                    exercise: ex,
+                                                    unit: unitLoad,
+                                                });
+                                            }}
                                             onToggleDone={() => {
                                                 if (!exState.done) {
                                                     ensureExercisePrefilledFromPlan({
@@ -721,18 +751,7 @@ export function RoutineGymCheckPage() {
                             </div>
 
                             <div className="pt-2">
-                                <GymCheckSessionMetrics
-                                    t={t}
-                                    lang={lang}
-                                    busy={busy}
-                                    routineExists={Boolean(routine)}
-                                    doneCount={doneCount}
-                                    gymCheckSessionExists={gymCheckSessionExists}
-                                    onSyncToLoadedWeek={syncToLoadedWeek}
-                                    onSaveGymCheckToDb={onSaveGymCheckToDb}
-                                    onCreateRealSession={onCreateRealSession}
-                                    onResetWeek={resetWeek}
-                                />
+                                <GymCheckSessionMetrics {...sessionMetricsProps} />
                             </div>
                         </>
                     )}

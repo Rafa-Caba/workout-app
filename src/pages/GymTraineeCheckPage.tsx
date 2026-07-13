@@ -1,3 +1,6 @@
+// src/pages/GymTraineeCheckPage.tsx
+// Trainee Gym Check page with shared top and bottom session action props.
+
 import * as React from "react";
 import { toast } from "sonner";
 import { addDays, addWeeks, endOfISOWeek, format, startOfISOWeek } from "date-fns";
@@ -541,6 +544,19 @@ export function GymTraineeCheckPage() {
     const routineExists = Boolean(safeRemoteDay?.plannedRoutine);
     const gymCheckSessionExists = hasGymCheckSession(remoteDay);
 
+    const sessionMetricsProps: React.ComponentProps<typeof GymCheckSessionMetrics> = {
+        t,
+        lang,
+        busy,
+        routineExists,
+        doneCount,
+        gymCheckSessionExists,
+        onSyncToLoadedWeek: syncToLoadedWeek,
+        onSaveGymCheckToDb,
+        onCreateRealSession,
+        onResetWeek: resetWeek,
+    };
+
     return (
         <AppPage
             title="Gym Check"
@@ -575,6 +591,13 @@ export function GymTraineeCheckPage() {
                 />
             ) : (
                 <div className="space-y-4">
+
+                    {hasExercises && (
+                        <div className="pt-2">
+                            <GymCheckSessionMetrics {...sessionMetricsProps} />
+                        </div>
+                    )}
+
                     <div className="-mx-2 px-2 overflow-x-auto">
                         <div className="min-w-max">
                             <GymCheckDayTabs items={dayTabItems} activeDay={activeDay} onSelectDay={setActiveDay} />
@@ -653,6 +676,14 @@ export function GymTraineeCheckPage() {
                                             mediaPublicIds={Array.isArray(exState.mediaPublicIds) ? exState.mediaPublicIds : []}
                                             attachmentByPublicId={attachmentByPublicId}
                                             performedSets={Array.isArray(exState.performedSets) ? exState.performedSets : []}
+                                            onEnsurePerformedSets={() => {
+                                                ensureExercisePrefilledFromPlan({
+                                                    dayKey: activeDay,
+                                                    exerciseId,
+                                                    exercise: ex,
+                                                    unit: unitLoad,
+                                                });
+                                            }}
                                             onToggleDone={() => {
                                                 if (!exState.done) {
                                                     ensureExercisePrefilledFromPlan({
@@ -691,18 +722,7 @@ export function GymTraineeCheckPage() {
                             </div>
 
                             <div className="pt-2">
-                                <GymCheckSessionMetrics
-                                    t={t}
-                                    lang={lang}
-                                    busy={busy}
-                                    routineExists={routineExists}
-                                    doneCount={doneCount}
-                                    gymCheckSessionExists={gymCheckSessionExists}
-                                    onSyncToLoadedWeek={syncToLoadedWeek}
-                                    onSaveGymCheckToDb={onSaveGymCheckToDb}
-                                    onCreateRealSession={onCreateRealSession}
-                                    onResetWeek={resetWeek}
-                                />
+                                <GymCheckSessionMetrics {...sessionMetricsProps} />
                             </div>
                         </>
                     )}

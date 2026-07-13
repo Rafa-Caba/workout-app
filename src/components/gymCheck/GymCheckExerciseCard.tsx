@@ -8,7 +8,9 @@ import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
 import Divider from "@mui/material/Divider";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import IconButton from "@mui/material/IconButton";
 import Checkbox from "@mui/material/Checkbox";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineSharp";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { AppCard } from "@/components/mui";
@@ -62,6 +64,7 @@ type Props = {
     attachmentByPublicId: Map<string, AttachmentOption>;
     performedSets: WorkoutExerciseSet[];
     onToggleDone: () => void;
+    onEnsurePerformedSets: () => void;
     onUploadFiles: (files: File[]) => void;
     onChangePerformedSet: (setIndex: number, patch: Partial<WorkoutExerciseSet>) => void;
     onAddPerformedSet: () => void;
@@ -84,6 +87,7 @@ export function GymCheckExerciseCard(props: Props) {
         attachmentByPublicId,
         performedSets,
         onToggleDone,
+        onEnsurePerformedSets,
         onUploadFiles,
         onChangePerformedSet,
         onAddPerformedSet,
@@ -169,7 +173,19 @@ export function GymCheckExerciseCard(props: Props) {
                         </Typography>
                     </Box>
                     <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                        <Button type="button" variant="outlined" size="small" onClick={() => setPerformedSetsOpen((prev) => !prev)} disabled={busy}>
+                        <Button
+                            type="button"
+                            variant="outlined"
+                            size="small"
+                            onClick={() => {
+                                if (!performedSetsOpen && performedSets.length === 0) {
+                                    onEnsurePerformedSets();
+                                }
+
+                                setPerformedSetsOpen((prev) => !prev);
+                            }}
+                            disabled={busy}
+                        >
                             {performedSetsOpen ? (lang === "es" ? "Ocultar sets" : "Hide sets") : (lang === "es" ? "Mostrar sets" : "Show sets")}
                         </Button>
                         <Button type="button" variant="outlined" size="small" onClick={onAddPerformedSet} disabled={!canEditPerformedSets}>
@@ -179,64 +195,95 @@ export function GymCheckExerciseCard(props: Props) {
                 </Box>
 
                 <Collapse in={performedSetsOpen} unmountOnExit>
-                    <Box sx={{ display: "grid", gap: 1, opacity: setsInputsDisabled ? 0.65 : 1 }}>
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: { xs: "minmax(0, 1fr)", lg: "repeat(2, minmax(0, 1fr))" },
+                            gap: 1,
+                            opacity: setsInputsDisabled ? 0.65 : 1,
+                        }}
+                    >
                         {performedSets.map((setItem, setIndex) => (
                             <Box
                                 key={`${exerciseId}-set-${setItem.setIndex}-${setIndex}`}
                                 sx={{
                                     display: "grid",
-                                    gridTemplateColumns: { xs: "1fr", sm: "80px repeat(3, minmax(0, 1fr)) auto" },
                                     gap: 1,
-                                    alignItems: "end",
                                     border: 1,
                                     borderColor: "divider",
                                     borderRadius: 2,
-                                    p: 1,
+                                    p: 1.25,
                                     bgcolor: "background.paper",
+                                    minWidth: 0,
                                 }}
                             >
-                                <Typography variant="body2" sx={{ fontWeight: 850, alignSelf: "center" }}>
-                                    {lang === "es" ? `Set ${setItem.setIndex}` : `Set ${setItem.setIndex}`}
+                                <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                                    {`Set ${setItem.setIndex}`}
                                 </Typography>
-                                <TextField
-                                    size="small"
-                                    type="number"
-                                    label={lang === "es" ? "Reps" : "Reps"}
-                                    value={numberToInputValue(setItem.reps)}
-                                    onChange={(event) => {
-                                        const value = event.target.value.trim();
-                                        onChangePerformedSet(setIndex, { reps: value === "" ? null : Math.trunc(Number(value)) });
+
+                                <Box
+                                    sx={{
+                                        display: "grid",
+                                        gridTemplateColumns: "repeat(3, minmax(0, 1fr)) auto",
+                                        gap: { xs: 0.5, sm: 1 },
+                                        alignItems: "center",
+                                        minWidth: 0,
                                     }}
-                                    disabled={setsInputsDisabled}
-                                    inputMode="numeric"
-                                />
-                                <TextField
-                                    size="small"
-                                    type="number"
-                                    label={lang === "es" ? "Carga" : "Load"}
-                                    value={numberToInputValue(setItem.weight)}
-                                    onChange={(event) => {
-                                        const value = event.target.value.trim();
-                                        onChangePerformedSet(setIndex, { weight: value === "" ? null : Number(value), unit: setItem.unit });
-                                    }}
-                                    disabled={setsInputsDisabled}
-                                    inputMode="decimal"
-                                />
-                                <TextField
-                                    size="small"
-                                    type="number"
-                                    label="RPE"
-                                    value={numberToInputValue(setItem.rpe)}
-                                    onChange={(event) => {
-                                        const value = event.target.value.trim();
-                                        onChangePerformedSet(setIndex, { rpe: value === "" ? null : Number(value) });
-                                    }}
-                                    disabled={setsInputsDisabled}
-                                    inputMode="decimal"
-                                />
-                                <Button type="button" variant="text" color="error" size="small" onClick={() => onRemovePerformedSet(setIndex)} disabled={setsInputsDisabled || performedSets.length <= 1}>
-                                    {lang === "es" ? "Quitar" : "Remove"}
-                                </Button>
+                                >
+                                    <TextField
+                                        size="small"
+                                        type="number"
+                                        label="Reps"
+                                        value={numberToInputValue(setItem.reps)}
+                                        onChange={(event) => {
+                                            const value = event.target.value.trim();
+                                            onChangePerformedSet(setIndex, { reps: value === "" ? null : Math.trunc(Number(value)) });
+                                        }}
+                                        disabled={setsInputsDisabled}
+                                        inputMode="numeric"
+                                        fullWidth
+                                        sx={{ minWidth: 0 }}
+                                    />
+                                    <TextField
+                                        size="small"
+                                        type="number"
+                                        label={lang === "es" ? "Carga" : "Load"}
+                                        value={numberToInputValue(setItem.weight)}
+                                        onChange={(event) => {
+                                            const value = event.target.value.trim();
+                                            onChangePerformedSet(setIndex, { weight: value === "" ? null : Number(value), unit: setItem.unit });
+                                        }}
+                                        disabled={setsInputsDisabled}
+                                        inputMode="decimal"
+                                        fullWidth
+                                        sx={{ minWidth: 0 }}
+                                    />
+                                    <TextField
+                                        size="small"
+                                        type="number"
+                                        label="RPE"
+                                        value={numberToInputValue(setItem.rpe)}
+                                        onChange={(event) => {
+                                            const value = event.target.value.trim();
+                                            onChangePerformedSet(setIndex, { rpe: value === "" ? null : Number(value) });
+                                        }}
+                                        disabled={setsInputsDisabled}
+                                        inputMode="decimal"
+                                        fullWidth
+                                        sx={{ minWidth: 0 }}
+                                    />
+                                    <IconButton
+                                        type="button"
+                                        color="error"
+                                        size="small"
+                                        aria-label={lang === "es" ? `Quitar set ${setItem.setIndex}` : `Remove set ${setItem.setIndex}`}
+                                        onClick={() => onRemovePerformedSet(setIndex)}
+                                        disabled={setsInputsDisabled || performedSets.length <= 1}
+                                        sx={{ alignSelf: "center" }}
+                                    >
+                                        <DeleteOutlineIcon fontSize="small" />
+                                    </IconButton>
+                                </Box>
                             </Box>
                         ))}
                     </Box>

@@ -63,6 +63,7 @@ function Field({
             onBlur={onBlur}
             inputMode={inputMode}
             slotProps={type === "time" ? { inputLabel: { shrink: true } } : undefined}
+            sx={{ alignSelf: "end" }}
         />
     );
 }
@@ -117,9 +118,9 @@ export function GymCheckDeviceMetricsCard({
                         <Field label={lang === "es" ? "Cadencia (rpm)" : "Cadence (rpm)"} value={metricsUi.cadenceRpm} onChange={(v) => onMetricsUiChange({ cadenceRpm: v })} onBlur={onCommit} placeholder="e.g. 78" inputMode="numeric" disabled={busy} />
                         <Field label={lang === "es" ? "Esfuerzo (RPE)" : "Effort (RPE)"} value={metricsUi.effortRpe} onChange={(v) => onMetricsUiChange({ effortRpe: v })} onBlur={onCommit} placeholder="1-10" inputMode="decimal" disabled={busy} />
                         <Box sx={{ minWidth: 0 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, fontWeight: 700 }}>
+                            {/* <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, fontWeight: 700 }}>
                                 {lang === "es" ? "Dispositivo" : "Device"}
-                            </Typography>
+                            </Typography> */}
                             <DeviceSelect
                                 t={t}
                                 value={metricsUi.trainingSource?.trim() ? metricsUi.trainingSource : null}

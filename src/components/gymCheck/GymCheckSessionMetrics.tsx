@@ -12,8 +12,8 @@ export type GymCheckSessionMetricsProps = {
     routineExists: boolean;
     doneCount: number;
     gymCheckSessionExists?: boolean;
-    onSyncToLoadedWeek: () => void;
-    onSaveGymCheckToDb: () => void;
+    // onSyncToLoadedWeek: () => void;
+    // onSaveGymCheckToDb: () => void;
     onCreateRealSession: () => void;
     onResetWeek: () => void;
 };
@@ -25,8 +25,8 @@ export function GymCheckSessionMetrics(props: GymCheckSessionMetricsProps) {
         routineExists,
         doneCount,
         gymCheckSessionExists,
-        onSyncToLoadedWeek,
-        onSaveGymCheckToDb,
+        // onSyncToLoadedWeek,
+        // onSaveGymCheckToDb,
         onCreateRealSession,
         onResetWeek,
     } = props;
@@ -45,12 +45,12 @@ export function GymCheckSessionMetrics(props: GymCheckSessionMetricsProps) {
 
     return (
         <AppActionRow align="right">
-            <Button variant="outlined" onClick={onSyncToLoadedWeek} disabled={busy} title={lang === "es" ? "Sincronizar selector con semana cargada" : "Sync picker to loaded week"}>
+            {/* <Button variant="outlined" onClick={onSyncToLoadedWeek} disabled={busy} title={lang === "es" ? "Sincronizar selector con semana cargada" : "Sync picker to loaded week"}>
                 {lang === "es" ? "Sync semana" : "Sync week"}
             </Button>
             <Button variant="outlined" color="secondary" onClick={onSaveGymCheckToDb} disabled={busy || !routineExists} title={lang === "es" ? "Guardar Gym Check en la rutina (semana)" : "Save Gym Check into routine (week)"}>
                 {lang === "es" ? "Guardar semana" : "Save week"}
-            </Button>
+            </Button> */}
             <Button variant="contained" onClick={onCreateRealSession} disabled={!canCreateOrUpdate} title={realSessionTitle}>
                 {realSessionLabel}
             </Button>

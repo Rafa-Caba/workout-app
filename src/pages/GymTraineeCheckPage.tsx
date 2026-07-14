@@ -551,8 +551,8 @@ export function GymTraineeCheckPage() {
         routineExists,
         doneCount,
         gymCheckSessionExists,
-        onSyncToLoadedWeek: syncToLoadedWeek,
-        onSaveGymCheckToDb,
+        // onSyncToLoadedWeek: syncToLoadedWeek,
+        // onSaveGymCheckToDb,
         onCreateRealSession,
         onResetWeek: resetWeek,
     };

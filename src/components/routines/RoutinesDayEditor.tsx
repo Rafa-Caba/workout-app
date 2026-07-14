@@ -100,6 +100,7 @@ export function RoutinesDayEditor({
                         onChange={(event) => onUpdatePlan(dayKey, { focus: event.target.value || undefined })}
                         disabled={busy}
                         placeholder={ph.focus}
+                        sx={{ alignSelf: "end" }}
                     />
                     <TextField
                         fullWidth

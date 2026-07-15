@@ -1,5 +1,5 @@
 // src/components/weeklySummary/WeekSleepByDayTable.tsx
-// Weekly sleep-detail table shared by the web weekly summary page.
+// Daily sleep-detail table used inside the weekly summary detail tabs.
 
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -9,7 +9,6 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 
-import { AppCard } from "@/components/mui";
 import type { I18nKey } from "@/i18n/translations";
 import type { CalendarDayFull, WorkoutSession } from "@/types/workoutDay.types";
 import { calcSleepEfficiencyPct } from "@/utils/dayExplorer";
@@ -140,81 +139,73 @@ export function WeekSleepByDayTable(props: Props) {
         .map(toSleepDayRow)
         .filter((row): row is SleepDayRow => row !== null);
 
+    if (loading) {
+        return (
+            <Typography variant="body2" color="text.secondary">
+                {lang === "es" ? "Cargando sueño semanal…" : "Loading weekly sleep…"}
+            </Typography>
+        );
+    }
+
+    if (hasError) {
+        return (
+            <Typography variant="body2" color="error">
+                {lang === "es"
+                    ? "No se pudo cargar el detalle diario de sueño."
+                    : "The daily sleep detail could not be loaded."}
+            </Typography>
+        );
+    }
+
     return (
-        <AppCard
-            title={lang === "es" ? "Sueño por día" : "Sleep by day"}
-            subtitle={
-                lang === "es"
-                    ? "Comparación de los registros de sueño capturados durante la semana."
-                    : "Comparison of the sleep records captured during the week."
-            }
-            padding="sm"
-        >
-            {loading ? (
-                <Typography variant="body2" color="text.secondary">
-                    {lang === "es" ? "Cargando sueño semanal…" : "Loading weekly sleep…"}
-                </Typography>
-            ) : null}
+        <TableContainer sx={{ overflowX: "auto" }}>
+            <Table size="small" sx={{ minWidth: 1320 }}>
+                <TableHead>
+                    <TableRow>
+                        <TableCell sx={{ whiteSpace: "nowrap" }}>📅 {t("common.date")}</TableCell>
+                        <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>🛌 {t("days.sleep.total")}</TableCell>
+                        <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>🏆 {t("days.sleep.score")}</TableCell>
+                        <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>💤 {t("days.sleep.efficiency")}</TableCell>
+                        <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>🔁 {t("days.sleep.readiness")}</TableCell>
+                        <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>🧠 {t("days.sleep.remPct")}</TableCell>
+                        <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>🌙 {t("days.sleep.deepPct")}</TableCell>
+                        <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>💤 {t("days.sleep.core")}</TableCell>
+                        <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>⏱ {t("days.sleep.awake")}</TableCell>
+                        <TableCell sx={{ whiteSpace: "nowrap" }}>📡 {t("days.sleep.source")}</TableCell>
+                        <TableCell sx={{ whiteSpace: "nowrap" }}>⌚ {t("days.sleep.sourceDevice")}</TableCell>
+                    </TableRow>
+                </TableHead>
 
-            {!loading && hasError ? (
-                <Typography variant="body2" color="error">
-                    {lang === "es"
-                        ? "No se pudo cargar el detalle diario de sueño."
-                        : "The daily sleep detail could not be loaded."}
-                </Typography>
-            ) : null}
-
-            {!loading && !hasError ? (
-                <TableContainer sx={{ overflowX: "auto" }}>
-                    <Table size="small" sx={{ minWidth: 1320 }}>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell sx={{ whiteSpace: "nowrap" }}>📅 {t("common.date")}</TableCell>
-                                <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>🛌 {t("days.sleep.total")}</TableCell>
-                                <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>🏆 {t("days.sleep.score")}</TableCell>
-                                <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>💤 {t("days.sleep.efficiency")}</TableCell>
-                                <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>🔁 {t("days.sleep.readiness")}</TableCell>
-                                <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>🧠 {t("days.sleep.remPct")}</TableCell>
-                                <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>🌙 {t("days.sleep.deepPct")}</TableCell>
-                                <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>💤 {t("days.sleep.core")}</TableCell>
-                                <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>⏱ {t("days.sleep.awake")}</TableCell>
-                                <TableCell sx={{ whiteSpace: "nowrap" }}>📡 {t("days.sleep.source")}</TableCell>
-                                <TableCell sx={{ whiteSpace: "nowrap" }}>⌚ {t("days.sleep.sourceDevice")}</TableCell>
+                <TableBody>
+                    {rows.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={11} align="center">
+                                {lang === "es"
+                                    ? "No hay registros de sueño para esta semana."
+                                    : "There are no sleep records for this week."}
+                            </TableCell>
+                        </TableRow>
+                    ) : (
+                        rows.map((row) => (
+                            <TableRow key={row.date} hover>
+                                <TableCell sx={{ fontWeight: 800, whiteSpace: "nowrap" }}>
+                                    {formatDayLabel(row.date, lang)}
+                                </TableCell>
+                                <TableCell align="right">{formatMinutes(row.totalMinutes)}</TableCell>
+                                <TableCell align="right">{formatNumber(row.score)}</TableCell>
+                                <TableCell align="right">{formatPercent(row.efficiencyPct)}</TableCell>
+                                <TableCell align="right">{formatNumber(row.readiness)}</TableCell>
+                                <TableCell align="right">{formatPercent(row.remPct)}</TableCell>
+                                <TableCell align="right">{formatPercent(row.deepPct)}</TableCell>
+                                <TableCell align="right">{formatMinutes(row.coreMinutes)}</TableCell>
+                                <TableCell align="right">{formatMinutes(row.awakeMinutes)}</TableCell>
+                                <TableCell sx={{ whiteSpace: "nowrap" }}>{row.source ?? "—"}</TableCell>
+                                <TableCell sx={{ whiteSpace: "nowrap" }}>{row.sourceDevice ?? "—"}</TableCell>
                             </TableRow>
-                        </TableHead>
-
-                        <TableBody>
-                            {rows.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={11} align="center">
-                                        {lang === "es"
-                                            ? "No hay registros de sueño para esta semana."
-                                            : "There are no sleep records for this week."}
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                rows.map((row) => (
-                                    <TableRow key={row.date} hover>
-                                        <TableCell sx={{ fontWeight: 800, whiteSpace: "nowrap" }}>
-                                            {formatDayLabel(row.date, lang)}
-                                        </TableCell>
-                                        <TableCell align="right">{formatMinutes(row.totalMinutes)}</TableCell>
-                                        <TableCell align="right">{formatNumber(row.score)}</TableCell>
-                                        <TableCell align="right">{formatPercent(row.efficiencyPct)}</TableCell>
-                                        <TableCell align="right">{formatNumber(row.readiness)}</TableCell>
-                                        <TableCell align="right">{formatPercent(row.remPct)}</TableCell>
-                                        <TableCell align="right">{formatPercent(row.deepPct)}</TableCell>
-                                        <TableCell align="right">{formatMinutes(row.coreMinutes)}</TableCell>
-                                        <TableCell align="right">{formatMinutes(row.awakeMinutes)}</TableCell>
-                                        <TableCell sx={{ whiteSpace: "nowrap" }}>{row.source ?? "—"}</TableCell>
-                                        <TableCell sx={{ whiteSpace: "nowrap" }}>{row.sourceDevice ?? "—"}</TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            ) : null}
-        </AppCard>
+                        ))
+                    )}
+                </TableBody>
+            </Table>
+        </TableContainer>
     );
 }

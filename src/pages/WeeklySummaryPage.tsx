@@ -20,7 +20,6 @@ import { JsonDetails } from "@/components/JsonDetails";
 import {
     AppCard,
     AppEmptyState,
-    AppMetricCard,
     AppPage,
     AppResponsiveTabs,
     AppToolbar,
@@ -32,7 +31,8 @@ import { useWeekSummary } from "@/hooks/useWeekSummary";
 import { useWorkoutWeekView } from "@/hooks/useWorkoutWeekView";
 import { extractWeekKpis } from "@/utils/weeksExplorer";
 import { toWeekKey, weekKeyToStartDate } from "@/utils/weekKey";
-import { WeekSleepByDayTable } from "@/components/weeklySummary/WeekSleepByDayTable";
+import { WeekDayDetailsCard } from "@/components/weeklySummary/WeekDayDetailsCard";
+import { WeekSummaryOverview } from "@/components/weeklySummary/WeekSummaryOverview";
 
 type Tab = "week" | "range";
 type AnyRecord = Record<string, unknown>;
@@ -224,32 +224,21 @@ export function WeeklySummaryPage() {
 
                 {tab === "week" && weekQuery.isSuccess && weekData && !showEmptyForZero ? (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2 } }}>
-                        <Box
-                            sx={{
-                                display: "grid",
-                                gridTemplateColumns: {
-                                    xs: "repeat(2, minmax(0, 1fr))",
-                                    md: "repeat(4, minmax(0, 1fr))",
-                                },
-                                gap: { xs: 1, md: 1.5 },
-                            }}
-                        >
-                            <AppMetricCard label={t("weeks.kpi.days")} value={formatStatValue(extracted.kpis.daysCount)} compact />
-                            <AppMetricCard label={t("weeks.kpi.sessions")} value={formatStatValue(extracted.kpis.sessionsCount)} compact />
-                            <AppMetricCard label={t("weeks.kpi.durationMin")} value={formatStatValue(extracted.kpis.durationMinutes)} compact />
-                            <AppMetricCard label={t("weeks.kpi.activeKcal")} value={formatStatValue(extracted.kpis.activeKcal)} compact />
-                            <AppMetricCard label={t("weeks.kpi.media")} value={formatStatValue(extracted.kpis.mediaCount)} compact />
-                            <AppMetricCard label={t("weeks.kpi.sleepDays")} value={formatStatValue(extracted.kpis.sleepDays)} compact />
-                            <AppMetricCard label={t("weeks.kpi.sleepAvgMin")} value={formatStatValue(extracted.kpis.sleepAvgTotal)} compact />
-                            <AppMetricCard label={t("weeks.kpi.sleepScore")} value={formatStatValue(extracted.kpis.sleepAvgScore)} compact />
-                            <AppMetricCard label={t("weeks.kpi.sleepAvgRemMin")} value={formatStatValue(extracted.kpis.sleepAvgRem)} compact />
-                            <AppMetricCard label={t("weeks.kpi.sleepAvgDeepMin")} value={formatStatValue(extracted.kpis.sleepAvgDeep)} compact />
-                            <AppMetricCard
-                                label={t("weeks.kpi.hr")}
-                                value={`${formatStatValue(extracted.kpis.avgHr)} / ${formatStatValue(extracted.kpis.maxHr)}`}
-                                compact
-                            />
-                        </Box>
+                        <WeekSummaryOverview
+                            kpis={extracted.kpis}
+                            days={weekDetailsQuery.data?.days ?? []}
+                            lang={lang}
+                            loading={weekDetailsQuery.isLoading}
+                            hasError={weekDetailsQuery.isError}
+                        />
+
+                        <WeekDayDetailsCard
+                            days={weekDetailsQuery.data?.days ?? []}
+                            loading={weekDetailsQuery.isLoading}
+                            hasError={weekDetailsQuery.isError}
+                            lang={lang}
+                            t={t}
+                        />
 
                         {extracted.bySessionType.length > 0 ? (
                             <AppCard title={t("weeks.byType.title")} padding="sm">
@@ -285,14 +274,6 @@ export function WeeklySummaryPage() {
                                 </TableContainer>
                             </AppCard>
                         ) : null}
-
-                        <WeekSleepByDayTable
-                            days={weekDetailsQuery.data?.days ?? []}
-                            loading={weekDetailsQuery.isLoading}
-                            hasError={weekDetailsQuery.isError}
-                            lang={lang}
-                            t={t}
-                        />
 
                         <JsonDetails title={t("weeks.json.weekTitle")} data={weekQuery.data} />
                     </Box>

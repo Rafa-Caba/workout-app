@@ -338,7 +338,11 @@ export function NavBar() {
                             type="button"
                             variant="outlined"
                             onClick={toggleLang}
-                            sx={{ minWidth: 58, px: 1.5 }}
+                            sx={{
+                                display: { xs: "none", md: "inline-flex" },
+                                minWidth: 58,
+                                px: 1.5,
+                            }}
                             aria-label={lang === "es" ? t("lang.english") : t("lang.spanish")}
                         >
                             {lang === "es" ? "EN" : "ES"}

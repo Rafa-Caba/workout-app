@@ -8,3 +8,4 @@ export * from "./routines.service";
 export * from "./insights.service";
 export * from "./progress.service";
 export * from "./cardio.service";
+export * from "./calendar.service";

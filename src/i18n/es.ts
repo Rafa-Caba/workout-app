@@ -634,7 +634,7 @@ export const es: Record<I18nKey, string> = {
     "week.loaded": "Cargado",
 
     "pages.days.title": "Explorador de días",
-    "pages.days.subtitle": "Resumen del día y documento completo para la fecha seleccionada.",
+    "pages.days.subtitle": "Explora el entrenamiento, sueño y notas de cualquier día.",
 
     "pages.weeks.title": "Resumen semanal",
     "pages.weeks.subtitle": "Carga un resumen por semana o por rango de fechas.",

@@ -29,14 +29,21 @@ import { DayTrainingMetaPanel } from "@/components/dayExplorer/DayTrainingMetaPa
 import { JsonDetails } from "@/components/JsonDetails";
 import { MediaViewerModal, type MediaLikeItem } from "@/components/media/MediaViewerModal";
 import { AppCard, AppEmptyState, AppPage } from "@/components/mui";
-import { useAddDayNote } from "@/hooks/useDayNotes";
+import {
+    useAddDayNote,
+    useDeleteDayNote,
+    useUpdateDayNote,
+} from "@/hooks/useDayNotes";
 import { useDaySummary } from "@/hooks/useDaySummary";
 import { useWorkoutCalendar } from "@/hooks/useWorkoutCalendar";
 import { useWorkoutDay } from "@/hooks/useWorkoutDay";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAppSettingsStore } from "@/state/appSettings.store";
 import { useSettingsStore } from "@/state/settings.store";
-import type { WorkoutDayNote } from "@/types/workoutDay.types";
+import type {
+    WorkoutDayNote,
+    WorkoutDayNoteDraft,
+} from "@/types/workoutDay.types";
 import { buildDayExplorerKpis } from "@/utils/dayExplorer";
 
 type ExplorerView = "month" | "day";
@@ -69,6 +76,7 @@ export function DayExplorerPage() {
     const [visibleMonth, setVisibleMonth] = React.useState<Date>(() => parseISO(initialDate));
     const [view, setView] = React.useState<ExplorerView>("month");
     const [noteFormOpen, setNoteFormOpen] = React.useState<boolean>(false);
+    const [editingNote, setEditingNote] = React.useState<OpenNoteState>(null);
     const [openNote, setOpenNote] = React.useState<OpenNoteState>(null);
     const [openMedia, setOpenMedia] = React.useState<MediaLikeItem | null>(null);
 
@@ -107,6 +115,9 @@ export function DayExplorerPage() {
     const summary = useDaySummary(selectedDate);
     const day = useWorkoutDay(selectedDate, view === "day");
     const addDayNote = useAddDayNote();
+    const updateDayNote = useUpdateDayNote();
+    const deleteDayNote = useDeleteDayNote();
+    const noteFormSaving = addDayNote.isPending || updateDayNote.isPending;
 
     React.useEffect(() => {
         if (calendar.isError) toast.error(calendar.error.message);
@@ -131,16 +142,79 @@ export function DayExplorerPage() {
         setView("day");
     }
 
-    async function handleSaveNote(args: Parameters<typeof addDayNote.mutateAsync>[0]): Promise<void> {
+    function handleOpenAddNote(): void {
+        setEditingNote(null);
+        setNoteFormOpen(true);
+    }
+
+    function handleCloseNoteForm(): void {
+        if (noteFormSaving) return;
+
+        setNoteFormOpen(false);
+        setEditingNote(null);
+    }
+
+    function handleEditNote(): void {
+        if (!openNote) return;
+
+        setEditingNote(openNote);
+        setOpenNote(null);
+        setNoteFormOpen(true);
+    }
+
+    async function handleSaveNote(args: { date: string; draft: WorkoutDayNoteDraft }): Promise<void> {
         try {
-            await addDayNote.mutateAsync(args);
+            if (editingNote) {
+                await updateDayNote.mutateAsync({
+                    date: editingNote.date,
+                    noteId: editingNote.note.id,
+                    draft: args.draft,
+                });
+            } else {
+                await addDayNote.mutateAsync(args);
+            }
+
             setSelectedDate(args.date);
             setVisibleMonth(parseISO(args.date));
             setNoteFormOpen(false);
-            toast.success(lang === "es" ? "Nota guardada" : "Note saved");
+            setEditingNote(null);
+            toast.success(
+                editingNote
+                    ? lang === "es"
+                        ? "Nota actualizada"
+                        : "Note updated"
+                    : lang === "es"
+                      ? "Nota guardada"
+                      : "Note saved",
+            );
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : null;
-            toast.error(message ?? (lang === "es" ? "No se pudo guardar la nota" : "Could not save note"));
+            toast.error(
+                message ??
+                    (editingNote
+                        ? lang === "es"
+                            ? "No se pudo actualizar la nota"
+                            : "Could not update note"
+                        : lang === "es"
+                          ? "No se pudo guardar la nota"
+                          : "Could not save note"),
+            );
+        }
+    }
+
+    async function handleDeleteNote(): Promise<void> {
+        if (!openNote) return;
+
+        try {
+            await deleteDayNote.mutateAsync({
+                date: openNote.date,
+                noteId: openNote.note.id,
+            });
+            setOpenNote(null);
+            toast.success(lang === "es" ? "Nota eliminada" : "Note deleted");
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : null;
+            toast.error(message ?? (lang === "es" ? "No se pudo eliminar la nota" : "Could not delete note"));
         }
     }
 
@@ -153,8 +227,8 @@ export function DayExplorerPage() {
                 <Button
                     variant="contained"
                     startIcon={<AddIcon />}
-                    onClick={() => setNoteFormOpen(true)}
-                    disabled={addDayNote.isPending}
+                    onClick={handleOpenAddNote}
+                    disabled={noteFormSaving || deleteDayNote.isPending}
                 >
                     {lang === "es" ? "Agregar nota" : "Add note"}
                 </Button>
@@ -239,9 +313,10 @@ export function DayExplorerPage() {
             <DayNoteFormDialog
                 open={noteFormOpen}
                 lang={lang}
-                initialDate={selectedDate}
-                saving={addDayNote.isPending}
-                onClose={() => setNoteFormOpen(false)}
+                initialDate={editingNote?.date ?? selectedDate}
+                initialNote={editingNote?.note ?? null}
+                saving={noteFormSaving}
+                onClose={handleCloseNoteForm}
                 onSave={handleSaveNote}
             />
 
@@ -250,7 +325,10 @@ export function DayExplorerPage() {
                 lang={lang}
                 date={openNote?.date ?? null}
                 note={openNote?.note ?? null}
+                deleting={deleteDayNote.isPending}
                 onClose={() => setOpenNote(null)}
+                onEdit={handleEditNote}
+                onDelete={handleDeleteNote}
             />
 
             {openMedia ? <MediaViewerModal item={openMedia} onClose={() => setOpenMedia(null)} /> : null}

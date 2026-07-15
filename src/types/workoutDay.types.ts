@@ -356,7 +356,32 @@ export type PlannedMeta = {
  * =========================================================
  */
 
-export type WorkoutDayMeta = Record<string, unknown> | null;
+export type WorkoutDayNoteType =
+    | "birthday"
+    | "appointment"
+    | "reminder"
+    | "health"
+    | "personal"
+    | "other";
+
+export type WorkoutDayNote = {
+    id: string;
+    type: WorkoutDayNoteType;
+    title: string;
+    description: string | null;
+    createdAt: ISODateTime;
+    updatedAt: ISODateTime;
+};
+
+export type WorkoutDayNoteDraft = {
+    type: WorkoutDayNoteType;
+    title: string;
+    description: string | null;
+};
+
+export type WorkoutDayMeta = ({
+    dayNotes?: WorkoutDayNote[] | null;
+} & Record<string, unknown>) | null;
 
 export type WorkoutDay = {
     id: string;
@@ -509,6 +534,15 @@ export type WeekViewResponse = {
 
     days: CalendarDayFull[];
 
+    rollups?: WeekRollups;
+};
+
+export type CalendarViewResponse = {
+    from: ISODate;
+    to: ISODate;
+    fields: string[] | null;
+    fillMissingDays: boolean;
+    days: CalendarDayFull[];
     rollups?: WeekRollups;
 };
 

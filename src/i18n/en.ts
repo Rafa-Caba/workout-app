@@ -630,7 +630,7 @@ export const en: Record<I18nKey, string> = {
     "week.loaded": "Loaded",
 
     "pages.days.title": "Days Explorer",
-    "pages.days.subtitle": "View day summary + raw day document for a selected date.",
+    "pages.days.subtitle": "Explore training, sleep, and notes for any day.",
 
     "pages.weeks.title": "Weekly Summary",
     "pages.weeks.subtitle": "Load a weekly summary or a date range summary.",

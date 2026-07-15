@@ -1,114 +1,257 @@
 // src/pages/DayExplorerPage.tsx
-// MUI Day Explorer page. Keeps summary/detail data hooks intact while moving
-// the visible layout to MUI cards, tabs, and responsive panels.
+// Monthly Day Explorer calendar with responsive day detail and structured notes.
 
-import React from "react";
-import { format } from "date-fns";
-import { toast } from "sonner";
+import * as React from "react";
+import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import {
+    addMonths,
+    endOfMonth,
+    endOfWeek,
+    format,
+    parseISO,
+    startOfMonth,
+    startOfWeek,
+} from "date-fns";
+import { toast } from "sonner";
 
-import { useI18n } from "@/i18n/I18nProvider";
-import { useDaySummary } from "@/hooks/useDaySummary";
-import { useWorkoutDay } from "@/hooks/useWorkoutDay";
-import { buildDayExplorerKpis } from "@/utils/dayExplorer";
-import { DayExplorerToolbar } from "@/components/dayExplorer/DayExplorerToolbar";
 import { DayExplorerKpisPanel } from "@/components/dayExplorer/DayExplorerKpis";
-import { MediaViewerModal, type MediaLikeItem } from "@/components/media/MediaViewerModal";
+import { DayMonthCalendar } from "@/components/dayExplorer/DayMonthCalendar";
+import { DayNoteFormDialog } from "@/components/dayExplorer/DayNoteFormDialog";
+import { DayNoteViewerDialog } from "@/components/dayExplorer/DayNoteViewerDialog";
 import { DaySessionsPanel } from "@/components/dayExplorer/DaySessionsPanel";
 import { DaySleepPanel } from "@/components/dayExplorer/DaySleepPanel";
 import { DayTrainingMetaPanel } from "@/components/dayExplorer/DayTrainingMetaPanel";
 import { JsonDetails } from "@/components/JsonDetails";
-import { useAppSettingsStore } from "@/state/appSettings.store";
+import { MediaViewerModal, type MediaLikeItem } from "@/components/media/MediaViewerModal";
 import { AppCard, AppEmptyState, AppPage } from "@/components/mui";
+import { useAddDayNote } from "@/hooks/useDayNotes";
+import { useDaySummary } from "@/hooks/useDaySummary";
+import { useWorkoutCalendar } from "@/hooks/useWorkoutCalendar";
+import { useWorkoutDay } from "@/hooks/useWorkoutDay";
+import { useI18n } from "@/i18n/I18nProvider";
+import { useAppSettingsStore } from "@/state/appSettings.store";
+import { useSettingsStore } from "@/state/settings.store";
+import type { WorkoutDayNote } from "@/types/workoutDay.types";
+import { buildDayExplorerKpis } from "@/utils/dayExplorer";
 
-type Tab = "summary" | "raw";
+type ExplorerView = "month" | "day";
+
+type OpenNoteState = {
+    date: string;
+    note: WorkoutDayNote;
+} | null;
 
 function todayIso(): string {
     return format(new Date(), "yyyy-MM-dd");
 }
 
+function formatSelectedDate(dateIso: string, lang: "es" | "en"): string {
+    const date = new Date(`${dateIso}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return dateIso;
+
+    return new Intl.DateTimeFormat(lang === "es" ? "es-MX" : "en-US", {
+        dateStyle: "full",
+    }).format(date);
+}
+
 export function DayExplorerPage() {
-    const { t } = useI18n();
-
-    const [date, setDate] = React.useState(() => todayIso());
-    const [tab, setTab] = React.useState<Tab>("summary");
-    const [openMedia, setOpenMedia] = React.useState<MediaLikeItem | null>(null);
+    const { t, lang } = useI18n();
     const showJson = useAppSettingsStore((state) => state.settings.debug?.showJson ?? false);
+    const weekStartsOn = useSettingsStore((state) => state.settings.weekStartsOn);
 
-    const summary = useDaySummary(date);
-    const day = useWorkoutDay(date, Boolean(date));
+    const initialDate = React.useMemo(() => todayIso(), []);
+    const [selectedDate, setSelectedDate] = React.useState<string>(initialDate);
+    const [visibleMonth, setVisibleMonth] = React.useState<Date>(() => parseISO(initialDate));
+    const [view, setView] = React.useState<ExplorerView>("month");
+    const [noteFormOpen, setNoteFormOpen] = React.useState<boolean>(false);
+    const [openNote, setOpenNote] = React.useState<OpenNoteState>(null);
+    const [openMedia, setOpenMedia] = React.useState<MediaLikeItem | null>(null);
 
-    const isFetching = summary.isFetching || day.isFetching;
+    const calendarRange = React.useMemo(() => {
+        const from = startOfWeek(startOfMonth(visibleMonth), { weekStartsOn });
+        const to = endOfWeek(endOfMonth(visibleMonth), { weekStartsOn });
+
+        return {
+            from: format(from, "yyyy-MM-dd"),
+            to: format(to, "yyyy-MM-dd"),
+        };
+    }, [visibleMonth, weekStartsOn]);
+
+    const calendar = useWorkoutCalendar({
+        from: calendarRange.from,
+        to: calendarRange.to,
+        fields: [
+            "date",
+            "weekKey",
+            "hasSleep",
+            "hasTraining",
+            "sleepSummary",
+            "trainingSummary",
+            "meta",
+        ],
+        fillMissingDays: true,
+        includeRollups: false,
+        includeSleep: true,
+        includeTraining: true,
+        includeSummaries: true,
+        includeTotals: false,
+        includeTypes: false,
+        includeRaw: false,
+    });
+
+    const summary = useDaySummary(selectedDate);
+    const day = useWorkoutDay(selectedDate, view === "day");
+    const addDayNote = useAddDayNote();
 
     React.useEffect(() => {
-        if (summary.isError) {
-            toast.error(summary.error.message);
-        }
-    }, [summary.isError, summary.error]);
+        if (calendar.isError) toast.error(calendar.error.message);
+    }, [calendar.error, calendar.isError]);
 
     React.useEffect(() => {
-        if (day.isError) {
-            toast.error(day.error.message);
-        }
-    }, [day.isError, day.error]);
+        if (summary.isError) toast.error(summary.error.message);
+    }, [summary.error, summary.isError]);
+
+    React.useEffect(() => {
+        if (day.isError) toast.error(day.error.message);
+    }, [day.error, day.isError]);
 
     const summaryData = summary.data ?? null;
     const rawDayData = day.data ?? null;
-
-    const dataForJson = tab === "summary" ? summaryData : rawDayData;
-    const errorForJson =
-        tab === "summary"
-            ? summary.isError
-                ? summary.error
-                : null
-            : day.isError
-                ? day.error
-                : null;
-
     const kpis = React.useMemo(() => buildDayExplorerKpis(summaryData), [summaryData]);
+    const isDayFetching = view === "day" && (summary.isFetching || day.isFetching);
+
+    function handleSelectDate(dateIso: string): void {
+        setSelectedDate(dateIso);
+        setVisibleMonth(parseISO(dateIso));
+        setView("day");
+    }
+
+    async function handleSaveNote(args: Parameters<typeof addDayNote.mutateAsync>[0]): Promise<void> {
+        try {
+            await addDayNote.mutateAsync(args);
+            setSelectedDate(args.date);
+            setVisibleMonth(parseISO(args.date));
+            setNoteFormOpen(false);
+            toast.success(lang === "es" ? "Nota guardada" : "Note saved");
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : null;
+            toast.error(message ?? (lang === "es" ? "No se pudo guardar la nota" : "Could not save note"));
+        }
+    }
 
     return (
-        <AppPage maxWidth="xl" title={t("pages.days.title")} subtitle={t("pages.days.subtitle")}>
-            <DayExplorerToolbar
-                t={t}
-                date={date}
-                onDateChange={setDate}
-                isFetching={isFetching}
-                tab={tab}
-                onTabChange={setTab}
+        <AppPage
+            maxWidth="xl"
+            title={t("pages.days.title")}
+            subtitle={t("pages.days.subtitle")}
+            actions={
+                <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => setNoteFormOpen(true)}
+                    disabled={addDayNote.isPending}
+                >
+                    {lang === "es" ? "Agregar nota" : "Add note"}
+                </Button>
+            }
+        >
+            {view === "month" ? (
+                <DayMonthCalendar
+                    lang={lang}
+                    monthDate={visibleMonth}
+                    selectedDate={selectedDate}
+                    weekStartsOn={weekStartsOn}
+                    days={calendar.data?.days ?? []}
+                    loading={calendar.isFetching}
+                    onPreviousMonth={() => setVisibleMonth((current) => addMonths(current, -1))}
+                    onNextMonth={() => setVisibleMonth((current) => addMonths(current, 1))}
+                    onSelectDate={handleSelectDate}
+                    onOpenNote={({ date, note }) => setOpenNote({ date, note })}
+                />
+            ) : (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2.25 }, minWidth: 0 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            flexDirection: { xs: "column", sm: "row" },
+                            alignItems: { xs: "stretch", sm: "center" },
+                            justifyContent: "space-between",
+                            gap: 1.25,
+                        }}
+                    >
+                        <Button
+                            variant="outlined"
+                            startIcon={<ArrowBackIcon />}
+                            onClick={() => setView("month")}
+                            sx={{ alignSelf: { xs: "flex-start", sm: "center" } }}
+                        >
+                            {lang === "es" ? "Volver al mes" : "Back to month"}
+                        </Button>
+
+                        <Typography variant="h6" component="h2" sx={{ fontWeight: 850 }}>
+                            {formatSelectedDate(selectedDate, lang)}
+                        </Typography>
+                    </Box>
+
+                    {summary.isSuccess ? <DayExplorerKpisPanel t={t} kpis={kpis} /> : null}
+
+                    {day.isSuccess && rawDayData ? (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2 }, minWidth: 0 }}>
+                            <DayTrainingMetaPanel t={t} training={rawDayData.training} />
+                            <DaySleepPanel t={t} day={rawDayData} />
+                            <DaySessionsPanel t={t} day={rawDayData} onOpenMedia={setOpenMedia} />
+                        </Box>
+                    ) : null}
+
+                    {day.isSuccess && !rawDayData ? (
+                        <AppEmptyState
+                            title={lang === "es" ? "Sin datos para este día" : "No data for this day"}
+                            description={
+                                lang === "es"
+                                    ? "Puedes agregar una nota o registrar sueño y entrenamiento para esta fecha."
+                                    : "You can add a note or record sleep and training for this date."
+                            }
+                        />
+                    ) : null}
+
+                    {isDayFetching ? (
+                        <Alert severity="info" variant="outlined">
+                            {t("common.fetching")}
+                        </Alert>
+                    ) : null}
+
+                    {showJson ? (
+                        <AppCard padding="sm" tone="soft">
+                            <JsonDetails
+                                title={t("days.debug.dayJsonTitle")}
+                                data={{ summary: summaryData, day: rawDayData }}
+                            />
+                        </AppCard>
+                    ) : null}
+                </Box>
+            )}
+
+            <DayNoteFormDialog
+                open={noteFormOpen}
+                lang={lang}
+                initialDate={selectedDate}
+                saving={addDayNote.isPending}
+                onClose={() => setNoteFormOpen(false)}
+                onSave={handleSaveNote}
             />
 
-            {tab === "summary" && summary.isSuccess ? <DayExplorerKpisPanel t={t} kpis={kpis} /> : null}
-
-            {!date ? <AppEmptyState title={t("days.empty.title")} description={t("days.empty.desc")} /> : null}
-
-            {tab === "raw" && day.isSuccess && rawDayData ? (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2 }, minWidth: 0 }}>
-                    <DayTrainingMetaPanel t={t} training={rawDayData.training} />
-                    <DaySleepPanel t={t} day={rawDayData} />
-                    <DaySessionsPanel t={t} day={rawDayData} onOpenMedia={setOpenMedia} />
-                </Box>
-            ) : null}
-
-            {isFetching ? (
-                <Alert severity="info" variant="outlined">
-                    {t("common.fetching")}
-                </Alert>
-            ) : null}
-
-            {errorForJson ? (
-                <JsonDetails title={t("days.debug.errorJsonTitle")} data={errorForJson} defaultOpen />
-            ) : null}
-
-            {showJson ? (
-                <AppCard padding="sm" tone="soft">
-                    <JsonDetails
-                        title={tab === "summary" ? t("days.debug.summaryJsonTitle") : t("days.debug.dayJsonTitle")}
-                        data={dataForJson}
-                    />
-                </AppCard>
-            ) : null}
+            <DayNoteViewerDialog
+                open={openNote !== null}
+                lang={lang}
+                date={openNote?.date ?? null}
+                note={openNote?.note ?? null}
+                onClose={() => setOpenNote(null)}
+            />
 
             {openMedia ? <MediaViewerModal item={openMedia} onClose={() => setOpenMedia(null)} /> : null}
         </AppPage>

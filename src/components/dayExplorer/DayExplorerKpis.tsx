@@ -31,8 +31,8 @@ export function DayExplorerKpisPanel({
         <Box
             sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
-                gap: { xs: 1, md: 1.25 },
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gap: { xs: 0.75, md: 1.25 },
                 minWidth: 0,
             }}
         >

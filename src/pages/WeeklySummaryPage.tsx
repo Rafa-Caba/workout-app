@@ -29,8 +29,10 @@ import { useI18n } from "@/i18n/I18nProvider";
 
 import { useRangeSummary } from "@/hooks/useRangeSummary";
 import { useWeekSummary } from "@/hooks/useWeekSummary";
+import { useWorkoutWeekView } from "@/hooks/useWorkoutWeekView";
 import { extractWeekKpis } from "@/utils/weeksExplorer";
 import { toWeekKey, weekKeyToStartDate } from "@/utils/weekKey";
+import { WeekSleepByDayTable } from "@/components/weeklySummary/WeekSleepByDayTable";
 
 type Tab = "week" | "range";
 type AnyRecord = Record<string, unknown>;
@@ -63,7 +65,7 @@ function formatStatValue(value: unknown): React.ReactNode {
 }
 
 export function WeeklySummaryPage() {
-    const { t } = useI18n();
+    const { t, lang } = useI18n();
     const today = React.useMemo(() => new Date(), []);
 
     const [tab, setTab] = React.useState<Tab>("week");
@@ -92,6 +94,17 @@ export function WeeklySummaryPage() {
     }, [tab, from, to]);
 
     const weekQuery = useWeekSummary(tab === "week" ? runWeekKey : "");
+    const weekDetailsQuery = useWorkoutWeekView(tab === "week" ? runWeekKey : null, {
+        fields: null,
+        fillMissingDays: true,
+        includeRollups: false,
+        includeSleep: true,
+        includeTraining: true,
+        includeSummaries: true,
+        includeTotals: false,
+        includeTypes: false,
+        includeRaw: false,
+    });
     const rangeQuery = useRangeSummary(tab === "range" ? runFrom : "", tab === "range" ? runTo : "");
     const active = tab === "week" ? weekQuery : rangeQuery;
     const isFetching = active.isFetching;
@@ -272,6 +285,14 @@ export function WeeklySummaryPage() {
                                 </TableContainer>
                             </AppCard>
                         ) : null}
+
+                        <WeekSleepByDayTable
+                            days={weekDetailsQuery.data?.days ?? []}
+                            loading={weekDetailsQuery.isLoading}
+                            hasError={weekDetailsQuery.isError}
+                            lang={lang}
+                            t={t}
+                        />
 
                         <JsonDetails title={t("weeks.json.weekTitle")} data={weekQuery.data} />
                     </Box>

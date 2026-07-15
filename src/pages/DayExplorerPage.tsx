@@ -27,8 +27,15 @@ import { DaySessionsPanel } from "@/components/dayExplorer/DaySessionsPanel";
 import { DaySleepPanel } from "@/components/dayExplorer/DaySleepPanel";
 import { DayTrainingMetaPanel } from "@/components/dayExplorer/DayTrainingMetaPanel";
 import { JsonDetails } from "@/components/JsonDetails";
-import { MediaViewerModal, type MediaLikeItem } from "@/components/media/MediaViewerModal";
-import { AppCard, AppEmptyState, AppPage } from "@/components/mui";
+import {
+    MediaViewerModal,
+    type MediaLikeItem,
+} from "@/components/media/MediaViewerModal";
+import {
+    AppCard,
+    AppEmptyState,
+    AppPage,
+} from "@/components/mui";
 import {
     useAddDayNote,
     useDeleteDayNote,
@@ -57,32 +64,115 @@ function todayIso(): string {
     return format(new Date(), "yyyy-MM-dd");
 }
 
-function formatSelectedDate(dateIso: string, lang: "es" | "en"): string {
+function parseSelectedDate(dateIso: string): Date | null {
     const date = new Date(`${dateIso}T00:00:00`);
-    if (Number.isNaN(date.getTime())) return dateIso;
 
-    return new Intl.DateTimeFormat(lang === "es" ? "es-MX" : "en-US", {
-        dateStyle: "full",
-    }).format(date);
+    return Number.isNaN(date.getTime())
+        ? null
+        : date;
+}
+
+/**
+ * Returns the complete localized date used on tablet and desktop.
+ */
+function formatSelectedDate(
+    dateIso: string,
+    lang: "es" | "en",
+): string {
+    const date = parseSelectedDate(dateIso);
+
+    if (!date) return dateIso;
+
+    return new Intl.DateTimeFormat(
+        lang === "es" ? "es-MX" : "en-US",
+        {
+            dateStyle: "full",
+        },
+    ).format(date);
+}
+
+/**
+ * Returns a compact localized date used on mobile.
+ *
+ * Examples:
+ * - es: mié, 15 jul 2026
+ * - en: Wed, Jul 15, 2026
+ */
+function formatSelectedDateShort(
+    dateIso: string,
+    lang: "es" | "en",
+): string {
+    const date = parseSelectedDate(dateIso);
+
+    if (!date) return dateIso;
+
+    return new Intl.DateTimeFormat(
+        lang === "es" ? "es-MX" : "en-US",
+        {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        },
+    ).format(date);
 }
 
 export function DayExplorerPage() {
     const { t, lang } = useI18n();
-    const showJson = useAppSettingsStore((state) => state.settings.debug?.showJson ?? false);
-    const weekStartsOn = useSettingsStore((state) => state.settings.weekStartsOn);
 
-    const initialDate = React.useMemo(() => todayIso(), []);
-    const [selectedDate, setSelectedDate] = React.useState<string>(initialDate);
-    const [visibleMonth, setVisibleMonth] = React.useState<Date>(() => parseISO(initialDate));
-    const [view, setView] = React.useState<ExplorerView>("month");
-    const [noteFormOpen, setNoteFormOpen] = React.useState<boolean>(false);
-    const [editingNote, setEditingNote] = React.useState<OpenNoteState>(null);
-    const [openNote, setOpenNote] = React.useState<OpenNoteState>(null);
-    const [openMedia, setOpenMedia] = React.useState<MediaLikeItem | null>(null);
+    const showJson = useAppSettingsStore(
+        (state) =>
+            state.settings.debug?.showJson ?? false,
+    );
+
+    const weekStartsOn = useSettingsStore(
+        (state) => state.settings.weekStartsOn,
+    );
+
+    const initialDate = React.useMemo(
+        () => todayIso(),
+        [],
+    );
+
+    const [selectedDate, setSelectedDate] =
+        React.useState<string>(initialDate);
+
+    const [visibleMonth, setVisibleMonth] =
+        React.useState<Date>(() =>
+            parseISO(initialDate),
+        );
+
+    const [view, setView] =
+        React.useState<ExplorerView>("month");
+
+    const [noteFormOpen, setNoteFormOpen] =
+        React.useState<boolean>(false);
+
+    const [editingNote, setEditingNote] =
+        React.useState<OpenNoteState>(null);
+
+    const [openNote, setOpenNote] =
+        React.useState<OpenNoteState>(null);
+
+    const [openMedia, setOpenMedia] =
+        React.useState<MediaLikeItem | null>(
+            null,
+        );
 
     const calendarRange = React.useMemo(() => {
-        const from = startOfWeek(startOfMonth(visibleMonth), { weekStartsOn });
-        const to = endOfWeek(endOfMonth(visibleMonth), { weekStartsOn });
+        const from = startOfWeek(
+            startOfMonth(visibleMonth),
+            {
+                weekStartsOn,
+            },
+        );
+
+        const to = endOfWeek(
+            endOfMonth(visibleMonth),
+            {
+                weekStartsOn,
+            },
+        );
 
         return {
             from: format(from, "yyyy-MM-dd"),
@@ -113,30 +203,62 @@ export function DayExplorerPage() {
     });
 
     const summary = useDaySummary(selectedDate);
-    const day = useWorkoutDay(selectedDate, view === "day");
+
+    const day = useWorkoutDay(
+        selectedDate,
+        view === "day",
+    );
+
     const addDayNote = useAddDayNote();
     const updateDayNote = useUpdateDayNote();
     const deleteDayNote = useDeleteDayNote();
-    const noteFormSaving = addDayNote.isPending || updateDayNote.isPending;
+
+    const noteFormSaving =
+        addDayNote.isPending ||
+        updateDayNote.isPending;
 
     React.useEffect(() => {
-        if (calendar.isError) toast.error(calendar.error.message);
+        if (calendar.isError) {
+            toast.error(calendar.error.message);
+        }
     }, [calendar.error, calendar.isError]);
 
     React.useEffect(() => {
-        if (summary.isError) toast.error(summary.error.message);
+        if (summary.isError) {
+            toast.error(summary.error.message);
+        }
     }, [summary.error, summary.isError]);
 
     React.useEffect(() => {
-        if (day.isError) toast.error(day.error.message);
+        if (day.isError) {
+            toast.error(day.error.message);
+        }
     }, [day.error, day.isError]);
 
     const summaryData = summary.data ?? null;
     const rawDayData = day.data ?? null;
-    const kpis = React.useMemo(() => buildDayExplorerKpis(summaryData), [summaryData]);
-    const isDayFetching = view === "day" && (summary.isFetching || day.isFetching);
 
-    function handleSelectDate(dateIso: string): void {
+    const kpis = React.useMemo(
+        () => buildDayExplorerKpis(summaryData),
+        [summaryData],
+    );
+
+    const isDayFetching =
+        view === "day" &&
+        (summary.isFetching || day.isFetching);
+
+    const selectedDateShortLabel =
+        formatSelectedDateShort(
+            selectedDate,
+            lang,
+        );
+
+    const selectedDateFullLabel =
+        formatSelectedDate(selectedDate, lang);
+
+    function handleSelectDate(
+        dateIso: string,
+    ): void {
         setSelectedDate(dateIso);
         setVisibleMonth(parseISO(dateIso));
         setView("day");
@@ -162,7 +284,10 @@ export function DayExplorerPage() {
         setNoteFormOpen(true);
     }
 
-    async function handleSaveNote(args: { date: string; draft: WorkoutDayNoteDraft }): Promise<void> {
+    async function handleSaveNote(args: {
+        date: string;
+        draft: WorkoutDayNoteDraft;
+    }): Promise<void> {
         try {
             if (editingNote) {
                 await updateDayNote.mutateAsync({
@@ -178,6 +303,7 @@ export function DayExplorerPage() {
             setVisibleMonth(parseISO(args.date));
             setNoteFormOpen(false);
             setEditingNote(null);
+
             toast.success(
                 editingNote
                     ? lang === "es"
@@ -188,7 +314,11 @@ export function DayExplorerPage() {
                       : "Note saved",
             );
         } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : null;
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : null;
+
             toast.error(
                 message ??
                     (editingNote
@@ -210,11 +340,26 @@ export function DayExplorerPage() {
                 date: openNote.date,
                 noteId: openNote.note.id,
             });
+
             setOpenNote(null);
-            toast.success(lang === "es" ? "Nota eliminada" : "Note deleted");
+
+            toast.success(
+                lang === "es"
+                    ? "Nota eliminada"
+                    : "Note deleted",
+            );
         } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : null;
-            toast.error(message ?? (lang === "es" ? "No se pudo eliminar la nota" : "Could not delete note"));
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : null;
+
+            toast.error(
+                message ??
+                    (lang === "es"
+                        ? "No se pudo eliminar la nota"
+                        : "Could not delete note"),
+            );
         }
     }
 
@@ -228,9 +373,14 @@ export function DayExplorerPage() {
                     variant="contained"
                     startIcon={<AddIcon />}
                     onClick={handleOpenAddNote}
-                    disabled={noteFormSaving || deleteDayNote.isPending}
+                    disabled={
+                        noteFormSaving ||
+                        deleteDayNote.isPending
+                    }
                 >
-                    {lang === "es" ? "Agregar nota" : "Add note"}
+                    {lang === "es"
+                        ? "Agregar nota"
+                        : "Add note"}
                 </Button>
             }
         >
@@ -240,51 +390,195 @@ export function DayExplorerPage() {
                     monthDate={visibleMonth}
                     selectedDate={selectedDate}
                     weekStartsOn={weekStartsOn}
-                    days={calendar.data?.days ?? []}
+                    days={
+                        calendar.data?.days ?? []
+                    }
                     loading={calendar.isFetching}
-                    onPreviousMonth={() => setVisibleMonth((current) => addMonths(current, -1))}
-                    onNextMonth={() => setVisibleMonth((current) => addMonths(current, 1))}
+                    onPreviousMonth={() =>
+                        setVisibleMonth(
+                            (current) =>
+                                addMonths(current, -1),
+                        )
+                    }
+                    onNextMonth={() =>
+                        setVisibleMonth(
+                            (current) =>
+                                addMonths(current, 1),
+                        )
+                    }
                     onSelectDate={handleSelectDate}
-                    onOpenNote={({ date, note }) => setOpenNote({ date, note })}
+                    onOpenNote={({ date, note }) =>
+                        setOpenNote({ date, note })
+                    }
                 />
             ) : (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2.25 }, minWidth: 0 }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: {
+                            xs: 1.5,
+                            md: 2.25,
+                        },
+                        minWidth: 0,
+                    }}
+                >
                     <Box
                         sx={{
                             display: "flex",
-                            flexDirection: { xs: "column", sm: "row" },
-                            alignItems: { xs: "stretch", sm: "center" },
-                            justifyContent: "space-between",
-                            gap: 1.25,
+                            alignItems: "center",
+                            justifyContent:
+                                "space-between",
+                            gap: {
+                                xs: 1,
+                                sm: 1.5,
+                            },
+                            minWidth: 0,
                         }}
                     >
                         <Button
                             variant="outlined"
-                            startIcon={<ArrowBackIcon />}
-                            onClick={() => setView("month")}
-                            sx={{ alignSelf: { xs: "flex-start", sm: "center" } }}
+                            startIcon={
+                                <ArrowBackIcon />
+                            }
+                            onClick={() =>
+                                setView("month")
+                            }
+                            sx={{
+                                flexShrink: 0,
+                                minWidth: {
+                                    xs: "auto",
+                                    sm: 64,
+                                },
+                                px: {
+                                    xs: 1.25,
+                                    sm: 2,
+                                },
+                            }}
                         >
-                            {lang === "es" ? "Volver al mes" : "Back to month"}
+                            <Box
+                                component="span"
+                                sx={{
+                                    display: {
+                                        xs: "inline",
+                                        sm: "none",
+                                    },
+                                }}
+                            >
+                                {lang === "es"
+                                    ? "Mes"
+                                    : "Month"}
+                            </Box>
+
+                            <Box
+                                component="span"
+                                sx={{
+                                    display: {
+                                        xs: "none",
+                                        sm: "inline",
+                                    },
+                                }}
+                            >
+                                {lang === "es"
+                                    ? "Volver al mes"
+                                    : "Back to month"}
+                            </Box>
                         </Button>
 
-                        <Typography variant="h6" component="h2" sx={{ fontWeight: 850 }}>
-                            {formatSelectedDate(selectedDate, lang)}
+                        <Typography
+                            component="h2"
+                            sx={{
+                                minWidth: 0,
+                                fontWeight: 850,
+                                lineHeight: 1.2,
+                                textAlign: "right",
+                                fontSize: {
+                                    xs: "0.95rem",
+                                    sm: "1.15rem",
+                                    md: "1.25rem",
+                                },
+                                overflowWrap: "anywhere",
+                            }}
+                        >
+                            <Box
+                                component="span"
+                                sx={{
+                                    display: {
+                                        xs: "inline",
+                                        sm: "none",
+                                    },
+                                }}
+                            >
+                                {
+                                    selectedDateShortLabel
+                                }
+                            </Box>
+
+                            <Box
+                                component="span"
+                                sx={{
+                                    display: {
+                                        xs: "none",
+                                        sm: "inline",
+                                    },
+                                }}
+                            >
+                                {
+                                    selectedDateFullLabel
+                                }
+                            </Box>
                         </Typography>
                     </Box>
 
-                    {summary.isSuccess ? <DayExplorerKpisPanel t={t} kpis={kpis} /> : null}
+                    {summary.isSuccess ? (
+                        <DayExplorerKpisPanel
+                            t={t}
+                            kpis={kpis}
+                        />
+                    ) : null}
 
                     {day.isSuccess && rawDayData ? (
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2 }, minWidth: 0 }}>
-                            <DayTrainingMetaPanel t={t} training={rawDayData.training} />
-                            <DaySleepPanel t={t} day={rawDayData} />
-                            <DaySessionsPanel t={t} day={rawDayData} onOpenMedia={setOpenMedia} />
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: {
+                                    xs: 1.5,
+                                    md: 2,
+                                },
+                                minWidth: 0,
+                            }}
+                        >
+                            <DayTrainingMetaPanel
+                                t={t}
+                                training={
+                                    rawDayData.training
+                                }
+                            />
+
+                            <DaySleepPanel
+                                t={t}
+                                day={rawDayData}
+                            />
+
+                            <DaySessionsPanel
+                                t={t}
+                                day={rawDayData}
+                                onOpenMedia={
+                                    setOpenMedia
+                                }
+                            />
                         </Box>
                     ) : null}
 
-                    {day.isSuccess && !rawDayData ? (
+                    {day.isSuccess &&
+                    !rawDayData ? (
                         <AppEmptyState
-                            title={lang === "es" ? "Sin datos para este día" : "No data for this day"}
+                            title={
+                                lang === "es"
+                                    ? "Sin datos para este día"
+                                    : "No data for this day"
+                            }
                             description={
                                 lang === "es"
                                     ? "Puedes agregar una nota o registrar sueño y entrenamiento para esta fecha."
@@ -294,16 +588,28 @@ export function DayExplorerPage() {
                     ) : null}
 
                     {isDayFetching ? (
-                        <Alert severity="info" variant="outlined">
+                        <Alert
+                            severity="info"
+                            variant="outlined"
+                        >
                             {t("common.fetching")}
                         </Alert>
                     ) : null}
 
                     {showJson ? (
-                        <AppCard padding="sm" tone="soft">
+                        <AppCard
+                            padding="sm"
+                            tone="soft"
+                        >
                             <JsonDetails
-                                title={t("days.debug.dayJsonTitle")}
-                                data={{ summary: summaryData, day: rawDayData }}
+                                title={t(
+                                    "days.debug.dayJsonTitle",
+                                )}
+                                data={{
+                                    summary:
+                                        summaryData,
+                                    day: rawDayData,
+                                }}
                             />
                         </AppCard>
                     ) : null}
@@ -313,8 +619,13 @@ export function DayExplorerPage() {
             <DayNoteFormDialog
                 open={noteFormOpen}
                 lang={lang}
-                initialDate={editingNote?.date ?? selectedDate}
-                initialNote={editingNote?.note ?? null}
+                initialDate={
+                    editingNote?.date ??
+                    selectedDate
+                }
+                initialNote={
+                    editingNote?.note ?? null
+                }
                 saving={noteFormSaving}
                 onClose={handleCloseNoteForm}
                 onSave={handleSaveNote}
@@ -331,7 +642,14 @@ export function DayExplorerPage() {
                 onDelete={handleDeleteNote}
             />
 
-            {openMedia ? <MediaViewerModal item={openMedia} onClose={() => setOpenMedia(null)} /> : null}
+            {openMedia ? (
+                <MediaViewerModal
+                    item={openMedia}
+                    onClose={() =>
+                        setOpenMedia(null)
+                    }
+                />
+            ) : null}
         </AppPage>
     );
 }

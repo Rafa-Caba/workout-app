@@ -1,5 +1,5 @@
 // src/components/dayExplorer/DayNoteFormDialog.tsx
-// Responsive dialog for adding a plain-text structured note to a WorkoutDay.
+// Responsive dialog for adding or editing a plain-text structured WorkoutDay note.
 
 import * as React from "react";
 import CloseIcon from "@mui/icons-material/Close";
@@ -15,6 +15,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
 import type {
+    WorkoutDayNote,
     WorkoutDayNoteDraft,
     WorkoutDayNoteType,
 } from "@/types/workoutDay.types";
@@ -31,12 +32,22 @@ type Props = {
     open: boolean;
     lang: "es" | "en";
     initialDate: string;
+    initialNote?: WorkoutDayNote | null;
     saving: boolean;
     onClose: () => void;
     onSave: (args: { date: string; draft: WorkoutDayNoteDraft }) => Promise<void>;
 };
 
-function createInitialForm(date: string): FormState {
+function createInitialForm(date: string, note: WorkoutDayNote | null | undefined): FormState {
+    if (note) {
+        return {
+            date,
+            type: note.type,
+            title: note.title,
+            description: note.description ?? "",
+        };
+    }
+
     return {
         date,
         type: "reminder",
@@ -50,17 +61,19 @@ export function DayNoteFormDialog(props: Props) {
         open,
         lang,
         initialDate,
+        initialNote,
         saving,
         onClose,
         onSave,
     } = props;
 
-    const [form, setForm] = React.useState<FormState>(() => createInitialForm(initialDate));
+    const isEditing = Boolean(initialNote);
+    const [form, setForm] = React.useState<FormState>(() => createInitialForm(initialDate, initialNote));
 
     React.useEffect(() => {
         if (!open) return;
-        setForm(createInitialForm(initialDate));
-    }, [initialDate, open]);
+        setForm(createInitialForm(initialDate, initialNote));
+    }, [initialDate, initialNote, open]);
 
     const canSave = form.date.length > 0 && form.title.trim().length > 0 && !saving;
 
@@ -107,12 +120,22 @@ export function DayNoteFormDialog(props: Props) {
                     >
                         <Box sx={{ minWidth: 0 }}>
                             <Typography variant="h6" component="h2" sx={{ fontWeight: 850 }}>
-                                {lang === "es" ? "Agregar nota" : "Add note"}
+                                {isEditing
+                                    ? lang === "es"
+                                        ? "Editar nota"
+                                        : "Edit note"
+                                    : lang === "es"
+                                      ? "Agregar nota"
+                                      : "Add note"}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                {lang === "es"
-                                    ? "La nota se guardará en el día seleccionado."
-                                    : "The note will be saved to the selected day."}
+                                {isEditing
+                                    ? lang === "es"
+                                        ? "Actualiza los datos de la nota seleccionada."
+                                        : "Update the selected note details."
+                                    : lang === "es"
+                                      ? "La nota se guardará en el día seleccionado."
+                                      : "The note will be saved to the selected day."}
                             </Typography>
                         </Box>
 
@@ -134,8 +157,10 @@ export function DayNoteFormDialog(props: Props) {
                         value={form.date}
                         onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
                         required
+                        disabled={isEditing}
                         fullWidth
                         size="small"
+                        sx={{ mt: 1 }}
                     />
 
                     <TextField
@@ -198,7 +223,11 @@ export function DayNoteFormDialog(props: Props) {
                             ? lang === "es"
                                 ? "Guardando..."
                                 : "Saving..."
-                            : lang === "es"
+                            : isEditing
+                              ? lang === "es"
+                                  ? "Guardar cambios"
+                                  : "Save changes"
+                              : lang === "es"
                                 ? "Guardar nota"
                                 : "Save note"}
                     </Button>

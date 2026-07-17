@@ -18,6 +18,7 @@ type Props = {
     lang: "es" | "en";
     loading: boolean;
     hasError: boolean;
+    period?: "week" | "range";
 };
 
 type SleepScoreHighlight = {
@@ -144,6 +145,7 @@ export function WeekSummaryOverview(props: Props) {
         lang,
         loading,
         hasError,
+        period = "week",
     } = props;
 
     const mostActiveDay = findMostActiveDay(days);
@@ -156,22 +158,22 @@ export function WeekSummaryOverview(props: Props) {
 
     const mostActiveHelper = mostActiveDay
         ? [
-              isFiniteNumber(mostActiveDay.activeKcal)
-                  ? `${Math.round(mostActiveDay.activeKcal)} kcal`
-                  : null,
-              formatDuration(
-                  mostActiveDay.durationSeconds,
-              ) !== "—"
-                  ? formatDuration(
-                        mostActiveDay.durationSeconds,
-                    )
-                  : null,
-          ]
-              .filter(
-                  (value): value is string =>
-                      Boolean(value),
-              )
-              .join(" · ") || undefined
+            isFiniteNumber(mostActiveDay.activeKcal)
+                ? `${Math.round(mostActiveDay.activeKcal)} kcal`
+                : null,
+            formatDuration(
+                mostActiveDay.durationSeconds,
+            ) !== "—"
+                ? formatDuration(
+                    mostActiveDay.durationSeconds,
+                )
+                : null,
+        ]
+            .filter(
+                (value): value is string =>
+                    Boolean(value),
+            )
+            .join(" · ") || undefined
         : undefined;
 
     return (
@@ -360,9 +362,9 @@ export function WeekSummaryOverview(props: Props) {
 
             <AppCard
                 title={
-                    lang === "es"
-                        ? "Highlights de la semana"
-                        : "Weekly highlights"
+                    period === "range"
+                        ? (lang === "es" ? "Highlights del rango" : "Range highlights")
+                        : (lang === "es" ? "Highlights de la semana" : "Weekly highlights")
                 }
                 padding="sm"
             >
@@ -387,9 +389,9 @@ export function WeekSummaryOverview(props: Props) {
                             value={
                                 mostActiveDay
                                     ? formatWeekDayLabel(
-                                          mostActiveDay.date,
-                                          lang,
-                                      )
+                                        mostActiveDay.date,
+                                        lang,
+                                    )
                                     : detailValueFallback
                             }
                             helper={mostActiveHelper}
@@ -408,16 +410,16 @@ export function WeekSummaryOverview(props: Props) {
                             value={
                                 bestSleepScore
                                     ? formatWeekDayLabel(
-                                          bestSleepScore.date,
-                                          lang,
-                                      )
+                                        bestSleepScore.date,
+                                        lang,
+                                    )
                                     : detailValueFallback
                             }
                             helper={
                                 bestSleepScore
                                     ? `${Math.round(
-                                          bestSleepScore.score,
-                                      )}`
+                                        bestSleepScore.score,
+                                    )}`
                                     : undefined
                             }
                             tone="success"
@@ -444,8 +446,8 @@ export function WeekSummaryOverview(props: Props) {
                                 loading
                                     ? "…"
                                     : hasError
-                                      ? "—"
-                                      : `${daysWithRecords} / 7`
+                                        ? "—"
+                                        : `${daysWithRecords} / 7`
                             }
                             helper={
                                 hasError
@@ -453,8 +455,8 @@ export function WeekSummaryOverview(props: Props) {
                                         ? "Detalle diario no disponible"
                                         : "Daily detail unavailable"
                                     : lang === "es"
-                                      ? "Entrenamiento o sueño"
-                                      : "Training or sleep"
+                                        ? "Entrenamiento o sueño"
+                                        : "Training or sleep"
                             }
                             tone="info"
                             compact

@@ -29,6 +29,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { useRangeSummary } from "@/hooks/useRangeSummary";
 import { useWeekSummary } from "@/hooks/useWeekSummary";
 import { useWorkoutWeekView } from "@/hooks/useWorkoutWeekView";
+import { useWorkoutCalendar } from "@/hooks/useWorkoutCalendar";
 import { extractWeekKpis } from "@/utils/weeksExplorer";
 import { toWeekKey, weekKeyToStartDate } from "@/utils/weekKey";
 import { WeekDayDetailsCard } from "@/components/weeklySummary/WeekDayDetailsCard";
@@ -106,8 +107,22 @@ export function WeeklySummaryPage() {
         includeRaw: false,
     });
     const rangeQuery = useRangeSummary(tab === "range" ? runFrom : "", tab === "range" ? runTo : "");
+    const rangeDetailsQuery = useWorkoutCalendar({
+        from: tab === "range" ? runFrom : "",
+        to: tab === "range" ? runTo : "",
+        fields: null,
+        fillMissingDays: true,
+        includeRollups: false,
+        includeSleep: true,
+        includeTraining: true,
+        includeSummaries: true,
+        includeTotals: false,
+        includeTypes: false,
+        includeRaw: false,
+    });
     const active = tab === "week" ? weekQuery : rangeQuery;
-    const isFetching = active.isFetching;
+    const activeDetails = tab === "week" ? weekDetailsQuery : rangeDetailsQuery;
+    const isFetching = active.isFetching || activeDetails.isFetching;
 
     React.useEffect(() => {
         if (weekQuery.isError) toast.error(weekQuery.error.message);
@@ -138,8 +153,8 @@ export function WeeklySummaryPage() {
         setWeekDate(format(start, "yyyy-MM-dd"));
     }
 
-    const weekData = tab === "week" ? weekQuery.data ?? null : null;
-    const extracted = React.useMemo(() => extractWeekKpis(weekData), [weekData]);
+    const activeSummaryData = active.data ?? null;
+    const extracted = React.useMemo(() => extractWeekKpis(activeSummaryData), [activeSummaryData]);
     const daysCount = getDaysCountFromSummary(active.data ?? null);
     const showEmptyForZero = active.isSuccess && daysCount === 0;
     const hasMediaCountPerType = extracted.bySessionType.some((row) => {
@@ -222,22 +237,24 @@ export function WeeklySummaryPage() {
 
                 {showEmptyForZero ? <AppEmptyState title={t("weeks.empty.title")} description={t("weeks.empty.desc")} /> : null}
 
-                {tab === "week" && weekQuery.isSuccess && weekData && !showEmptyForZero ? (
+                {active.isSuccess && activeSummaryData && !showEmptyForZero ? (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2 } }}>
                         <WeekSummaryOverview
                             kpis={extracted.kpis}
-                            days={weekDetailsQuery.data?.days ?? []}
+                            days={activeDetails.data?.days ?? []}
                             lang={lang}
-                            loading={weekDetailsQuery.isLoading}
-                            hasError={weekDetailsQuery.isError}
+                            loading={activeDetails.isLoading}
+                            hasError={activeDetails.isError}
+                            period={tab}
                         />
 
                         <WeekDayDetailsCard
-                            days={weekDetailsQuery.data?.days ?? []}
-                            loading={weekDetailsQuery.isLoading}
-                            hasError={weekDetailsQuery.isError}
+                            days={activeDetails.data?.days ?? []}
+                            loading={activeDetails.isLoading}
+                            hasError={activeDetails.isError}
                             lang={lang}
                             t={t}
+                            period={tab}
                         />
 
                         {extracted.bySessionType.length > 0 ? (
@@ -275,13 +292,13 @@ export function WeeklySummaryPage() {
                             </AppCard>
                         ) : null}
 
-                        <JsonDetails title={t("weeks.json.weekTitle")} data={weekQuery.data} />
+                        <JsonDetails
+                            title={tab === "week" ? t("weeks.json.weekTitle") : t("weeks.json.rangeTitle")}
+                            data={activeSummaryData}
+                        />
                     </Box>
                 ) : null}
 
-                {tab === "range" && rangeQuery.isSuccess ? (
-                    <JsonDetails title={t("weeks.json.rangeTitle")} data={rangeQuery.data} />
-                ) : null}
             </AppCard>
         </AppPage>
     );

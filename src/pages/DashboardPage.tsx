@@ -32,6 +32,33 @@ function formatDashboardNumber(value: number | null | undefined): string {
     return Number(value.toFixed(2)).toString();
 }
 
+
+function getSleepTotalMinutes(
+    sleep: {
+        totalMinutes?: number | null;
+        timeAsleepMinutes?: number | null;
+        deepMinutes?: number | null;
+        remMinutes?: number | null;
+        coreMinutes?: number | null;
+    } | null | undefined,
+): number | null {
+    if (!sleep) return null;
+
+    const explicitTotal = sleep.totalMinutes ?? sleep.timeAsleepMinutes ?? null;
+    if (typeof explicitTotal === "number" && Number.isFinite(explicitTotal) && explicitTotal > 0) {
+        return explicitTotal;
+    }
+
+    const stages = [sleep.deepMinutes, sleep.remMinutes, sleep.coreMinutes].filter(
+        (value): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0,
+    );
+
+    if (stages.length === 0) return null;
+
+    const stageTotal = stages.reduce((total, value) => total + value, 0);
+    return stageTotal > 0 ? stageTotal : null;
+}
+
 function getErrorMessage(error: unknown, fallback: string): string {
     if (error instanceof Error && error.message.trim().length > 0) {
         return error.message;
@@ -90,6 +117,7 @@ export function DashboardPage() {
     const rangeSleep = d.rangeSummary.data?.sleep ?? null;
 
     const day = d.daySummary.data ?? null;
+    const todaySleepTotalMinutes = getSleepTotalMinutes(day?.sleep);
     const week = d.weekSummary.data ?? null;
 
     const trendPoint = React.useMemo(
@@ -231,7 +259,11 @@ export function DashboardPage() {
                                     <>
                                         <InlineMetric
                                             label={t("dashboard.sleep.total")}
-                                            value={day.sleep.totalMinutes ? minutesToHhMm(day.sleep.totalMinutes) : "—"}
+                                            value={
+                                                todaySleepTotalMinutes !== null
+                                                    ? minutesToHhMm(todaySleepTotalMinutes)
+                                                    : "—"
+                                            }
                                         />
                                         <InlineMetric
                                             label={`${t("dashboard.sleep.deep")} / ${t("dashboard.sleep.rem")}`}

@@ -49,8 +49,10 @@ export type DaySummaryResponse = {
     sleep:
     | {
         totalMinutes?: number | null;
+        timeAsleepMinutes?: number | null;
         deepMinutes?: number | null;
         remMinutes?: number | null;
+        coreMinutes?: number | null;
         score?: number | null;
         [k: string]: unknown;
     }

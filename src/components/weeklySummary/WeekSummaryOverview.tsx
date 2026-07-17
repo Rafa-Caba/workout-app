@@ -1,5 +1,5 @@
 // src/components/weeklySummary/WeekSummaryOverview.tsx
-// Grouped weekly KPIs and three concise highlights for training and sleep.
+// Grouped period KPIs and three concise highlights for training and sleep.
 
 import Box from "@mui/material/Box";
 
@@ -8,9 +8,10 @@ import {
     buildTrainingDayRows,
     formatWeekDayLabel,
     type TrainingDayRow,
-} from "@/utils/weeklySummary";
+} from "@/utils/summaryPeriods/weeklySummary";
 import type { CalendarDayFull } from "@/types/workoutDay.types";
-import type { WeekKpis } from "@/utils/weeksExplorer";
+import { buildMonthWeekRows, type MonthWeekRow } from "@/utils/summaryPeriods/monthlySummary";
+import type { WeekKpis } from "@/utils/summaryPeriods/weeksExplorer";
 
 type Props = {
     kpis: WeekKpis;
@@ -18,7 +19,8 @@ type Props = {
     lang: "es" | "en";
     loading: boolean;
     hasError: boolean;
-    period?: "week" | "range";
+    period?: "month" | "week" | "range";
+    periodDaysCount?: number;
 };
 
 type SleepScoreHighlight = {
@@ -88,6 +90,40 @@ function findMostActiveDay(
     );
 }
 
+function compareWeekActivity(a: MonthWeekRow, b: MonthWeekRow): number {
+    const kcalDifference = (a.activeKcal ?? -1) - (b.activeKcal ?? -1);
+    if (kcalDifference !== 0) return kcalDifference;
+
+    const durationDifference = (a.durationSeconds ?? -1) - (b.durationSeconds ?? -1);
+    if (durationDifference !== 0) return durationDifference;
+
+    return a.sessionsCount - b.sessionsCount;
+}
+
+function findMostActiveWeek(
+    days: readonly CalendarDayFull[],
+    lang: "es" | "en",
+): MonthWeekRow | null {
+    const rows = buildMonthWeekRows(days, lang).filter((row) => row.sessionsCount > 0);
+    if (rows.length === 0) return null;
+
+    return rows.reduce((best, current) =>
+        compareWeekActivity(current, best) > 0 ? current : best,
+    );
+}
+
+function buildActivityHelper(
+    activeKcal: number | null,
+    durationSeconds: number | null,
+): string | undefined {
+    return [
+        isFiniteNumber(activeKcal) ? `${Math.round(activeKcal)} kcal` : null,
+        formatDuration(durationSeconds) !== "—" ? formatDuration(durationSeconds) : null,
+    ]
+        .filter((value): value is string => Boolean(value))
+        .join(" · ") || undefined;
+}
+
 function findBestSleepScore(
     days: readonly CalendarDayFull[],
 ): SleepScoreHighlight | null {
@@ -146,9 +182,11 @@ export function WeekSummaryOverview(props: Props) {
         loading,
         hasError,
         period = "week",
+        periodDaysCount,
     } = props;
 
-    const mostActiveDay = findMostActiveDay(days);
+    const mostActiveDay = period === "month" ? null : findMostActiveDay(days);
+    const mostActiveWeek = period === "month" ? findMostActiveWeek(days, lang) : null;
     const bestSleepScore = findBestSleepScore(days);
     const daysWithRecords = countDaysWithRecords(days);
 
@@ -156,25 +194,15 @@ export function WeekSummaryOverview(props: Props) {
         ? "…"
         : "—";
 
-    const mostActiveHelper = mostActiveDay
-        ? [
-            isFiniteNumber(mostActiveDay.activeKcal)
-                ? `${Math.round(mostActiveDay.activeKcal)} kcal`
-                : null,
-            formatDuration(
-                mostActiveDay.durationSeconds,
-            ) !== "—"
-                ? formatDuration(
-                    mostActiveDay.durationSeconds,
-                )
-                : null,
-        ]
-            .filter(
-                (value): value is string =>
-                    Boolean(value),
-            )
-            .join(" · ") || undefined
-        : undefined;
+    const mostActiveHelper = period === "month"
+        ? buildActivityHelper(
+            mostActiveWeek?.activeKcal ?? null,
+            mostActiveWeek?.durationSeconds ?? null,
+        )
+        : buildActivityHelper(
+            mostActiveDay?.activeKcal ?? null,
+            mostActiveDay?.durationSeconds ?? null,
+        );
 
     return (
         <Box
@@ -362,9 +390,11 @@ export function WeekSummaryOverview(props: Props) {
 
             <AppCard
                 title={
-                    period === "range"
-                        ? (lang === "es" ? "Highlights del rango" : "Range highlights")
-                        : (lang === "es" ? "Highlights de la semana" : "Weekly highlights")
+                    period === "month"
+                        ? (lang === "es" ? "Highlights del mes" : "Monthly highlights")
+                        : period === "range"
+                            ? (lang === "es" ? "Highlights del rango" : "Range highlights")
+                            : (lang === "es" ? "Highlights de la semana" : "Weekly highlights")
                 }
                 padding="sm"
             >
@@ -382,17 +412,19 @@ export function WeekSummaryOverview(props: Props) {
                     <Box sx={{ minWidth: 0 }}>
                         <AppMetricCard
                             label={
-                                lang === "es"
-                                    ? "🔥 Día más activo"
-                                    : "🔥 Most active day"
+                                period === "month"
+                                    ? (lang === "es" ? "🔥 Semana más activa" : "🔥 Most active week")
+                                    : (lang === "es" ? "🔥 Día más activo" : "🔥 Most active day")
                             }
                             value={
-                                mostActiveDay
-                                    ? formatWeekDayLabel(
-                                        mostActiveDay.date,
-                                        lang,
-                                    )
-                                    : detailValueFallback
+                                period === "month"
+                                    ? mostActiveWeek?.label ?? detailValueFallback
+                                    : mostActiveDay
+                                        ? formatWeekDayLabel(
+                                            mostActiveDay.date,
+                                            lang,
+                                        )
+                                        : detailValueFallback
                             }
                             helper={mostActiveHelper}
                             tone="warning"
@@ -447,7 +479,7 @@ export function WeekSummaryOverview(props: Props) {
                                     ? "…"
                                     : hasError
                                         ? "—"
-                                        : `${daysWithRecords} / 7`
+                                        : `${daysWithRecords} / ${periodDaysCount ?? (days.length || 7)}`
                             }
                             helper={
                                 hasError

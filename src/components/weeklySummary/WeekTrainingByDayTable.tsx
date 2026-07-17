@@ -11,7 +11,7 @@ import Typography from "@mui/material/Typography";
 
 import type { I18nKey } from "@/i18n/translations";
 import type { CalendarDayFull } from "@/types/workoutDay.types";
-import { buildTrainingDayRows, formatWeekDayLabel } from "@/utils/weeklySummary";
+import { buildTrainingDayRows, formatWeekDayLabel } from "@/utils/summaryPeriods/weeklySummary";
 
 type Props = {
     days: readonly CalendarDayFull[];

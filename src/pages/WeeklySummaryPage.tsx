@@ -1,18 +1,20 @@
 // src/pages/WeeklySummaryPage.tsx
-// MUI weekly / range summary page. Keeps existing hooks and API contracts unchanged.
+// Period summary page for monthly comparisons, weekly summaries, and custom ranges.
 
-import React from "react";
-import { addWeeks, endOfISOWeek, format, startOfISOWeek } from "date-fns";
+import * as React from "react";
+import {
+    addMonths,
+    addWeeks,
+    differenceInCalendarDays,
+    endOfISOWeek,
+    format,
+    startOfISOWeek,
+    subMonths,
+} from "date-fns";
 import { toast } from "sonner";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
@@ -24,22 +26,37 @@ import {
     AppResponsiveTabs,
     AppToolbar,
 } from "@/components/mui";
-import { useI18n } from "@/i18n/I18nProvider";
-
-import { useRangeSummary } from "@/hooks/useRangeSummary";
-import { useWeekSummary } from "@/hooks/useWeekSummary";
-import { useWorkoutWeekView } from "@/hooks/useWorkoutWeekView";
-import { useWorkoutCalendar } from "@/hooks/useWorkoutCalendar";
-import { extractWeekKpis } from "@/utils/weeksExplorer";
-import { toWeekKey, weekKeyToStartDate } from "@/utils/weekKey";
+import { MonthComparisonCard } from "@/components/weeklySummary/MonthComparisonCard";
+import { MonthWeekBreakdownTable } from "@/components/weeklySummary/MonthWeekBreakdownTable";
+import { SessionTypeSummaryTable } from "@/components/weeklySummary/SessionTypeSummaryTable";
 import { WeekDayDetailsCard } from "@/components/weeklySummary/WeekDayDetailsCard";
 import { WeekSummaryOverview } from "@/components/weeklySummary/WeekSummaryOverview";
+import { useI18n } from "@/i18n/I18nProvider";
+import { useRangeSummary } from "@/hooks/useRangeSummary";
+import { useWeekSummary } from "@/hooks/useWeekSummary";
+import { useWorkoutCalendar } from "@/hooks/useWorkoutCalendar";
+import { useWorkoutWeekView } from "@/hooks/useWorkoutWeekView";
+import { formatMonthLabel, getMonthRange } from "@/utils/summaryPeriods/monthlySummary";
+import { toWeekKey, weekKeyToStartDate } from "@/utils/weekKey";
+import { extractWeekKpis } from "@/utils/summaryPeriods/weeksExplorer";
 
-type Tab = "week" | "range";
-type AnyRecord = Record<string, unknown>;
+type PeriodTab = "month" | "week" | "range";
+type UnknownRecord = Record<string, unknown>;
 
-function isRecord(value: unknown): value is AnyRecord {
-    return typeof value === "object" && value !== null;
+const DETAILS_QUERY_OPTIONS = {
+    fields: null,
+    fillMissingDays: true,
+    includeRollups: false,
+    includeSleep: true,
+    includeTraining: true,
+    includeSummaries: true,
+    includeTotals: false,
+    includeTypes: false,
+    includeRaw: false,
+} as const;
+
+function isRecord(value: unknown): value is UnknownRecord {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function todayIso(): string {
@@ -53,23 +70,32 @@ function getDaysCountFromSummary(data: unknown): number | null {
     return typeof daysCount === "number" && Number.isFinite(daysCount) ? daysCount : null;
 }
 
-function formatStatValue(value: unknown): React.ReactNode {
-    if (typeof value === "number" && Number.isFinite(value)) {
-        return Number(value.toFixed(2)).toString();
-    }
+function parseMonthValue(monthValue: string): Date | null {
+    if (!/^\d{4}-\d{2}$/.test(monthValue)) return null;
 
-    if (value === null || value === undefined || value === "") {
-        return "—";
-    }
+    const date = new Date(`${monthValue}-01T00:00:00`);
+    return Number.isNaN(date.getTime()) ? null : date;
+}
 
-    return value as React.ReactNode;
+function getInclusiveRangeDaysCount(from: string, to: string): number | undefined {
+    const fromDate = new Date(`${from}T00:00:00`);
+    const toDate = new Date(`${to}T00:00:00`);
+
+    if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) return undefined;
+    if (toDate.getTime() < fromDate.getTime()) return undefined;
+
+    return differenceInCalendarDays(toDate, fromDate) + 1;
 }
 
 export function WeeklySummaryPage() {
     const { t, lang } = useI18n();
     const today = React.useMemo(() => new Date(), []);
 
-    const [tab, setTab] = React.useState<Tab>("week");
+    const [tab, setTab] = React.useState<PeriodTab>("month");
+
+    const [monthValue, setMonthValue] = React.useState<string>(() => format(today, "yyyy-MM"));
+    const [comparisonMonthValue, setComparisonMonthValue] = React.useState<string>(() => format(subMonths(today, 1), "yyyy-MM"));
+
     const [weekDate, setWeekDate] = React.useState<string>(() => format(today, "yyyy-MM-dd"));
     const [from, setFrom] = React.useState<string>(() => todayIso());
     const [to, setTo] = React.useState<string>(() => todayIso());
@@ -94,35 +120,55 @@ export function WeeklySummaryPage() {
         setRunTo(to);
     }, [tab, from, to]);
 
-    const weekQuery = useWeekSummary(tab === "week" ? runWeekKey : "");
-    const weekDetailsQuery = useWorkoutWeekView(tab === "week" ? runWeekKey : null, {
-        fields: null,
-        fillMissingDays: true,
-        includeRollups: false,
-        includeSleep: true,
-        includeTraining: true,
-        includeSummaries: true,
-        includeTotals: false,
-        includeTypes: false,
-        includeRaw: false,
+    const monthRange = React.useMemo(() => getMonthRange(monthValue), [monthValue]);
+    const comparisonMonthRange = React.useMemo(
+        () => getMonthRange(comparisonMonthValue),
+        [comparisonMonthValue],
+    );
+
+    const monthSummaryQuery = useRangeSummary(
+        tab === "month" ? monthRange?.from ?? "" : "",
+        tab === "month" ? monthRange?.to ?? "" : "",
+    );
+    const monthDetailsQuery = useWorkoutCalendar({
+        from: tab === "month" ? monthRange?.from ?? "" : "",
+        to: tab === "month" ? monthRange?.to ?? "" : "",
+        ...DETAILS_QUERY_OPTIONS,
     });
-    const rangeQuery = useRangeSummary(tab === "range" ? runFrom : "", tab === "range" ? runTo : "");
+
+    const comparisonSummaryQuery = useRangeSummary(
+        tab === "month" ? comparisonMonthRange?.from ?? "" : "",
+        tab === "month" ? comparisonMonthRange?.to ?? "" : "",
+    );
+    const comparisonDetailsQuery = useWorkoutCalendar({
+        from: tab === "month" ? comparisonMonthRange?.from ?? "" : "",
+        to: tab === "month" ? comparisonMonthRange?.to ?? "" : "",
+        ...DETAILS_QUERY_OPTIONS,
+    });
+
+    const weekQuery = useWeekSummary(tab === "week" ? runWeekKey : "");
+    const weekDetailsQuery = useWorkoutWeekView(
+        tab === "week" ? runWeekKey : null,
+        DETAILS_QUERY_OPTIONS,
+    );
+
+    const rangeQuery = useRangeSummary(
+        tab === "range" ? runFrom : "",
+        tab === "range" ? runTo : "",
+    );
     const rangeDetailsQuery = useWorkoutCalendar({
         from: tab === "range" ? runFrom : "",
         to: tab === "range" ? runTo : "",
-        fields: null,
-        fillMissingDays: true,
-        includeRollups: false,
-        includeSleep: true,
-        includeTraining: true,
-        includeSummaries: true,
-        includeTotals: false,
-        includeTypes: false,
-        includeRaw: false,
+        ...DETAILS_QUERY_OPTIONS,
     });
-    const active = tab === "week" ? weekQuery : rangeQuery;
-    const activeDetails = tab === "week" ? weekDetailsQuery : rangeDetailsQuery;
-    const isFetching = active.isFetching || activeDetails.isFetching;
+
+    React.useEffect(() => {
+        if (monthSummaryQuery.isError) toast.error(monthSummaryQuery.error.message);
+    }, [monthSummaryQuery.isError, monthSummaryQuery.error]);
+
+    React.useEffect(() => {
+        if (comparisonSummaryQuery.isError) toast.error(comparisonSummaryQuery.error.message);
+    }, [comparisonSummaryQuery.isError, comparisonSummaryQuery.error]);
 
     React.useEffect(() => {
         if (weekQuery.isError) toast.error(weekQuery.error.message);
@@ -137,44 +183,130 @@ export function WeeklySummaryPage() {
         return `${format(startOfISOWeek(date), "MMM d, yyyy")} → ${format(endOfISOWeek(date), "MMM d, yyyy")}`;
     }, [weekDate]);
 
-    function goPrevWeek() {
+    const rangeDaysCount = React.useMemo(
+        () => getInclusiveRangeDaysCount(runFrom, runTo),
+        [runFrom, runTo],
+    );
+
+    const currentMonthLabel = formatMonthLabel(monthValue, lang);
+    const comparisonMonthLabel = formatMonthLabel(comparisonMonthValue, lang);
+
+    function updateSelectedMonth(nextMonthValue: string): void {
+        const parsed = parseMonthValue(nextMonthValue);
+        if (!parsed) return;
+
+        setMonthValue(nextMonthValue);
+        setComparisonMonthValue(format(subMonths(parsed, 1), "yyyy-MM"));
+    }
+
+    function goPrevMonth(): void {
+        const parsed = parseMonthValue(monthValue);
+        if (!parsed) return;
+
+        updateSelectedMonth(format(addMonths(parsed, -1), "yyyy-MM"));
+    }
+
+    function goNextMonth(): void {
+        const parsed = parseMonthValue(monthValue);
+        if (!parsed) return;
+
+        updateSelectedMonth(format(addMonths(parsed, 1), "yyyy-MM"));
+    }
+
+    function goPrevWeek(): void {
         const date = new Date(`${weekDate}T00:00:00`);
         setWeekDate(format(addWeeks(date, -1), "yyyy-MM-dd"));
     }
 
-    function goNextWeek() {
+    function goNextWeek(): void {
         const date = new Date(`${weekDate}T00:00:00`);
         setWeekDate(format(addWeeks(date, 1), "yyyy-MM-dd"));
     }
 
-    function jumpToWeekKey(weekKey: string) {
+    function jumpToWeekKey(weekKey: string): void {
         const start = weekKeyToStartDate(weekKey);
         if (!start) return;
         setWeekDate(format(start, "yyyy-MM-dd"));
     }
 
-    const activeSummaryData = active.data ?? null;
-    const extracted = React.useMemo(() => extractWeekKpis(activeSummaryData), [activeSummaryData]);
-    const daysCount = getDaysCountFromSummary(active.data ?? null);
-    const showEmptyForZero = active.isSuccess && daysCount === 0;
-    const hasMediaCountPerType = extracted.bySessionType.some((row) => {
-        const mediaCount = (row as { mediaCount?: unknown }).mediaCount;
-        return typeof mediaCount === "number";
-    });
+    const monthSummaryData = monthSummaryQuery.data ?? null;
+    const monthExtracted = React.useMemo(
+        () => extractWeekKpis(monthSummaryData),
+        [monthSummaryData],
+    );
+    const comparisonExtracted = React.useMemo(
+        () => extractWeekKpis(comparisonSummaryQuery.data ?? null),
+        [comparisonSummaryQuery.data],
+    );
+
+    const monthDaysCount = getDaysCountFromSummary(monthSummaryData);
+    const showMonthEmpty = monthSummaryQuery.isSuccess && monthDaysCount === 0;
+    const monthIsFetching = monthSummaryQuery.isFetching || monthDetailsQuery.isFetching;
+    const comparisonIsFetching = comparisonSummaryQuery.isFetching || comparisonDetailsQuery.isFetching;
+
+    const activeSummaryData = tab === "week"
+        ? weekQuery.data ?? null
+        : tab === "range"
+            ? rangeQuery.data ?? null
+            : null;
+    const activeSummaryFetching = tab === "week" ? weekQuery.isFetching : rangeQuery.isFetching;
+    const activeSummaryError = tab === "week" ? weekQuery.error : rangeQuery.error;
+    const activeSummaryIsError = tab === "week" ? weekQuery.isError : rangeQuery.isError;
+    const activeSummaryIsSuccess = tab === "week" ? weekQuery.isSuccess : rangeQuery.isSuccess;
+    const activeDetails = tab === "week" ? weekDetailsQuery : rangeDetailsQuery;
+    const activeExtracted = React.useMemo(
+        () => extractWeekKpis(activeSummaryData),
+        [activeSummaryData],
+    );
+    const activeDaysCount = getDaysCountFromSummary(activeSummaryData);
+    const showActiveEmpty = activeSummaryIsSuccess && activeDaysCount === 0;
 
     return (
         <AppPage title={t("pages.weeks.title")} subtitle={t("pages.weeks.subtitle")} maxWidth="lg">
             <AppToolbar>
                 <AppResponsiveTabs
                     value={tab}
-                    onChange={(nextValue) => setTab(nextValue as Tab)}
+                    onChange={(nextValue) => setTab(nextValue as PeriodTab)}
                     ariaLabel={t("pages.weeks.title")}
                     tabs={[
+                        { value: "month", label: t("tabs.month") },
                         { value: "week", label: t("tabs.week") },
                         { value: "range", label: t("tabs.range") },
                     ]}
                     sx={{ width: { xs: "100%", sm: "auto" }, borderBottom: 0 }}
                 />
+
+                {tab === "month" ? (
+                    <>
+                        <TextField
+                            label={lang === "es" ? "Mes" : "Month"}
+                            type="month"
+                            size="small"
+                            value={monthValue}
+                            onChange={(event) => updateSelectedMonth(event.target.value)}
+                            sx={{ width: { xs: "100%", sm: 180 } }}
+                        />
+                        <Button variant="outlined" onClick={goPrevMonth} disabled={monthIsFetching}>
+                            {lang === "es" ? "← Mes anterior" : "← Previous month"}
+                        </Button>
+                        <Button variant="outlined" onClick={goNextMonth} disabled={monthIsFetching}>
+                            {lang === "es" ? "Mes siguiente →" : "Next month →"}
+                        </Button>
+                        <TextField
+                            label={lang === "es" ? "Comparar con" : "Compare with"}
+                            type="month"
+                            size="small"
+                            value={comparisonMonthValue}
+                            onChange={(event) => setComparisonMonthValue(event.target.value)}
+                            sx={{ width: { xs: "100%", sm: 180 } }}
+                        />
+                        <Chip
+                            label={`${currentMonthLabel} vs ${comparisonMonthLabel}`}
+                            color="primary"
+                            variant="outlined"
+                        />
+                    </>
+                ) : null}
 
                 {tab === "week" ? (
                     <>
@@ -186,20 +318,22 @@ export function WeeklySummaryPage() {
                             onChange={(event) => setWeekDate(event.target.value)}
                             sx={{ width: { xs: "100%", sm: 190 } }}
                         />
-                        <Button sx={{ fontSize: { xs: "0.8rem", md: "1rem" } }} variant="outlined" onClick={goPrevWeek} disabled={isFetching}>
+                        <Button sx={{ fontSize: { xs: "0.8rem", md: "1rem" } }} variant="outlined" onClick={goPrevWeek} disabled={activeSummaryFetching}>
                             {t("week.prev")}
                         </Button>
-                        <Button sx={{ fontSize: { xs: "0.8rem", md: "1rem" } }} variant="outlined" onClick={goNextWeek} disabled={isFetching}>
+                        <Button sx={{ fontSize: { xs: "0.8rem", md: "1rem" } }} variant="outlined" onClick={goNextWeek} disabled={activeSummaryFetching}>
                             {t("week.next")}
                         </Button>
                         <Chip label={`${t("week.selectedWeekKey")}: ${derivedWeekKey}`} variant="outlined" />
                         <Chip label={`${t("week.weekRange")}: ${weekRangeLabel}`} variant="outlined" />
                         <Chip label={`${t("week.loaded")}: ${runWeekKey}`} color="primary" variant="outlined" />
-                        <Button variant="text" onClick={() => jumpToWeekKey(runWeekKey)} disabled={isFetching}>
+                        <Button variant="text" onClick={() => jumpToWeekKey(runWeekKey)} disabled={activeSummaryFetching}>
                             {t("weeks.sync")}
                         </Button>
                     </>
-                ) : (
+                ) : null}
+
+                {tab === "range" ? (
                     <>
                         <TextField
                             label={t("common.from")}
@@ -219,87 +353,123 @@ export function WeeklySummaryPage() {
                         />
                         <Chip label={`${t("week.loaded")}: ${runFrom} → ${runTo}`} color="primary" variant="outlined" />
                     </>
-                )}
+                ) : null}
             </AppToolbar>
 
-            <AppCard>
-                {!active.data && !active.isFetching && !active.isError ? (
-                    <AppEmptyState title={t("weeks.empty.title")} description={t("weeks.empty.desc")} variant="inline" />
-                ) : null}
+            {tab === "month" ? (
+                <AppCard>
+                    {!monthSummaryData && !monthSummaryQuery.isFetching && !monthSummaryQuery.isError ? (
+                        <AppEmptyState title={t("weeks.empty.title")} description={t("weeks.empty.desc")} variant="inline" />
+                    ) : null}
 
-                {active.isFetching ? (
-                    <Typography variant="body2" color="text.secondary">
-                        {t("common.fetching")}
-                    </Typography>
-                ) : null}
+                    {monthSummaryQuery.isFetching ? (
+                        <Typography variant="body2" color="text.secondary">
+                            {t("common.fetching")}
+                        </Typography>
+                    ) : null}
 
-                {active.isError ? <JsonDetails title={t("common.errorTitle")} data={active.error} defaultOpen /> : null}
+                    {monthSummaryQuery.isError ? (
+                        <JsonDetails title={t("common.errorTitle")} data={monthSummaryQuery.error} defaultOpen />
+                    ) : null}
 
-                {showEmptyForZero ? <AppEmptyState title={t("weeks.empty.title")} description={t("weeks.empty.desc")} /> : null}
+                    {showMonthEmpty ? (
+                        <AppEmptyState title={t("weeks.empty.title")} description={t("weeks.empty.desc")} />
+                    ) : null}
 
-                {active.isSuccess && activeSummaryData && !showEmptyForZero ? (
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2 } }}>
-                        <WeekSummaryOverview
-                            kpis={extracted.kpis}
-                            days={activeDetails.data?.days ?? []}
-                            lang={lang}
-                            loading={activeDetails.isLoading}
-                            hasError={activeDetails.isError}
-                            period={tab}
-                        />
+                    {monthSummaryQuery.isSuccess && monthSummaryData && !showMonthEmpty ? (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2 } }}>
+                            <WeekSummaryOverview
+                                kpis={monthExtracted.kpis}
+                                days={monthDetailsQuery.data?.days ?? []}
+                                lang={lang}
+                                loading={monthDetailsQuery.isLoading}
+                                hasError={monthDetailsQuery.isError}
+                                period="month"
+                                periodDaysCount={monthRange?.daysCount}
+                            />
 
-                        <WeekDayDetailsCard
-                            days={activeDetails.data?.days ?? []}
-                            loading={activeDetails.isLoading}
-                            hasError={activeDetails.isError}
-                            lang={lang}
-                            t={t}
-                            period={tab}
-                        />
+                            <MonthComparisonCard
+                                currentLabel={currentMonthLabel}
+                                comparisonLabel={comparisonMonthLabel}
+                                currentKpis={monthExtracted.kpis}
+                                comparisonKpis={comparisonExtracted.kpis}
+                                currentDays={monthDetailsQuery.data?.days ?? []}
+                                comparisonDays={comparisonDetailsQuery.data?.days ?? []}
+                                lang={lang}
+                                loading={monthDetailsQuery.isFetching || comparisonIsFetching}
+                                hasError={comparisonSummaryQuery.isError || comparisonDetailsQuery.isError}
+                            />
 
-                        {extracted.bySessionType.length > 0 ? (
-                            <AppCard title={t("weeks.byType.title")} padding="sm">
-                                <TableContainer sx={{ overflowX: "auto" }}>
-                                    <Table size="small" sx={{ minWidth: 620 }}>
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell>{t("weeks.byType.type")}</TableCell>
-                                                <TableCell align="right">{t("weeks.byType.sessions")}</TableCell>
-                                                <TableCell align="right">{t("weeks.byType.durationMin")}</TableCell>
-                                                <TableCell align="right">{t("weeks.byType.kcal")}</TableCell>
-                                                {hasMediaCountPerType ? (
-                                                    <TableCell align="right">{t("weeks.byType.media")}</TableCell>
-                                                ) : null}
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {extracted.bySessionType.map((row, index) => (
-                                                <TableRow key={`${row.sessionType}-${index}`}>
-                                                    <TableCell>{row.sessionType}</TableCell>
-                                                    <TableCell align="right">{formatStatValue(row.sessionsCount)}</TableCell>
-                                                    <TableCell align="right">{formatStatValue(row.durationMinutes)}</TableCell>
-                                                    <TableCell align="right">{formatStatValue(row.activeKcal)}</TableCell>
-                                                    {hasMediaCountPerType ? (
-                                                        <TableCell align="right">
-                                                            {formatStatValue((row as { mediaCount?: unknown }).mediaCount ?? "—")}
-                                                        </TableCell>
-                                                    ) : null}
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                            </AppCard>
-                        ) : null}
+                            <MonthWeekBreakdownTable
+                                days={monthDetailsQuery.data?.days ?? []}
+                                lang={lang}
+                                loading={monthDetailsQuery.isLoading}
+                                hasError={monthDetailsQuery.isError}
+                            />
 
-                        <JsonDetails
-                            title={tab === "week" ? t("weeks.json.weekTitle") : t("weeks.json.rangeTitle")}
-                            data={activeSummaryData}
-                        />
-                    </Box>
-                ) : null}
+                            <SessionTypeSummaryTable rows={monthExtracted.bySessionType} t={t} />
 
-            </AppCard>
+                            <JsonDetails
+                                title={t("weeks.json.monthTitle")}
+                                data={{
+                                    selectedMonth: monthSummaryData,
+                                    comparisonMonth: comparisonSummaryQuery.data ?? null,
+                                }}
+                            />
+                        </Box>
+                    ) : null}
+                </AppCard>
+            ) : (
+                <AppCard>
+                    {!activeSummaryData && !activeSummaryFetching && !activeSummaryIsError ? (
+                        <AppEmptyState title={t("weeks.empty.title")} description={t("weeks.empty.desc")} variant="inline" />
+                    ) : null}
+
+                    {activeSummaryFetching ? (
+                        <Typography variant="body2" color="text.secondary">
+                            {t("common.fetching")}
+                        </Typography>
+                    ) : null}
+
+                    {activeSummaryIsError ? (
+                        <JsonDetails title={t("common.errorTitle")} data={activeSummaryError} defaultOpen />
+                    ) : null}
+
+                    {showActiveEmpty ? (
+                        <AppEmptyState title={t("weeks.empty.title")} description={t("weeks.empty.desc")} />
+                    ) : null}
+
+                    {activeSummaryIsSuccess && activeSummaryData && !showActiveEmpty ? (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2 } }}>
+                            <WeekSummaryOverview
+                                kpis={activeExtracted.kpis}
+                                days={activeDetails.data?.days ?? []}
+                                lang={lang}
+                                loading={activeDetails.isLoading}
+                                hasError={activeDetails.isError}
+                                period={tab}
+                                periodDaysCount={tab === "week" ? 7 : rangeDaysCount}
+                            />
+
+                            <WeekDayDetailsCard
+                                days={activeDetails.data?.days ?? []}
+                                loading={activeDetails.isLoading}
+                                hasError={activeDetails.isError}
+                                lang={lang}
+                                t={t}
+                                period={tab}
+                            />
+
+                            <SessionTypeSummaryTable rows={activeExtracted.bySessionType} t={t} />
+
+                            <JsonDetails
+                                title={tab === "week" ? t("weeks.json.weekTitle") : t("weeks.json.rangeTitle")}
+                                data={activeSummaryData}
+                            />
+                        </Box>
+                    ) : null}
+                </AppCard>
+            )}
         </AppPage>
     );
 }

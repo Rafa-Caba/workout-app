@@ -125,6 +125,7 @@ export const i18nKeys = [
     // Tabs
     "tabs.summary",
     "tabs.raw",
+    "tabs.month",
     "tabs.week",
     "tabs.range",
     "tabs.browse",
@@ -448,6 +449,7 @@ export const i18nKeys = [
     "weeks.byType.kcal",
     "weeks.byType.media",
 
+    "weeks.json.monthTitle",
     "weeks.json.weekTitle",
     "weeks.json.rangeTitle",
 

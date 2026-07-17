@@ -73,7 +73,7 @@ export const en: Record<I18nKey, string> = {
 
     "nav.home": "Home",
     "nav.days": "Days",
-    "nav.weeks": "Weeks",
+    "nav.weeks": "Periods",
     "nav.trends": "Trends",
     "nav.media": "Media",
     "nav.routines": "Routines",
@@ -371,8 +371,8 @@ export const en: Record<I18nKey, string> = {
     "weeks.sync": "sync",
     "weeks.syncPickerTitle": "Sync picker with loaded week",
 
-    "weeks.empty.title": "Pick a week or a range and click Load",
-    "weeks.empty.desc": "You’ll see the summary and computed metrics.",
+    "weeks.empty.title": "No records for the selected period",
+    "weeks.empty.desc": "Try another month, week, or date range.",
 
     "weeks.kpi.days": "Days",
     "weeks.kpi.sessions": "Sessions",
@@ -390,6 +390,7 @@ export const en: Record<I18nKey, string> = {
     "weeks.byType.durationMin": "Duration (min)",
     "weeks.byType.kcal": "Kcal",
 
+    "weeks.json.monthTitle": "Monthly summary (JSON)",
     "weeks.json.weekTitle": "Weekly summary (JSON)",
     "weeks.json.rangeTitle": "Range summary (JSON)",
     "weeks.kpi.sleepAvgRemMin": "Avg REM (min)",
@@ -614,8 +615,9 @@ export const en: Record<I18nKey, string> = {
 
     "tabs.summary": "Summary",
     "tabs.raw": "Raw",
-    "tabs.week": "Week",
-    "tabs.range": "Range",
+    "tabs.month": "Months",
+    "tabs.week": "Weeks",
+    "tabs.range": "Date range",
     "tabs.browse": "Browse",
     "tabs.stats": "Stats",
 
@@ -632,8 +634,8 @@ export const en: Record<I18nKey, string> = {
     "pages.days.title": "Days Explorer",
     "pages.days.subtitle": "Explore training, sleep, and notes for any day.",
 
-    "pages.weeks.title": "Weekly Summary",
-    "pages.weeks.subtitle": "Load a weekly summary or a date range summary.",
+    "pages.weeks.title": "Period Summary",
+    "pages.weeks.subtitle": "Compare months, review weeks, or analyze a custom date range.",
 
     "pages.trends.title": "Trends (Weeks)",
     "pages.trends.subtitle": "See aggregated weekly metrics over time.",

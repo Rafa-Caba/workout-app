@@ -74,7 +74,7 @@ export const es: Record<I18nKey, string> = {
 
     "nav.home": "Inicio",
     "nav.days": "Días",
-    "nav.weeks": "Semanas",
+    "nav.weeks": "Periodos",
     "nav.trends": "Tendencias",
     "nav.media": "Media",
     "nav.routines": "Rutinas",
@@ -372,8 +372,8 @@ export const es: Record<I18nKey, string> = {
     "weeks.sync": "sync",
     "weeks.syncPickerTitle": "Sincronizar picker con la semana cargada",
 
-    "weeks.empty.title": "Elige una semana o un rango y haz clic en Cargar",
-    "weeks.empty.desc": "Verás el resumen y métricas calculadas.",
+    "weeks.empty.title": "No hay registros para el periodo seleccionado",
+    "weeks.empty.desc": "Prueba con otro mes, semana o rango de fechas.",
 
     "weeks.kpi.days": "Días",
     "weeks.kpi.sessions": "Sesiones",
@@ -391,6 +391,7 @@ export const es: Record<I18nKey, string> = {
     "weeks.byType.durationMin": "Duración (min)",
     "weeks.byType.kcal": "Kcal",
 
+    "weeks.json.monthTitle": "Resumen mensual (JSON)",
     "weeks.json.weekTitle": "Resumen semanal (JSON)",
     "weeks.json.rangeTitle": "Resumen por rango (JSON)",
 
@@ -618,8 +619,9 @@ export const es: Record<I18nKey, string> = {
 
     "tabs.summary": "Resumen",
     "tabs.raw": "Raw",
-    "tabs.week": "Semana",
-    "tabs.range": "Rango",
+    "tabs.month": "Meses",
+    "tabs.week": "Semanas",
+    "tabs.range": "Rango de fechas",
     "tabs.browse": "Explorar",
     "tabs.stats": "Estadísticas",
 
@@ -636,8 +638,8 @@ export const es: Record<I18nKey, string> = {
     "pages.days.title": "Explorador de días",
     "pages.days.subtitle": "Explora el entrenamiento, sueño y notas de cualquier día.",
 
-    "pages.weeks.title": "Resumen semanal",
-    "pages.weeks.subtitle": "Carga un resumen por semana o por rango de fechas.",
+    "pages.weeks.title": "Resumen por periodo",
+    "pages.weeks.subtitle": "Compara meses, revisa semanas o analiza un rango de fechas.",
 
     "pages.trends.title": "Tendencias (semanas)",
     "pages.trends.subtitle": "Visualiza métricas agregadas por semana.",

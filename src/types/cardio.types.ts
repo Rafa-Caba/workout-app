@@ -38,7 +38,7 @@ export type CardioFormValues = {
     startTime: string;
     endTime: string;
 
-    /** Accepts whole minutes, mm:ss, or h:mm:ss. */
+    /** Masked right-to-left as ss, mm:ss, or h:mm:ss. */
     durationText: string;
 
     activeKcal: string;
@@ -51,7 +51,7 @@ export type CardioFormValues = {
     steps: string;
     elevationGainM: string;
 
-    /** Accepts minutes or mm:ss per kilometre, matching Apple Watch display. */
+    /** Masked as Apple-style mm'ss" per kilometre. */
     paceText: string;
     cadenceRpm: string;
 

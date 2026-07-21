@@ -9,12 +9,17 @@ import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import MenuItem from "@mui/material/MenuItem";
+import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
 import { DeviceSelect } from "@/components/DeviceSelect";
 import { AppActionRow, AppCard } from "@/components/mui";
 import type { I18nKey } from "@/i18n/translations";
+import {
+    formatDurationInput,
+    formatPaceInput,
+} from "@/services/workout/cardio.service";
 import type { CardioFormMode, CardioFormValues } from "@/types/cardio.types";
 
 type TFn = (key: I18nKey, vars?: Record<string, string | number>) => string;
@@ -47,6 +52,8 @@ type ClockTextFieldProps = {
     value: string;
     placeholder: string;
     helperText: string;
+    formatter: (value: string) => string;
+    endAdornment?: string;
     onChange: (value: string) => void;
 };
 
@@ -94,6 +101,8 @@ function ClockTextField({
     value,
     placeholder,
     helperText,
+    formatter,
+    endAdornment,
     onChange,
 }: ClockTextFieldProps) {
     return (
@@ -108,10 +117,18 @@ function ClockTextField({
             slotProps={{
                 htmlInput: {
                     inputMode: "numeric",
-                    pattern: "[0-9:]*",
                 },
+                input: endAdornment
+                    ? {
+                          endAdornment: (
+                              <InputAdornment position="end">
+                                  {endAdornment}
+                              </InputAdornment>
+                          ),
+                      }
+                    : undefined,
             }}
-            onChange={(event) => onChange(event.target.value)}
+            onChange={(event) => onChange(formatter(event.target.value))}
         />
     );
 }
@@ -214,7 +231,7 @@ export function CardioSessionForm({
 
             <FormBlock
                 title="Tiempo y distancia"
-                subtitle="Copia la duración tal como aparece en el reloj o escríbela en minutos."
+                subtitle="Escribe solo números; la aplicación agrega automáticamente los separadores."
             >
                 <Box sx={fieldGridSx()}>
                     <TextField
@@ -239,7 +256,8 @@ export function CardioSessionForm({
                         label="Duración"
                         value={values.durationText}
                         placeholder="7:49"
-                        helperText="Acepta 17, 7:49 o 1:07:49. Internamente se guarda en segundos."
+                        helperText="Máscara automática: 49 = 49 s, 749 = 7:49 y 10749 = 1:07:49."
+                        formatter={formatDurationInput}
                         onChange={(next) => onChange("durationText", next)}
                     />
                     <NumberField
@@ -292,8 +310,10 @@ export function CardioSessionForm({
                     <ClockTextField
                         label="Ritmo (min/km)"
                         value={values.paceText}
-                        placeholder="14:27"
-                        helperText="Escríbelo como aparece en Apple Watch. Si queda vacío, se estima con duración y distancia."
+                        placeholder={`14'27"`}
+                        helperText={`Máscara automática: 1427 = 14'27". Si queda vacío, se estima con duración y distancia.`}
+                        formatter={formatPaceInput}
+                        endAdornment="/km"
                         onChange={(next) => onChange("paceText", next)}
                     />
                     <NumberField

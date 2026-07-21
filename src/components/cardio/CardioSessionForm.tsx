@@ -8,9 +8,13 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
 import { DeviceSelect } from "@/components/DeviceSelect";
 import { AppActionRow, AppCard } from "@/components/mui";
@@ -39,14 +43,14 @@ type NumberFieldProps = {
     onChange: (value: string) => void;
     min?: number;
     step?: number;
-    helperText?: string;
+    tooltip?: string;
 };
 
 type ClockTextFieldProps = {
     label: string;
     value: string;
     placeholder: string;
-    helperText: string;
+    tooltip?: string;
     onChange: (value: string) => void;
 };
 
@@ -73,13 +77,36 @@ function fieldGridSx(desktopColumns: DesktopGridColumns) {
     };
 }
 
+/**
+ * Compact help affordance used instead of persistent helper text.
+ * It keeps every grid row aligned while remaining accessible by mouse,
+ * keyboard, and touch.
+ */
+function FieldInfoTooltip(props: { label: string; tooltip: string }) {
+    return (
+        <InputAdornment position="end">
+            <Tooltip title={props.tooltip} arrow enterTouchDelay={0}>
+                <IconButton
+                    type="button"
+                    size="small"
+                    edge="end"
+                    aria-label={`Información sobre ${props.label}`}
+                    sx={{ color: "text.secondary" }}
+                >
+                    <InfoOutlinedIcon sx={{ fontSize: 17 }} />
+                </IconButton>
+            </Tooltip>
+        </InputAdornment>
+    );
+}
+
 function NumberField({
     label,
     value,
     onChange,
     min,
     step,
-    helperText,
+    tooltip,
 }: NumberFieldProps) {
     return (
         <TextField
@@ -88,12 +115,21 @@ function NumberField({
             type="number"
             label={label}
             value={value}
-            helperText={helperText}
             slotProps={{
                 htmlInput: {
                     min: min ?? 0,
                     step: step ?? 1,
                 },
+                input: tooltip
+                    ? {
+                          endAdornment: (
+                              <FieldInfoTooltip
+                                  label={label}
+                                  tooltip={tooltip}
+                              />
+                          ),
+                      }
+                    : undefined,
             }}
             onChange={(event) => onChange(event.target.value)}
         />
@@ -108,7 +144,7 @@ function ClockTextField({
     label,
     value,
     placeholder,
-    helperText,
+    tooltip,
     onChange,
 }: ClockTextFieldProps) {
     return (
@@ -119,12 +155,20 @@ function ClockTextField({
             label={label}
             value={value}
             placeholder={placeholder}
-            helperText={helperText}
             slotProps={{
                 htmlInput: {
                     inputMode: "numeric",
-                    pattern: "[0-9:]*",
                 },
+                input: tooltip
+                    ? {
+                          endAdornment: (
+                              <FieldInfoTooltip
+                                  label={label}
+                                  tooltip={tooltip}
+                              />
+                          ),
+                      }
+                    : undefined,
             }}
             onChange={(event) => onChange(event.target.value)}
         />
@@ -167,37 +211,21 @@ export function CardioSessionForm({
             sx={{
                 display: "flex",
                 flexDirection: "column",
-                gap: { xs: 1.75, md: 2.5 },
+                gap: { xs: 1.5, md: 2 },
             }}
         >
-            <Box sx={{ minWidth: 0 }}>
-                <Typography
-                    variant="h6"
-                    component="h3"
-                    sx={{ fontWeight: 850 }}
+            <Typography variant="body2" color="text.secondary">
+                Fecha seleccionada:{" "}
+                <Box
+                    component="span"
+                    sx={{
+                        color: "text.primary",
+                        fontWeight: 800,
+                    }}
                 >
-                    {mode === "create"
-                        ? "Nueva sesión Cardio"
-                        : "Editar sesión Cardio"}
-                </Typography>
-
-                <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 0.5 }}
-                >
-                    Fecha seleccionada:{" "}
-                    <Box
-                        component="span"
-                        sx={{
-                            color: "text.primary",
-                            fontWeight: 800,
-                        }}
-                    >
-                        {selectedDate}
-                    </Box>
-                </Typography>
-            </Box>
+                    {selectedDate}
+                </Box>
+            </Typography>
 
             <FormBlock
                 title="Tipo de sesión"
@@ -228,7 +256,10 @@ export function CardioSessionForm({
                             }
                         }}
                     >
-                        <MenuItem value="outdoor">Outdoor</MenuItem>
+                        <MenuItem value="outdoor">
+                            Outdoor
+                        </MenuItem>
+
                         <MenuItem value="indoor">
                             Indoor / Treadmill
                         </MenuItem>
@@ -249,8 +280,13 @@ export function CardioSessionForm({
                             )
                         }
                     >
-                        <MenuItem value="walking">Walking</MenuItem>
-                        <MenuItem value="running">Running</MenuItem>
+                        <MenuItem value="walking">
+                            Walking
+                        </MenuItem>
+
+                        <MenuItem value="running">
+                            Running
+                        </MenuItem>
                     </TextField>
 
                     <Box sx={{ minWidth: 0 }}>
@@ -263,6 +299,7 @@ export function CardioSessionForm({
                                     next ?? ""
                                 )
                             }
+                            className="!space-y-0 [&>label]:sr-only [&>select]:!mt-0 [&>select]:h-10"
                         />
                     </Box>
                 </Box>
@@ -315,7 +352,7 @@ export function CardioSessionForm({
                         label="Duración"
                         value={values.durationText}
                         placeholder="7:49"
-                        helperText="Acepta 17, 7:49 o 1:07:49. Internamente se guarda en segundos."
+                        tooltip="Escribe solo números. Ejemplos: 49 = 49 s, 749 = 7:49 y 10749 = 1:07:49. Internamente se guarda en segundos."
                         onChange={(next) =>
                             onChange("durationText", next)
                         }
@@ -399,7 +436,7 @@ export function CardioSessionForm({
                         label="Ritmo (min/km)"
                         value={values.paceText}
                         placeholder="14:27"
-                        helperText="Escríbelo como aparece en Apple Watch. Si queda vacío, se estima con duración y distancia."
+                        tooltip="Escríbelo como aparece en Apple Watch; por ejemplo, 1427 se muestra como 14'27″. Si queda vacío, se estima con duración y distancia."
                         onChange={(next) =>
                             onChange("paceText", next)
                         }
@@ -417,7 +454,7 @@ export function CardioSessionForm({
                         label="Vel. prom (km/h)"
                         value={values.avgSpeedKmh}
                         step={0.01}
-                        helperText="Opcional: si queda vacía, se calcula con ritmo o distancia/duración."
+                        tooltip="Opcional. Si queda vacía, se calcula con el ritmo o con distancia y duración."
                         onChange={(next) =>
                             onChange("avgSpeedKmh", next)
                         }

@@ -1,9 +1,9 @@
 // src/components/cardio/CardioSessionForm.tsx
 // MUI manual form for Cardio sessions in Web.
-// Supports indoor/outdoor walking/running while keeping existing form values
-// and submit logic unchanged.
+// Uses user-friendly duration and pace inputs while preserving the API contract
+// that stores duration and pace as seconds.
 
-import type { ReactNode } from "react";
+import type { FormEvent, ReactNode } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
@@ -29,8 +29,25 @@ type Props = {
         key: K,
         value: CardioFormValues[K]
     ) => void;
-    onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+    onSubmit: (event: FormEvent<HTMLFormElement>) => void;
     onCancel: () => void;
+};
+
+type NumberFieldProps = {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    min?: number;
+    step?: number;
+    helperText?: string;
+};
+
+type ClockTextFieldProps = {
+    label: string;
+    value: string;
+    placeholder: string;
+    helperText: string;
+    onChange: (value: string) => void;
 };
 
 function fieldGridSx() {
@@ -41,27 +58,60 @@ function fieldGridSx() {
     };
 }
 
-function NumberField(props: {
-    label: string;
-    value: string;
-    onChange: (value: string) => void;
-    min?: number;
-    step?: number;
-}) {
+function NumberField({
+    label,
+    value,
+    onChange,
+    min,
+    step,
+    helperText,
+}: NumberFieldProps) {
     return (
         <TextField
             fullWidth
             size="small"
             type="number"
-            label={props.label}
-            value={props.value}
+            label={label}
+            value={value}
+            helperText={helperText}
             slotProps={{
                 htmlInput: {
-                    min: props.min ?? 0,
-                    step: props.step ?? 1,
+                    min: min ?? 0,
+                    step: step ?? 1,
                 },
             }}
-            onChange={(event) => props.onChange(event.target.value)}
+            onChange={(event) => onChange(event.target.value)}
+        />
+    );
+}
+
+/**
+ * Text input for clock-style values copied directly from Apple Watch/Fitness.
+ * The service layer validates and converts these values into canonical seconds.
+ */
+function ClockTextField({
+    label,
+    value,
+    placeholder,
+    helperText,
+    onChange,
+}: ClockTextFieldProps) {
+    return (
+        <TextField
+            fullWidth
+            size="small"
+            type="text"
+            label={label}
+            value={value}
+            placeholder={placeholder}
+            helperText={helperText}
+            slotProps={{
+                htmlInput: {
+                    inputMode: "numeric",
+                    pattern: "[0-9:]*",
+                },
+            }}
+            onChange={(event) => onChange(event.target.value)}
         />
     );
 }
@@ -87,7 +137,15 @@ export function CardioSessionForm({
     const isIndoor = values.cardioEnvironment === "indoor";
 
     return (
-        <Box component="form" onSubmit={onSubmit} sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.75, md: 2.5 } }}>
+        <Box
+            component="form"
+            onSubmit={onSubmit}
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: { xs: 1.75, md: 2.5 },
+            }}
+        >
             <Box sx={{ minWidth: 0 }}>
                 <Typography variant="h6" component="h3" sx={{ fontWeight: 850 }}>
                     {mode === "create" ? "Nueva sesión Cardio" : "Editar sesión Cardio"}
@@ -100,7 +158,10 @@ export function CardioSessionForm({
                 </Typography>
             </Box>
 
-            <FormBlock title="Tipo de sesión" subtitle="Define actividad, ambiente y dispositivo origen.">
+            <FormBlock
+                title="Tipo de sesión"
+                subtitle="Define actividad, ambiente y dispositivo origen."
+            >
                 <Box sx={fieldGridSx()}>
                     <TextField
                         select
@@ -109,7 +170,8 @@ export function CardioSessionForm({
                         label="Ambiente"
                         value={values.cardioEnvironment}
                         onChange={(event) => {
-                            const nextEnvironment = event.target.value === "indoor" ? "indoor" : "outdoor";
+                            const nextEnvironment =
+                                event.target.value === "indoor" ? "indoor" : "outdoor";
                             onChange("cardioEnvironment", nextEnvironment);
 
                             if (nextEnvironment === "indoor") {
@@ -130,7 +192,10 @@ export function CardioSessionForm({
                         label="Actividad"
                         value={values.activityType}
                         onChange={(event) =>
-                            onChange("activityType", event.target.value === "running" ? "running" : "walking")
+                            onChange(
+                                "activityType",
+                                event.target.value === "running" ? "running" : "walking"
+                            )
                         }
                     >
                         <MenuItem value="walking">Walking</MenuItem>
@@ -147,7 +212,10 @@ export function CardioSessionForm({
                 </Box>
             </FormBlock>
 
-            <FormBlock title="Tiempo y distancia" subtitle="Captura duración, horarios y distancia base.">
+            <FormBlock
+                title="Tiempo y distancia"
+                subtitle="Copia la duración tal como aparece en el reloj o escríbela en minutos."
+            >
                 <Box sx={fieldGridSx()}>
                     <TextField
                         fullWidth
@@ -167,10 +235,12 @@ export function CardioSessionForm({
                         onChange={(event) => onChange("endTime", event.target.value)}
                         slotProps={{ inputLabel: { shrink: true } }}
                     />
-                    <NumberField
-                        label="Duración (seg)"
-                        value={values.durationSeconds}
-                        onChange={(next) => onChange("durationSeconds", next)}
+                    <ClockTextField
+                        label="Duración"
+                        value={values.durationText}
+                        placeholder="7:49"
+                        helperText="Acepta 17, 7:49 o 1:07:49. Internamente se guarda en segundos."
+                        onChange={(next) => onChange("durationText", next)}
                     />
                     <NumberField
                         label={isIndoor ? "Distancia treadmill (km)" : "Distancia (km)"}
@@ -181,9 +251,16 @@ export function CardioSessionForm({
                 </Box>
             </FormBlock>
 
-            <FormBlock title="Métricas" subtitle="Datos opcionales de dispositivo o captura manual.">
+            <FormBlock
+                title="Métricas"
+                subtitle="Datos opcionales del dispositivo o de captura manual."
+            >
                 <Box sx={fieldGridSx()}>
-                    <NumberField label="Pasos" value={values.steps} onChange={(next) => onChange("steps", next)} />
+                    <NumberField
+                        label="Pasos"
+                        value={values.steps}
+                        onChange={(next) => onChange("steps", next)}
+                    />
                     {!isIndoor ? (
                         <NumberField
                             label="Elevación (m)"
@@ -192,15 +269,57 @@ export function CardioSessionForm({
                             onChange={(next) => onChange("elevationGainM", next)}
                         />
                     ) : null}
-                    <NumberField label="Kcal activas" value={values.activeKcal} onChange={(next) => onChange("activeKcal", next)} />
-                    <NumberField label="Kcal totales" value={values.totalKcal} onChange={(next) => onChange("totalKcal", next)} />
-                    <NumberField label="FC prom" value={values.avgHr} onChange={(next) => onChange("avgHr", next)} />
-                    <NumberField label="FC máx" value={values.maxHr} onChange={(next) => onChange("maxHr", next)} />
-                    <NumberField label="Ritmo (seg/km)" value={values.paceSecPerKm} onChange={(next) => onChange("paceSecPerKm", next)} />
-                    <NumberField label="Cadencia (rpm)" value={values.cadenceRpm} onChange={(next) => onChange("cadenceRpm", next)} />
-                    <NumberField label="Vel. prom (km/h)" value={values.avgSpeedKmh} step={0.01} onChange={(next) => onChange("avgSpeedKmh", next)} />
-                    <NumberField label="Vel. máx (km/h)" value={values.maxSpeedKmh} step={0.01} onChange={(next) => onChange("maxSpeedKmh", next)} />
-                    <NumberField label="Zancada (m)" value={values.strideLengthM} step={0.01} onChange={(next) => onChange("strideLengthM", next)} />
+                    <NumberField
+                        label="Kcal activas"
+                        value={values.activeKcal}
+                        onChange={(next) => onChange("activeKcal", next)}
+                    />
+                    <NumberField
+                        label="Kcal totales"
+                        value={values.totalKcal}
+                        onChange={(next) => onChange("totalKcal", next)}
+                    />
+                    <NumberField
+                        label="FC prom"
+                        value={values.avgHr}
+                        onChange={(next) => onChange("avgHr", next)}
+                    />
+                    <NumberField
+                        label="FC máx"
+                        value={values.maxHr}
+                        onChange={(next) => onChange("maxHr", next)}
+                    />
+                    <ClockTextField
+                        label="Ritmo (min/km)"
+                        value={values.paceText}
+                        placeholder="14:27"
+                        helperText="Escríbelo como aparece en Apple Watch. Si queda vacío, se estima con duración y distancia."
+                        onChange={(next) => onChange("paceText", next)}
+                    />
+                    <NumberField
+                        label="Cadencia (rpm)"
+                        value={values.cadenceRpm}
+                        onChange={(next) => onChange("cadenceRpm", next)}
+                    />
+                    <NumberField
+                        label="Vel. prom (km/h)"
+                        value={values.avgSpeedKmh}
+                        step={0.01}
+                        helperText="Opcional: si queda vacía, se calcula con ritmo o distancia/duración."
+                        onChange={(next) => onChange("avgSpeedKmh", next)}
+                    />
+                    <NumberField
+                        label="Vel. máx (km/h)"
+                        value={values.maxSpeedKmh}
+                        step={0.01}
+                        onChange={(next) => onChange("maxSpeedKmh", next)}
+                    />
+                    <NumberField
+                        label="Zancada (m)"
+                        value={values.strideLengthM}
+                        step={0.01}
+                        onChange={(next) => onChange("strideLengthM", next)}
+                    />
                 </Box>
             </FormBlock>
 
@@ -216,7 +335,9 @@ export function CardioSessionForm({
                             control={
                                 <Checkbox
                                     checked={values.hasRoute}
-                                    onChange={(event) => onChange("hasRoute", event.target.checked)}
+                                    onChange={(event) =>
+                                        onChange("hasRoute", event.target.checked)
+                                    }
                                 />
                             }
                             label="Tiene ruta"
@@ -236,7 +357,12 @@ export function CardioSessionForm({
             />
 
             <AppActionRow align="right" reverseOnMobile>
-                <Button type="button" variant="outlined" onClick={onCancel} disabled={isSubmitting}>
+                <Button
+                    type="button"
+                    variant="outlined"
+                    onClick={onCancel}
+                    disabled={isSubmitting}
+                >
                     Cancelar
                 </Button>
                 <Button type="submit" variant="contained" disabled={isSubmitting}>
@@ -245,8 +371,8 @@ export function CardioSessionForm({
                             ? "Guardando..."
                             : "Actualizando..."
                         : mode === "create"
-                            ? "Guardar sesión"
-                            : "Actualizar sesión"}
+                          ? "Guardar sesión"
+                          : "Actualizar sesión"}
                 </Button>
             </AppActionRow>
         </Box>

@@ -92,95 +92,117 @@ export function buildIsoDateTime(date: string, time: string): string | null {
     return built.toISOString();
 }
 
-function parseWholeNumberSegment(value: string): number | null {
-    if (!/^\d+$/.test(value)) return null;
-
-    const parsed = Number(value);
-    return Number.isSafeInteger(parsed) ? parsed : null;
+function getNumericInputDigits(value: string): string {
+    return value.replace(/\D/g, "");
 }
 
 /**
- * Converts a user-facing duration into canonical seconds.
- * Supported examples: "17", "7:49", "1:07:49".
+ * Applies a right-to-left stopwatch mask while the user types.
+ * Examples: 7 -> 7, 49 -> 49, 749 -> 7:49, 10749 -> 1:07:49.
+ */
+export function formatDurationInput(value: string): string {
+    const digits = getNumericInputDigits(value);
+    if (!digits) return "";
+
+    if (digits.length <= 2) return digits;
+
+    const seconds = digits.slice(-2);
+
+    if (digits.length <= 4) {
+        const minutes = digits.slice(0, -2);
+        return `${minutes}:${seconds}`;
+    }
+
+    const hours = digits.slice(0, -4);
+    const minutes = digits.slice(-4, -2);
+    return `${hours}:${minutes}:${seconds}`;
+}
+
+/**
+ * Applies an Apple-style pace mask while the user types.
+ * Examples: 905 -> 9'05", 1427 -> 14'27".
+ */
+export function formatPaceInput(value: string): string {
+    const digits = getNumericInputDigits(value);
+    if (!digits) return "";
+
+    if (digits.length <= 2) return digits;
+
+    const minutes = digits.slice(0, -2);
+    const seconds = digits.slice(-2);
+    return `${minutes}'${seconds}"`;
+}
+
+/**
+ * Converts the masked duration input into canonical seconds.
+ * One or two digits represent seconds; additional digits are interpreted
+ * from right to left as mm:ss or h:mm:ss.
  */
 export function parseDurationTextToSeconds(value: string): number | null {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
+    const digits = getNumericInputDigits(value);
+    if (!digits) return null;
 
-    const parts = trimmed.split(":");
-
-    if (parts.length === 1) {
-        const minutes = parseWholeNumberSegment(parts[0]);
-        if (minutes === null) {
-            throw new Error("Duración inválida. Usa minutos, mm:ss o h:mm:ss.");
-        }
-
-        return minutes * 60;
+    if (!/^\d+$/.test(digits)) {
+        throw new Error("Duración inválida.");
     }
 
-    if (parts.length === 2) {
-        const minutes = parseWholeNumberSegment(parts[0]);
-        const seconds = parseWholeNumberSegment(parts[1]);
-
-        if (minutes === null || seconds === null || seconds > 59) {
-            throw new Error("Duración inválida. Usa mm:ss, por ejemplo 7:49.");
-        }
-
-        return minutes * 60 + seconds;
+    if (digits.length <= 2) {
+        const seconds = Number(digits);
+        return Number.isSafeInteger(seconds) ? seconds : null;
     }
 
-    if (parts.length === 3) {
-        const hours = parseWholeNumberSegment(parts[0]);
-        const minutes = parseWholeNumberSegment(parts[1]);
-        const seconds = parseWholeNumberSegment(parts[2]);
+    const seconds = Number(digits.slice(-2));
+    const minutes = Number(
+        digits.length <= 4 ? digits.slice(0, -2) : digits.slice(-4, -2)
+    );
+    const hours = digits.length > 4 ? Number(digits.slice(0, -4)) : 0;
 
-        if (
-            hours === null ||
-            minutes === null ||
-            seconds === null ||
-            minutes > 59 ||
-            seconds > 59
-        ) {
-            throw new Error("Duración inválida. Usa h:mm:ss, por ejemplo 1:07:49.");
-        }
-
-        return hours * 3600 + minutes * 60 + seconds;
+    if (
+        !Number.isSafeInteger(hours) ||
+        !Number.isSafeInteger(minutes) ||
+        !Number.isSafeInteger(seconds) ||
+        minutes > 59 ||
+        seconds > 59
+    ) {
+        throw new Error(
+            "Duración inválida. Usa ss, mm:ss o h:mm:ss; minutos y segundos deben ser menores a 60."
+        );
     }
 
-    throw new Error("Duración inválida. Usa minutos, mm:ss o h:mm:ss.");
+    return hours * 3600 + minutes * 60 + seconds;
 }
 
 /**
  * Converts Apple-style pace text into canonical seconds per kilometre.
- * Supported examples: "14" or "14:27".
+ * Examples: 14 -> 14:00 min/km, 905 -> 9:05 min/km, 14'27" -> 14:27 min/km.
  */
 export function parsePaceTextToSeconds(value: string): number | null {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
+    const digits = getNumericInputDigits(value);
+    if (!digits) return null;
 
-    const parts = trimmed.split(":");
-
-    if (parts.length === 1) {
-        const minutes = parseWholeNumberSegment(parts[0]);
-        if (minutes === null) {
-            throw new Error("Ritmo inválido. Usa minutos o mm:ss por kilómetro.");
+    if (digits.length <= 2) {
+        const minutes = Number(digits);
+        if (!Number.isSafeInteger(minutes)) {
+            throw new Error("Ritmo inválido.");
         }
 
         return minutes * 60;
     }
 
-    if (parts.length === 2) {
-        const minutes = parseWholeNumberSegment(parts[0]);
-        const seconds = parseWholeNumberSegment(parts[1]);
+    const minutes = Number(digits.slice(0, -2));
+    const seconds = Number(digits.slice(-2));
 
-        if (minutes === null || seconds === null || seconds > 59) {
-            throw new Error("Ritmo inválido. Usa mm:ss, por ejemplo 14:27.");
-        }
-
-        return minutes * 60 + seconds;
+    if (
+        !Number.isSafeInteger(minutes) ||
+        !Number.isSafeInteger(seconds) ||
+        seconds > 59
+    ) {
+        throw new Error(
+            `Ritmo inválido. Usa mm:ss o mm'ss"; los segundos deben ser menores a 60.`
+        );
     }
 
-    throw new Error("Ritmo inválido. Usa minutos o mm:ss por kilómetro.");
+    return minutes * 60 + seconds;
 }
 
 export function formatDurationText(seconds: number | null): string {
@@ -197,7 +219,11 @@ export function formatDurationText(seconds: number | null): string {
         ).padStart(2, "0")}`;
     }
 
-    return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+    if (minutes > 0) {
+        return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+    }
+
+    return String(remainingSeconds);
 }
 
 export function formatPaceText(secondsPerKm: number | null): string {
@@ -207,7 +233,7 @@ export function formatPaceText(secondsPerKm: number | null): string {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
 
-    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+    return `${minutes}'${String(seconds).padStart(2, "0")}"`;
 }
 
 export function deriveDurationSeconds(

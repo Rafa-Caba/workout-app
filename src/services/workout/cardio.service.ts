@@ -92,12 +92,130 @@ export function buildIsoDateTime(date: string, time: string): string | null {
     return built.toISOString();
 }
 
+function parseWholeNumberSegment(value: string): number | null {
+    if (!/^\d+$/.test(value)) return null;
+
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
+/**
+ * Converts a user-facing duration into canonical seconds.
+ * Supported examples: "17", "7:49", "1:07:49".
+ */
+export function parseDurationTextToSeconds(value: string): number | null {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const parts = trimmed.split(":");
+
+    if (parts.length === 1) {
+        const minutes = parseWholeNumberSegment(parts[0]);
+        if (minutes === null) {
+            throw new Error("Duración inválida. Usa minutos, mm:ss o h:mm:ss.");
+        }
+
+        return minutes * 60;
+    }
+
+    if (parts.length === 2) {
+        const minutes = parseWholeNumberSegment(parts[0]);
+        const seconds = parseWholeNumberSegment(parts[1]);
+
+        if (minutes === null || seconds === null || seconds > 59) {
+            throw new Error("Duración inválida. Usa mm:ss, por ejemplo 7:49.");
+        }
+
+        return minutes * 60 + seconds;
+    }
+
+    if (parts.length === 3) {
+        const hours = parseWholeNumberSegment(parts[0]);
+        const minutes = parseWholeNumberSegment(parts[1]);
+        const seconds = parseWholeNumberSegment(parts[2]);
+
+        if (
+            hours === null ||
+            minutes === null ||
+            seconds === null ||
+            minutes > 59 ||
+            seconds > 59
+        ) {
+            throw new Error("Duración inválida. Usa h:mm:ss, por ejemplo 1:07:49.");
+        }
+
+        return hours * 3600 + minutes * 60 + seconds;
+    }
+
+    throw new Error("Duración inválida. Usa minutos, mm:ss o h:mm:ss.");
+}
+
+/**
+ * Converts Apple-style pace text into canonical seconds per kilometre.
+ * Supported examples: "14" or "14:27".
+ */
+export function parsePaceTextToSeconds(value: string): number | null {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const parts = trimmed.split(":");
+
+    if (parts.length === 1) {
+        const minutes = parseWholeNumberSegment(parts[0]);
+        if (minutes === null) {
+            throw new Error("Ritmo inválido. Usa minutos o mm:ss por kilómetro.");
+        }
+
+        return minutes * 60;
+    }
+
+    if (parts.length === 2) {
+        const minutes = parseWholeNumberSegment(parts[0]);
+        const seconds = parseWholeNumberSegment(parts[1]);
+
+        if (minutes === null || seconds === null || seconds > 59) {
+            throw new Error("Ritmo inválido. Usa mm:ss, por ejemplo 14:27.");
+        }
+
+        return minutes * 60 + seconds;
+    }
+
+    throw new Error("Ritmo inválido. Usa minutos o mm:ss por kilómetro.");
+}
+
+export function formatDurationText(seconds: number | null): string {
+    if (!isFiniteNumber(seconds) || seconds < 0) return "";
+
+    const totalSeconds = Math.round(seconds);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const remainingSeconds = totalSeconds % 60;
+
+    if (hours > 0) {
+        return `${hours}:${String(minutes).padStart(2, "0")}:${String(
+            remainingSeconds
+        ).padStart(2, "0")}`;
+    }
+
+    return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+}
+
+export function formatPaceText(secondsPerKm: number | null): string {
+    if (!isFiniteNumber(secondsPerKm) || secondsPerKm <= 0) return "";
+
+    const totalSeconds = Math.round(secondsPerKm);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
 export function deriveDurationSeconds(
     explicitDuration: string,
     startAt: string | null,
     endAt: string | null
 ): number | null {
-    const parsedExplicit = parseNullableInt(explicitDuration);
+    const parsedExplicit = parseDurationTextToSeconds(explicitDuration);
     if (parsedExplicit !== null) return parsedExplicit;
 
     if (!startAt || !endAt) return null;
@@ -110,6 +228,56 @@ export function deriveDurationSeconds(
     }
 
     return Math.trunc((endMs - startMs) / 1000);
+}
+
+function roundTo(value: number, decimals: number): number {
+    const factor = 10 ** decimals;
+    return Math.round(value * factor) / factor;
+}
+
+export function derivePaceSecPerKm(
+    explicitPace: string,
+    durationSeconds: number | null,
+    distanceKm: number | null
+): number | null {
+    const parsedExplicit = parsePaceTextToSeconds(explicitPace);
+    if (parsedExplicit !== null) return parsedExplicit;
+
+    if (
+        !isFiniteNumber(durationSeconds) ||
+        durationSeconds <= 0 ||
+        !isFiniteNumber(distanceKm) ||
+        distanceKm <= 0
+    ) {
+        return null;
+    }
+
+    return Math.round(durationSeconds / distanceKm);
+}
+
+export function deriveAverageSpeedKmh(
+    explicitAverageSpeed: string,
+    paceSecPerKm: number | null,
+    durationSeconds: number | null,
+    distanceKm: number | null
+): number | null {
+    const parsedExplicit = parseNullableNumber(explicitAverageSpeed);
+    if (parsedExplicit !== null) return parsedExplicit;
+
+    if (isFiniteNumber(paceSecPerKm) && paceSecPerKm > 0) {
+        return roundTo(3600 / paceSecPerKm, 2);
+    }
+
+    if (
+        isFiniteNumber(durationSeconds) &&
+        durationSeconds > 0 &&
+        isFiniteNumber(distanceKm) &&
+        distanceKm > 0
+    ) {
+        return roundTo((distanceKm * 3600) / durationSeconds, 2);
+    }
+
+    return null;
 }
 
 export function buildRouteSummary(
@@ -142,7 +310,7 @@ export function createEmptyCardioFormValues(): CardioFormValues {
         startTime: "",
         endTime: "",
 
-        durationSeconds: "",
+        durationText: "",
 
         activeKcal: "",
         totalKcal: "",
@@ -154,7 +322,7 @@ export function createEmptyCardioFormValues(): CardioFormValues {
         steps: "",
         elevationGainM: "",
 
-        paceSecPerKm: "",
+        paceText: "",
         cadenceRpm: "",
 
         avgSpeedKmh: "",
@@ -202,8 +370,7 @@ export function mapCardioSessionToFormValues(
         startTime,
         endTime,
 
-        durationSeconds:
-            session.durationSeconds !== null ? String(session.durationSeconds) : "",
+        durationText: formatDurationText(session.durationSeconds),
 
         activeKcal: session.activeKcal !== null ? String(session.activeKcal) : "",
         totalKcal: session.totalKcal !== null ? String(session.totalKcal) : "",
@@ -216,8 +383,7 @@ export function mapCardioSessionToFormValues(
         elevationGainM:
             session.elevationGainM !== null ? String(session.elevationGainM) : "",
 
-        paceSecPerKm:
-            session.paceSecPerKm !== null ? String(session.paceSecPerKm) : "",
+        paceText: formatPaceText(session.paceSecPerKm),
         cadenceRpm: session.cadenceRpm !== null ? String(session.cadenceRpm) : "",
 
         avgSpeedKmh:
@@ -262,7 +428,7 @@ export function buildCardioCreatePayload(
     const startAt = buildIsoDateTime(date, values.startTime);
     const endAt = buildIsoDateTime(date, values.endTime);
     const durationSeconds = deriveDurationSeconds(
-        values.durationSeconds,
+        values.durationText,
         startAt,
         endAt
     );
@@ -280,7 +446,17 @@ export function buildCardioCreatePayload(
         values.cardioEnvironment === "outdoor"
             ? parseNullableNumber(values.elevationGainM)
             : null;
-    const paceSecPerKm = parseNullableInt(values.paceSecPerKm);
+    const paceSecPerKm = derivePaceSecPerKm(
+        values.paceText,
+        durationSeconds,
+        distanceKm
+    );
+    const avgSpeedKmh = deriveAverageSpeedKmh(
+        values.avgSpeedKmh,
+        paceSecPerKm,
+        durationSeconds,
+        distanceKm
+    );
     const cadenceRpm = parseNullableInt(values.cadenceRpm);
 
     return {
@@ -312,7 +488,7 @@ export function buildCardioCreatePayload(
             steps,
             elevationGainM,
             paceSecPerKm,
-            avgSpeedKmh: parseNullableNumber(values.avgSpeedKmh),
+            avgSpeedKmh,
             maxSpeedKmh: parseNullableNumber(values.maxSpeedKmh),
             cadenceRpm,
             strideLengthM: parseNullableNumber(values.strideLengthM),

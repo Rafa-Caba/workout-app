@@ -7,7 +7,9 @@
  * - create / edit / delete Cardio sessions
  * - read Cardio sessions from WorkoutDay.training.sessions
  *
- * Cardio now supports walking/running across indoor and outdoor environments.
+ * Cardio supports walking/running across indoor and outdoor environments.
+ * The form uses user-friendly duration and pace strings, while API payloads
+ * continue using the canonical values in seconds.
  */
 
 import type {
@@ -36,7 +38,8 @@ export type CardioFormValues = {
     startTime: string;
     endTime: string;
 
-    durationSeconds: string;
+    /** Accepts whole minutes, mm:ss, or h:mm:ss. */
+    durationText: string;
 
     activeKcal: string;
     totalKcal: string;
@@ -48,7 +51,8 @@ export type CardioFormValues = {
     steps: string;
     elevationGainM: string;
 
-    paceSecPerKm: string;
+    /** Accepts minutes or mm:ss per kilometre, matching Apple Watch display. */
+    paceText: string;
     cadenceRpm: string;
 
     avgSpeedKmh: string;

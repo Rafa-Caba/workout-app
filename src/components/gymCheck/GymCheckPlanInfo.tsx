@@ -23,19 +23,23 @@ function InfoRow(props: { label: string; value: string }) {
     return (
         <Box
             sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 1.5,
+                display: "grid",
+                gridTemplateColumns: "25% minmax(0, 1fr)",
+                columnGap: 1.5,
+                alignItems: "start",
                 py: 0.7,
                 borderBottom: 1,
                 borderColor: "divider",
-                flexWrap: "wrap",
             }}
         >
             <Typography
                 variant="body2"
                 color="text.secondary"
-                sx={{ fontWeight: 750 }}
+                sx={{
+                    fontWeight: 750,
+                    minWidth: 0,
+                    whiteSpace: "nowrap",
+                }}
             >
                 {props.label}
             </Typography>
@@ -44,8 +48,9 @@ function InfoRow(props: { label: string; value: string }) {
                 variant="body2"
                 sx={{
                     fontWeight: 800,
-                    textAlign: "right",
                     minWidth: 0,
+                    textAlign: "right",
+                    overflowWrap: "anywhere",
                 }}
             >
                 {props.value}

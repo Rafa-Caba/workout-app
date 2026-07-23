@@ -59,7 +59,7 @@ function PlannedMetricsTable(props: { metrics: readonly PlannedMetric[] }) {
                     md: "1px solid rgba(127, 127, 127, 0.18)",
                 },
                 borderRadius: {
-                    xs: 0,
+                    xs: 1.5,
                     md: 2,
                 },
                 overflow: "hidden",

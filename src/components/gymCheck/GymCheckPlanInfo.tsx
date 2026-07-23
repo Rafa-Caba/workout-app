@@ -32,35 +32,77 @@ function InfoRow(props: { label: string; value: string }) {
                 flexWrap: "wrap",
             }}
         >
-            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 750 }}>
+            <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontWeight: 750 }}
+            >
                 {props.label}
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 800, textAlign: "right", minWidth: 0 }}>
+
+            <Typography
+                variant="body2"
+                sx={{
+                    fontWeight: 800,
+                    textAlign: "right",
+                    minWidth: 0,
+                }}
+            >
                 {props.value}
             </Typography>
         </Box>
     );
 }
 
-export function GymCheckPlanInfo({ lang, activeDay, dayLabels, activePlan }: Props) {
+export function GymCheckPlanInfo({
+    lang,
+    activeDay,
+    dayLabels,
+    activePlan,
+}: Props) {
     const exerciseCount = activePlan.exercises?.length ?? 0;
     const title = lang === "es" ? "Plan del día" : "Day plan";
-    const dayLabel = lang === "es" ? dayLabels[activeDay].es : dayLabels[activeDay].en;
+    const dayLabel =
+        lang === "es"
+            ? dayLabels[activeDay].es
+            : dayLabels[activeDay].en;
 
     return (
         <AppCard
             title={title}
-            subtitle={lang === "es" ? "Resumen del plan asignado." : "Assigned plan summary."}
-            action={<Chip size="small" color="primary" label={dayLabel} />}
+            subtitle={
+                lang === "es"
+                    ? "Resumen del plan asignado."
+                    : "Assigned plan summary."
+            }
+            action={
+                <Chip
+                    size="small"
+                    color="primary"
+                    label={dayLabel}
+                />
+            }
             padding="md"
         >
             <Box sx={{ display: "grid", gap: 0.2 }}>
-                <InfoRow label={lang === "es" ? "Tipo" : "Type"} value={formatNullable(activePlan.sessionType)} />
-                <InfoRow label={lang === "es" ? "Focus" : "Focus"} value={formatNullable(activePlan.focus)} />
-                <InfoRow label={lang === "es" ? "Ejercicios" : "Exercises"} value={String(exerciseCount)} />
                 <InfoRow
-                    label={lang === "es" ? "Tags" : "Tags"}
-                    value={Array.isArray(activePlan.tags) && activePlan.tags.length > 0 ? activePlan.tags.join(", ") : "—"}
+                    label={lang === "es" ? "Tipo" : "Type"}
+                    value={formatNullable(activePlan.sessionType)}
+                />
+
+                <InfoRow
+                    label="Focus"
+                    value={formatNullable(activePlan.focus)}
+                />
+
+                <InfoRow
+                    label={lang === "es" ? "Ejercicios" : "Exercises"}
+                    value={String(exerciseCount)}
+                />
+
+                <InfoRow
+                    label={lang === "es" ? "Notas" : "Notes"}
+                    value={formatNullable(activePlan.notes)}
                 />
             </Box>
         </AppCard>

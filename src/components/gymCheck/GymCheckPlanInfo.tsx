@@ -24,7 +24,7 @@ function InfoRow(props: { label: string; value: string }) {
         <Box
             sx={{
                 display: "grid",
-                gridTemplateColumns: "25% minmax(0, 1fr)",
+                gridTemplateColumns: "20% minmax(0, 1fr)",
                 columnGap: 1.5,
                 alignItems: "start",
                 py: 0.7,
